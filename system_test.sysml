@@ -1,13 +1,13 @@
-package system_test{
+library package system_test{
     doc /* This is the top-level system that will intagrate all subsystem for the application. */
 
     /* ===================================================================
          * IMPORTS [PARTS]
      * =================================================================== */
-    private import conditioning_unit::*;
-    private import elaboration_unit::*;
-    private import balancing_unit::*;
-    
+    public import conditioning_unit::*;
+    public import elaboration_unit::*;
+    public import balancing_unit::*;
+
     /* ===================================================================
          * IMPORTS [LIBRARIES]
      * =================================================================== */
@@ -76,15 +76,40 @@ package system_test{
 	
     part def topLevelSystem {
         doc /* The top-level system representing the entire S.L.O.W. architecture. */
-        part conditioner : conditioning_unit;
-        part elaborator : elaboration_unit;
-        part balancer : balancing_unit;
+        part conditioner : conditioning_unit::conditioning_unit;
+        part elaborator : elaboration_unit::elaboration_unit;
+        part balancer : balancing_unit::balancing_unit;
         
         /* Internal Connections via Interface Usages */
-        connection dataFlow : DataFlow connect conditioner to elaborator;
-        connection dataFlow : DataFlow connect elaborator to balancer;
+        connection conditioned_signals : DataFlow connect conditioner to elaborator;
+        connection generated_parameters : DataFlow connect elaborator to balancer;
 
     }
 
+
+
+    /* ===================================================================
+		 * VIEWPOINT DEFINITIONS — Filtered Views on the System
+	 * =================================================================== */
+	
+	viewpoint def SignalFlowViewpoint {
+		doc /* Viewpoint for signal and data flow visualization.
+			 * Filters: Emphasize ports, interfaces, and data movement.
+			 * Suitable for understanding:
+			 * - How signals flow through the system
+			 * - Port-to-port connections
+			 * - External interfaces
+			 * - Latency and throughput characteristics */
+		
+		filter signal_flows {
+			doc /* Highlight all signal transfer paths */
+		}
+		filter external_interfaces {
+			doc /* Show input/output ports at system boundary */
+		}
+		filter dataflow {
+			doc /* Display data movement between subsystems */
+		}
+	}
 
 }

@@ -20,5 +20,8 @@ package TOP_LEVEL{
         part :>> balancer {
             /* Configuration for the Balancing Unit */
         }
+
+        /*connection Supply : SupplyEnergy connect system to elaborator;
+        */
     }
 }

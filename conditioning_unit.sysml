@@ -7,12 +7,6 @@ library package conditioning_unit{
          * - S&H (Sample and Hold)
          * - Signal conditioning in general */
     
-    private import ScalarValues::*;
-	private import Quantities::*;
-	private import MeasurementReferences::*;
-	private import ISQ::*;
-	private import SI::*;
-    
     /* ===================================================================
 		 * PART DEFINITIONS — Subsystem Definitions
 	 * =================================================================== */
