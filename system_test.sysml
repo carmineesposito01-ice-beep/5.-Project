@@ -17,39 +17,47 @@ library package system_test{
 	private import ISQ::*;
 	private import SI::*;
 
-    /* ===================================================================
-         * ATTRIBUTE DEFINITIONS
-     * =================================================================== */
-    attribute def ScalarValue :> Real {
-        doc /* A generic scalar value, used for various measurements. */
-    }
-    attribute def Quantity :> Real {
-        doc /* A physical quantity with units, such as length or mass. */
-    }
-    attribute def MeasurementReference :> String {
-        doc /* A reference to the measurement context or standard. */
-    }
-    attribute def ISQUnit :> String {
-        doc /* An International System of Quantities (ISQ) unit, like "m" for meters. */
-    }
-    attribute def SIUnit :> String {
-        doc /* A unit from the International System of Units (SI), like "kg" for kilograms. */
+    enum def AsilLevel {        
+        doc /*
+                 * Automotive Safety Integrity Level (ASIL) classification for the conditioning unit, indicating the required safety level for its operation.
+        */
+        enum QM;
+        enum A;
+        enum B;
+        enum C;
+        enum D;
     }
 
+    /* ===================================================================
+         * ATTRIBUTE DEFINITIONS
+    * =================================================================== */
+    attribute def systemClockFrequency_MHz :> Real {
+        doc /* The operating clock frequency of the conditioning unit, in megahertz (MHz). */
+    }
+    attribute def asilRequirement :> AsilLevel {
+        doc /* The Automotive Safety Integrity Level (ASIL) requirement for the conditioning unit, indicating the safety level it must meet. */
+    }
+    attribute def totalLatencyBudget_ms :> Real {
+        doc /* The total latency budget for the conditioning unit, in milliseconds (ms), indicating the maximum allowed time for processing input signals. */
+    }
+    attribute def thermalPowerLimit_W :> Real {
+        doc /* The thermal power limit for the conditioning unit, in watts (W), indicating the maximum power dissipation allowed to prevent overheating. */
+    }
+    
 
     /* ===================================================================
 		 * PORT DEFINITIONS — Energy and Signal Flows
 	 * =================================================================== */
 	port def DataPort {
         doc /* A generic port for data transfer between components. */
-        in dataIn :> ScalarValue;
-        out dataOut :> ScalarValue;
+        in dataIn :> power;
+        out dataOut :> power;
     }
 
     port def SupplyPort {
         doc /* A port for supplying power or resources to components. */
-        in supplyIn :> Quantity;
-        out supplyOut :> Quantity;
+        in supplyIn :> power;
+        out supplyOut :> power;
     }
 
     /* ===================================================================
@@ -70,15 +78,21 @@ library package system_test{
     }
 
 
-    /* ===================================================================
-		 * TOP-LEVEL SYSTEM — Car (Composition)
+     /* ===================================================================
+		 * PART DEFINITIONS — Subsystem Definitions
 	 * =================================================================== */
 	
     part def topLevelSystem {
         doc /* The top-level system representing the entire S.L.O.W. architecture. */
-        part conditioner : conditioning_unit::conditioning_unit;
-        part elaborator : elaboration_unit::elaboration_unit;
-        part balancer : balancing_unit::balancing_unit;
+
+        attribute systemClockFrequency_MHz : Real = 200.0;
+        attribute asilRequirement : AsilLevel = AsilLevel::B;
+        attribute totalLatencyBudget_ms : Real = 5.0;
+        attribute thermalPowerLimit_W : Real = 15.0;
+
+        part conditioner : conditioning_unit::conditioning_unit_v1;
+        part elaborator : elaboration_unit::elaboration_unit_v1;
+        part balancer : balancing_unit::balancing_unit_v1;
         
         /* Internal Connections via Interface Usages */
         connection conditioned_signals : DataFlow connect conditioner to elaborator;
@@ -92,6 +106,7 @@ library package system_test{
 		 * VIEWPOINT DEFINITIONS — Filtered Views on the System
 	 * =================================================================== */
 	
+
 	viewpoint def SignalFlowViewpoint {
 		doc /* Viewpoint for signal and data flow visualization.
 			 * Filters: Emphasize ports, interfaces, and data movement.
@@ -100,16 +115,7 @@ library package system_test{
 			 * - Port-to-port connections
 			 * - External interfaces
 			 * - Latency and throughput characteristics */
-		
-		filter signal_flows {
-			doc /* Highlight all signal transfer paths */
-		}
-		filter external_interfaces {
-			doc /* Show input/output ports at system boundary */
-		}
-		filter dataflow {
-			doc /* Display data movement between subsystems */
-		}
 	}
+
 
 }

@@ -8,13 +8,13 @@ package VehicleArchitecture {
 	private import SI::*;
 	/* ===================================================================
 		 * ATTRIBUTE DEFINITIONS
-		 * =================================================================== */
+	 * =================================================================== */
 	attribute def FuelLevelType :> Real {
 		doc /* Fuel level as a ratio, 0.0 (empty) to 1.0 (full). */
 	}
 	/* ===================================================================
 		 * PORT DEFINITIONS — Energy and Signal Flows
-		 * =================================================================== */
+	 * =================================================================== */
 	port def MechanicalEnergyPort {
 		doc /* Port for mechanical energy transfer (e.g. torque). */
 		out transferredTorque :> torque;
