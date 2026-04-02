@@ -23,13 +23,10 @@ library package balancing_unit{
     /* ===================================================================
          * ATTRIBUTE DEFINITIONS
     * =================================================================== */
-    attribute def weightingFactors :> Real {
-        doc /* The weighting factors used by the balancing unit to combine parameters from different models, represented as an array of three real numbers. */
-    }
-    attribute def updateRateOut_Hz :> Real {
+    attribute def UpdateRateOut_Hz :> Real {
         doc /* The update rate of the output parameters from the balancing unit, in hertz (Hz), indicating how frequently the balanced parameters are updated. */
     }
-    attribute def validityFlag :> DataStatus {
+    attribute def ValidityFlag :> DataStatus {
         doc /* A flag indicating the validity of the output parameters from the balancing unit, using the DataStatus enumeration defined in the system_test package. */
     }
     
@@ -43,9 +40,12 @@ library package balancing_unit{
              * ATTRIBUTE USAGE
         * =================================================================== */
         attribute weightingFactors : Real [3]; 
-        attribute updateRateOut_Hz : Real = 100.0;
-        attribute validityFlag : DataStatus;
+        attribute updateRateOut_Hz : UpdateRateOut_Hz = 100.0;
+        attribute validityFlag : ValidityFlag;
     }
+
+
+
 
 
 }

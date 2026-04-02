@@ -16,16 +16,13 @@ library package elaboration_unit{
     /* ===================================================================
          * ATTRIBUTE DEFINITIONS
     * =================================================================== */
-    attribute def processingLatencyCycles :> Integer {
+    attribute def ProcessingLatencyCycles :> Integer {
         doc /* The number of clock cycles required for the elaboration unit to process input signals and generate output parameters. */        
     }
-    attribute def throughputPerCycle :> Real {
-        doc /* The number of parameters generated per clock cycle by the elaboration unit, indicating its processing efficiency. */
-    }
-    attribute def algorithmicErrorMargin_percent :> Real {
+    attribute def AlgorithmicErrorMargin_percent :> Real {
         doc /* The margin of error allowed in the algorithmic computations of the elaboration unit, expressed as a percentage. */
     }
-    attribute def dspSliceUtilization :> Integer {
+    attribute def DSPSliceUtilization :> Integer {
         doc /* The utilization rate of the digital signal processing (DSP) slices in the elaboration unit, indicating how fully they are being used. */
     }
 
@@ -39,9 +36,8 @@ library package elaboration_unit{
         /* ===================================================================
              * ATTRIBUTE DEFINITIONS
         * =================================================================== */
-        attribute processingLatencyCycles : Integer;
-        attribute throughputPerCycle : Real;
-        attribute algorithmicErrorMargin_percent : Real;
-        attribute dspSliceUtilization : Integer;
+        attribute processingLatencyCycles : ProcessingLatencyCycles;
+        attribute algorithmicErrorMargin_percent : AlgorithmicErrorMargin_percent;
+        attribute dspSliceUtilization : DSPSliceUtilization;
     }
 }
