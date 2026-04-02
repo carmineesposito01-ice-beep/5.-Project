@@ -29,6 +29,7 @@ library package conditioning_unit{
 		 * PART DEFINITIONS — Subsystem Definitions
 	 * =================================================================== */
     part def conditioning_unit_v1{
+    part def conditioning_unit_v1{
         doc /* Top-Level definition of the conditioner. */
         
         /* ===================================================================

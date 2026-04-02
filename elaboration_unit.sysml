@@ -31,6 +31,7 @@ library package elaboration_unit{
 		 * PART DEFINITIONS — Subsystem Definitions
 	 * =================================================================== */
     part def elaboration_unit_v1{
+    part def elaboration_unit_v1{
         doc /* Top-Level definition of the elaboration unit. */
 
         /* ===================================================================

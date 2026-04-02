@@ -34,6 +34,7 @@ library package balancing_unit{
 		 * PART DEFINITIONS — Subsystem Definitions
 	 * =================================================================== */
     part def balancing_unit_v1{
+    part def balancing_unit_v1{
         doc /* Top-Level definition of the conditioner. */
 
         /* ===================================================================
