@@ -16,6 +16,7 @@ library package system_test{
 	private import MeasurementReferences::*;
 	private import ISQ::*;
 	private import SI::*;
+    public import Attribute::*;
 
     enum def AsilLevel {        
         doc /*
@@ -88,7 +89,19 @@ library package system_test{
         attribute systemClockFrequency_MHz : Real = 200.0;
         attribute asilRequirement : AsilLevel = AsilLevel::B;
         attribute totalLatencyBudget_ms : Real = 5.0;
-        attribute thermalPowerLimit_W : Real = 15.0;
+        attribute used_power : PowerValue = 15.0 [W]; // Based on post-synthesis power estimates
+        attribute logicElements : LogicElements = 50000; // Based on post-synthesis resource usage estimates
+        attribute dspBlocks : DSPBlocks = 200; // Based on post-synthesis resource usage estimates
+        attribute blockRAM : BlockRAM = 10 [mega*B]; // Based on post-synthesis resource usage estimates
+        attribute ioPins : IOPins = 100; // Based on post-synthesis resource usage estimates
+        attribute performance : Performance{
+            attribute :>> maxThroughput = 6 [giga*bit/s];
+            attribute :>> latency = 10 [nano*s];
+        }  // Based on post-synthesis performance estimates
+        attribute safetyDetectionTime : TimeValue = 50 [milli*s]; // Based on safety analysis
+        attribute safetyRecoveryTime : TimeValue = 30 [milli*s]; // Based on safety analysis
+        attribute temperature : TemperatureValue = 70 [C]; // Based on thermal analysis
+
 
         part conditioner : conditioning_unit::conditioning_unit_v1;
         part elaborator : elaboration_unit::elaboration_unit_v1;
