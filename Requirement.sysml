@@ -1,5 +1,10 @@
-library package Requirements {
-    private import Attribute::*;
+library package Requirement_Definitions {
+    private import ScalarValues::*;
+    private import Quantities::*;
+    private import MeasurementReferences::*;
+    private import ISQ::*;
+    private import SI::*;
+    private import Attribute_Definitions::*;
 
         requirement def FPGA_ResourceRequirements {
             doc /* Resource requirements for the FPGA system, including logic elements, DSP blocks, block RAM, and I/O pins. */
@@ -99,3 +104,46 @@ library package Requirements {
             }
 
         }
+
+        requirement def FPGA_PowerRequirement{
+            doc /* Constraint to ensure that the power consumption of the design does not exceed the maximum power limit of the FPGA. */
+            id = "POWER-001";
+            text = "Il sistema FPGA deve consumare ≤ potenza massima in condizioni operative.";
+        
+            attribute actual : PowerValue;
+            attribute required : PowerValue;
+
+            require constraint {actual <= required}        
+        }
+
+        requirement def FPGA_ThermalRequirement{
+            doc /* Constraint to ensure that the operating temperature of the FPGA does not exceed the specified limits. */
+            id = "THERMAL-001";
+            text = "Il sistema FPGA deve operare entro i limiti di temperatura specificati.";
+        
+            attribute actual : TemperatureValue;
+            attribute required : Temperature;
+
+            require constraint {required.tempMin <= actual <= required.tempMax}        
+        }
+
+        /* ===================================================================
+		     * SYSTEM REQUIREMENTS (WIP)
+	     * =================================================================== */
+        requirement def SafeDistanceMaintenance{
+            doc /* The system must maintain a safe distance from the following vehicle by adjusting the speed accordingly. */
+            id = "SYS-001";
+            text = "Il sistema deve mantenere una distanza di sicurezza dal veicolo che segue, regolando la velocità di conseguenza.";
+        
+            attribute actualDistance : QuantityValue;
+            attribute requiredDistance : QuantityValue;}
+    }
+
+
+
+
+
+
+
+    
+    

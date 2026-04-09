@@ -16,7 +16,7 @@ library package system_test{
 	private import MeasurementReferences::*;
 	private import ISQ::*;
 	private import SI::*;
-    public import Attribute::*;
+    private import Attribute_Definitions::*;
 
     enum def AsilLevel {        
         doc /*
@@ -30,7 +30,7 @@ library package system_test{
     }
 
     /* ===================================================================
-         * ATTRIBUTE DEFINITIONS
+         * ATTRIBUTE DEFINITIONS (da cambiare con quelli definiti in Attribute_Definitions)
     * =================================================================== */
     attribute def systemClockFrequency_MHz :> Real {
         doc /* The operating clock frequency of the conditioning unit, in megahertz (MHz). */
@@ -44,7 +44,6 @@ library package system_test{
     attribute def thermalPowerLimit_W :> Real {
         doc /* The thermal power limit for the conditioning unit, in watts (W), indicating the maximum power dissipation allowed to prevent overheating. */
     }
-    
 
     /* ===================================================================
 		 * PORT DEFINITIONS — Energy and Signal Flows
@@ -113,6 +112,9 @@ library package system_test{
 
     }
 
+    part sys : topLevelSystem {
+        doc /* An instance of the top-level system, representing the actual implementation of the S.L.O.W. architecture. */
+    }
 
 
     /* ===================================================================
