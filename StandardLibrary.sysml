@@ -1,4 +1,4 @@
-library package Attribute{
+library package Attribute_Definitions{
     doc /* FPGA System Definition:
          * This package defines the overall structure where the system will be allocated, with all the main components and their interactions.
          * It serves as the central point for integrating the various subsystem. 
@@ -9,8 +9,6 @@ library package Attribute{
 	private import ISQ::*;
 	private import SI::*;
 
-
-    private import system_test::*;
     
 
     /* ===================================================================
