@@ -17,6 +17,7 @@ library package system_test{
 	private import ISQ::*;
 	private import SI::*;
     private import Attribute_Definitions::*;
+    private import Use_Case_Definitions::*;
 
     enum def AsilLevel {        
         doc /*
@@ -110,11 +111,29 @@ library package system_test{
         connection conditioned_signals : DataFlow connect conditioner to elaborator;
         connection generated_parameters : DataFlow connect elaborator to balancer;
 
-    }
-
-    part sys : topLevelSystem {
-        doc /* An instance of the top-level system, representing the actual implementation of the S.L.O.W. architecture. */
-    }
+        /* ===================================================================
+             * USE CASE ALLOCATION
+         * =================================================================== */
+        use case MaintainSecurityDistance : N1_MaintainSecurityDistance{
+            doc /* Allocation of the Maintain Security Distance use case to the system. */
+            subject = this;
+        }
+        use case SpeedAdaptation : N2_SpeedAdaptation{
+            doc /* Allocation of the Speed Adaptation use case to the system. */
+            subject = this;
+        }
+        use case EmergencyBraking : N3_EmergencyBraking{
+            doc /* Allocation of the Emergency Braking use case to the system. */
+            subject = this;
+        }
+        use case AnticipateVehiclesBehavior : N4_AnticipateVehiclesBehavior{
+            doc /* Allocation of the Anticipate Vehicles Behavior use case to the system. */
+            subject = this;
+        }
+        use case CutInDetection : N5_CutInDetection{
+            doc /* Allocation of the Cut-In Detection use case to the system. */
+            subject = this;
+        }
 
 
     /* ===================================================================
@@ -133,4 +152,5 @@ library package system_test{
 	}
 
 
+}
 }

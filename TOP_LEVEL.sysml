@@ -10,6 +10,7 @@ package FPGA_Hardware{
 	private import SI::*;
     private import Requirement_Definitions::*;
     private import Attribute_Definitions::*;
+    private import Use_Case_Definitions::*;
 
 
     private import system_test::*;
@@ -139,10 +140,30 @@ package FPGA_Hardware{
                 attribute :>> actual = system.temperature; 
                 attribute :>> required = temperature;
             }
+
+            
         }
     }
 
-  
+    viewpoint def HardwareViewpoint {
+        doc /* Viewpoint for hardware architecture visualization.
+             * Filters: Emphasize hardware components and their usage.
+             * Suitable for understanding:
+             * - The overall hardware architecture weight of the system
+             * - The main hardware components and their own resource needs
+             * - Performance and reliability characteristics */
+
+
+
+    viewpoint def SignalFlowViewpoint {
+		doc /* Viewpoint for signal and data flow visualization.
+			 * Filters: Emphasize ports, interfaces, and data movement.
+			 * Suitable for understanding:
+			 * - How signals flow through the system
+			 * - Port-to-port connections
+			 * - External interfaces
+			 * - Latency and throughput characteristics */
+	}
 }
 
     
