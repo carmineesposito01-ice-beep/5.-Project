@@ -114,80 +114,80 @@ library package system_test{
         /* ===================================================================
              * USE CASE ALLOCATION
          * =================================================================== */
-        use case maintainSecurityDistance : N1_MaintainSecurityDistance{
+        use case MaintainSecurityDistance : N1_MaintainSecurityDistance{
             doc /* Allocation of the Maintain Security Distance use case to the system. */
             subject = this;
         }
-        use case emergencyBraking : N3_EmergencyBraking{
+        use case EmergencyBraking : N3_EmergencyBraking{
             doc /* Allocation of the Emergency Braking use case to the system. */
             subject = this;
         }
-        use case cutInDetection : N5_CutInDetection{
+        use case CutInDetection : N5_CutInDetection{
             doc /* Allocation of the Cut-In Detection use case to the system. */
             subject = this;
         }
-        use case stopAndGoMitigation: N6_StopAndGoMitigation{
+        use case StopAndGoMitigation: N6_StopAndGoMitigation{
             doc /* Allocation of the Stop-and-Go Mitigation use case to the system. */
             subject = this;
         }
-        use case packetLossResilience : N7_PacketLossResilience{
+        use case PacketLossResilience : N7_PacketLossResilience{
             doc /* Allocation of the Packet Loss Resilience use case to the system. */
             subject = this;
         }
-        use case crossroadAdaptiveDriving : N8_CrossroadAdaptiveDriving{
+        use case CrossroadAdaptiveDriving : N8_CrossroadAdaptiveDriving{
             doc /* Allocation of the Crossroad Adaptive Driving use case to the system. */
             subject = this;
         }
-        use case followingVehicleClassification : N9_FollowingVehicleClassification{
+        use case FollowingVehicleClassification : N9_FollowingVehicleClassification{
             doc /* Allocation of the Following Vehicle Classification use case to the system. */
             subject = this;
         }
         /* ===================================================================
 		     * REQUIREMENT USAGE (WIP)
 	     * =================================================================== */
-        satisfy requirement safeDistanceMaintenance: SafeDistanceMaintenance by this{
+        satisfy requirement SafeDistanceMaintenance: SafeDistanceMaintenance by this{
             doc /* Allocation of the requirement for maintaining a safe distance to the system. */
         }
-        satisfy requirement emergencyBraking: EmergencyBraking by this{
+        satisfy requirement EmergencyBraking: EmergencyBraking by this{
             doc /* Allocation of the requirement for emergency braking to the system. */
         }
-        satisfy requirement cutInManagement: CutInManagement by this{
+        satisfy requirement CutInManagement: CutInManagement by this{
             doc /* Allocation of the requirement for cut-in management to the system. */
         }
-        satisfy requirement wavesDetection : WavesDetection by this{
+        satisfy requirement WavesDetection : WavesDetection by this{
             doc /* Allocation of the requirement for stop-and-go wave detection to the system. */
         }
-        satisfy requirement wavesMitigation : WavesMitigation by this{
+        satisfy requirement WavesMitigation : WavesMitigation by this{
             doc /* Allocation of the requirement for stop-and-go wave mitigation to the system. */
         }
-        satisfy requirement adjustToDegradedSignals : AdjustToDegradedSignals by this{
+        satisfy requirement AdjustToDegradedSignals : AdjustToDegradedSignals by this{
             doc /* Allocation of the requirement for adjusting to degraded signals to the system. */
         }
-        satisfy requirement continuousSignals : ContinuousSignals by this{
+        satisfy requirement ContinuousSignals : ContinuousSignals by this{
             doc /* Allocation of the requirement for handling continuous signals to the system. */
         }
-        satisfy requirement interactionV2I : InteractionV2I by this{
+        satisfy requirement InteractionV2I : InteractionV2I by this{
             doc /* Allocation of the requirement for V2I interaction to the system. */
         }
-        satisfy requirement crossroadAdaptation : CrossroadAdaptation by this{
+        satisfy requirement CrossroadAdaptation : CrossroadAdaptation by this{
             doc /* Allocation of the requirement for crossroad adaptation to the system. */
         }
-        satisfy requirement trafficLightFlowOptimization : TrafficLightFlowOptimization by this{
+        satisfy requirement TrafficLightFlowOptimization : TrafficLightFlowOptimization by this{
             doc /* Allocation of the requirement for traffic light flow optimization to the system. */
         }
-        satisfy requirement followingsUnderstanding : FollowingsUnderstanding by this{
+        satisfy requirement FollowingsUnderstanding : FollowingsUnderstanding by this{
             doc /* Allocation of the requirement for understanding following vehicles to the system. */
         }
-        satisfy requirement followingAdaptation : FollowingAdaptation by this{
+        satisfy requirement FollowingAdaptation : FollowingAdaptation by this{
             doc /* Allocation of the requirement for adapting to following vehicles to the system. */
         }
-        satisfy requirement jerkMinimization : JerkMinimization by this{
+        satisfy requirement JerkMinimization : JerkMinimization by this{
             doc /* Allocation of the requirement for jerk minimization to the system. */
         }
-        satisfy requirement reactionTimeMinimize : ReactionTimeMinimize by this{
+        satisfy requirement ReactionTimeMinimize : ReactionTimeMinimize by this{
             doc /* Allocation of the requirement for minimizing reaction time to the system. */
         }
-        satisfy requirement energyEfficiency : EnergyEfficiency by this{
+        satisfy requirement EnergyEfficiency : EnergyEfficiency by this{
             doc /* Allocation of the requirement for energy efficiency to the system. */
         }
 

@@ -152,7 +152,7 @@ library package Requirement_Definitions {
         require constraint {actualAdjustmentTime <= requiredAdjustmentTime}        
     }
 
-    requirement def EmergencyBraking{
+    requirement def EmergencyBrakeing{
         doc /* The system must apply emergency braking when receive an emergency flag (DENM message). */
         id = "SYS-003";
         text = "Il sistema deve applicare la frenata di emergenza quando viene ricevuto un messaggio d'emergenza.";
@@ -212,7 +212,7 @@ library package Requirement_Definitions {
         // Riempire poi con la logica di validazione di questo requisito, ad esempio basata su pattern di accelerazione/decelerazione dei veicoli che precedono e sulla capacità del sistema di assorbire queste variazioni senza causare disagio ai passeggeri.
     }
 
-    requirement def AdjustToDegradedSignals{
+    requirement def AdjustToDegradedSignal{
         doc /* The system must adjust its behavior in case of degraded V2X signal quality, for example by increasing the safety distance or reducing the speed. */
         id = "FR-S-008";
         text = "Il sistema deve adattare il proprio comportamento in caso di degrado della qualità del segnale V2X, ad esempio aumentando la distanza di sicurezza o riducendo la velocità.";
