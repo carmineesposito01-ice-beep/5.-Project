@@ -118,22 +118,31 @@ library package system_test{
             doc /* Allocation of the Maintain Security Distance use case to the system. */
             subject = this;
         }
-        use case SpeedAdaptation : N2_SpeedAdaptation{
-            doc /* Allocation of the Speed Adaptation use case to the system. */
-            subject = this;
-        }
         use case EmergencyBraking : N3_EmergencyBraking{
             doc /* Allocation of the Emergency Braking use case to the system. */
-            subject = this;
-        }
-        use case AnticipateVehiclesBehavior : N4_AnticipateVehiclesBehavior{
-            doc /* Allocation of the Anticipate Vehicles Behavior use case to the system. */
             subject = this;
         }
         use case CutInDetection : N5_CutInDetection{
             doc /* Allocation of the Cut-In Detection use case to the system. */
             subject = this;
         }
+        use case StopAndGoMitigation: N6_StopAndGoMitigation{
+            doc /* Allocation of the Stop-and-Go Mitigation use case to the system. */
+            subject = this;
+        }
+        use case PacketLossResilience : N7_PacketLossResilience{
+            doc /* Allocation of the Packet Loss Resilience use case to the system. */
+            subject = this;
+        }
+        use case CrossroadAdaptiveDriving : N8_CrossroadAdaptiveDriving{
+            doc /* Allocation of the Crossroad Adaptive Driving use case to the system. */
+            subject = this;
+        }
+        use case FollowingVehicleClassification : N9_FollowingVehicleClassification{
+            doc /* Allocation of the Following Vehicle Classification use case to the system. */
+            subject = this;
+        }
+        
 
 
     /* ===================================================================

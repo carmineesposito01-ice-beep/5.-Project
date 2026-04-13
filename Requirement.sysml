@@ -173,21 +173,7 @@ library package Requirement_Definitions {
         }
     }
 
-    requirement def V2V_Anticipation{
-        doc /* The system must anticipate the behavior of the following vehicle based on historical data and current conditions. */
-        id = "SYS-004";
-        text = "Il sistema deve anticipare il comportamento del veicolo che segue basandosi su dati storici e condizioni attuali.";
 
-        attribute min_anticipation_time : TimeValue;
-        attribute max_jerk : Real;        
-        attribute action_start_time : TimeValue;
-        attribute leader_maneuver_start_time : TimeValue;
-        
-        require constraint {
-            doc /* Verifica che l'azione inizi prima dell'effettiva variazione cinematica */
-            action_start_time <= (leader_maneuver_start_time - min_anticipation_time)
-        }
-    }
 
     requirement def CutInManagement{
         doc /* The system must detect cut-in maneuvers from other vehicle and respond accordingly. */
@@ -209,6 +195,102 @@ library package Requirement_Definitions {
             commanded_accel >= comfort_decel_limit
         }
     }
+
+    requirement def WavesDetection{
+        doc /* The system must detect stop-and-go waves in the traffic flow, observing following vehicles situation. */
+        id = "FR-S-006";
+        text = "Il sistema deve controllare lo stato dei veicoli che lo precedono, per rilevare in anticipo onde 'stop-and-go'.";
+
+        // Riempire poi con la logica di validazione di questo requisito, ad esempio basata su pattern di accelerazione/decelerazione dei veicoli che precedono.
+    }
+
+    requirement def WavesMitigation{
+        doc /* The system must mitigate stop-and-go waves by adjusting the speed of the vehicle based on the waves intensity. */
+        id = "FR-S-007";
+        text = "Il sistema deve mitigare le onde 'stop-and-go' regolando la velocità del veicolo in base all'entità dell'onda.";
+
+        // Riempire poi con la logica di validazione di questo requisito, ad esempio basata su pattern di accelerazione/decelerazione dei veicoli che precedono e sulla capacità del sistema di assorbire queste variazioni senza causare disagio ai passeggeri.
+    }
+
+    requirement def AdjustToDegradedSignal{
+        doc /* The system must adjust its behavior in case of degraded V2X signal quality, for example by increasing the safety distance or reducing the speed. */
+        id = "FR-S-008";
+        text = "Il sistema deve adattare il proprio comportamento in caso di degrado della qualità del segnale V2X, ad esempio aumentando la distanza di sicurezza o riducendo la velocità.";
+
+        // Riempire poi con la logica di validazione di questo requisito, ad esempio basata su pattern di degradazione del segnale e sulla capacità del sistema di adattarsi a queste condizioni per mantenere la sicurezza.
+    }
+
+    requirement def ContinuousSignals{
+        doc /* The system must ensure continuous and reliable V2X signals, to avoid ghost braking and maintain smooth driving. */
+        id = "FR-S-009";
+        text = "Il sistema deve garantire segnali V2X continui e affidabili, allo scopo di evitare frenate fantasma e mantenere una guida fluida.";
+
+        // Riempire poi con la logica di validazione di questo requisito, ad esempio basata su pattern di elaborazione dei segnali e sulla capacità del sistema di mantenere una risposta coerente e affidabile anche in presenza di variazioni nei dati ricevuti.
+
+    requirement def InteractionV2I{
+        doc /* The system must interact with the infrastructure (V2I) and extract from SPaT messages the necessary information for its operation (e.g., traffic light color, remaining time, etc.). */
+        id = "FR-S-010";
+        text = "Il sistema deve interagire con l'infrastruttura (V2I) ed estrarre dai messaggi SPaT le informazioni necessarie al funzionamento (ex. colore semaforo, tempo residuo, ecc).";
+
+        // Riempire poi con la logica di validazione di questo requisito, ad esempio basata su pattern di comunicazione V2I e sulla capacità del sistema di integrare queste informazioni nel processo decisionale per migliorare la sicurezza e l'efficienza della guida.
+    }
+
+    requirement def CrossroadAdaptation{
+        doc /* The system must adapt its trend at crossroads, considering the behavior of surrounding vehicles and traffic conditions (taken from V2V and V2I signals (SPaT)). */
+        id = "FR-S-011";
+        text = "Il sistema deve adattare il proprio andamento agli incroci, considerando il comportamento dei veicoli circostanti e le condizioni del traffico (sulla base dei segnali V2V e V2I (SPaT)).";
+
+        // Riempire poi con la logica di validazione di questo requisito, ad esempio basata su pattern di comportamento degli incroci e sulla capacità del sistema di adattarsi a queste condizioni per garantire una guida sicura ed efficiente.
+    }
+
+    requirement def TrafficLightFlowOptimization{
+        doc /* The system must optimize the traffic flow at intersections by adjusting the speed of the vehicle to catch green lights, based on V2I communication and SPaT messages. */
+        id = "FR-S-012";
+        text = "Il sistema deve ottimizzare il flusso del traffico agli incroci regolando la velocità del veicolo per prendere i semafori verdi, sulla base della comunicazione V2I e dei messaggi SPaT.";
+
+        // Riempire poi con la logica di validazione di questo requisito, ad esempio basata su pattern di ottimizzazione del flusso del traffico e sulla capacità del sistema di regolare la velocità in modo da massimizzare l'efficienza della guida e ridurre i tempi di attesa agli incroci.
+    }
+
+    requirement def FollowingsUnderstanding{
+        doc /* The system must understand the behavior of the following vehicle, classifying it (e.g., aggressive, cautious) based on its behavior and characteristics. */
+        id = "FR-S-013";
+        text = "Il sistema deve comprendere il comportamento del veicolo che segue, classificandolo (es. aggressivo, prudente) sulla base del suo comportamento e delle sue caratteristiche.";
+
+        // Riempire poi con la logica di validazione di questo requisito, ad esempio basata su pattern di comportamento dei veicoli che seguono e sulla capacità del sistema di classificare questi comportamenti per adattare la propria strategia di guida in modo più efficace.
+    }
+
+    requirement def FollowingAdaptation{
+        doc /* The system must adapt its behavior based on the classification of the following vehicle, to enhance safety and comfort. */
+        id = "FR-S-014";
+        text = "Il sistema deve adattare il proprio comportamento in base alla classificazione del veicolo che segue, per migliorare la sicurezza e il comfort.";
+
+        // Riempire poi con la logica di validazione di questo requisito, ad esempio basata su pattern di adattamento del comportamento e sulla capacità del sistema di regolare la propria strategia di guida in modo da garantire una maggiore sicurezza e comfort per i passeggeri.
+    }
+
+    requirement def JerkMinimization{
+        doc /* The system must minimize jerk (the rate of change of acceleration) to enhance passenger comfort, especially during stop-and-go waves or cut-in maneuvers. */
+        id = "CR-S-01";
+        text = "Il sistema deve minimizzare il jerk (la variazione di accelerazione) per migliorare il comfort dei passeggeri, specialmente durante le onde di stop-and-go o le manovre di inserimento.";
+
+        // Riempire poi con la logica di validazione di questo requisito, ad esempio basata su pattern di minimizzazione del jerk e sulla capacità del sistema di regolare la propria strategia di guida in modo da garantire una maggiore comodità per i passeggeri.
+    }
+
+    requirement def ReactionTimeMinimize{
+        doc /* The system must minimize is own reaction time to the enviroment change, to enhance safety. */
+        id = "CR-S-2";
+        text = "Il sistema deve minimizzare il proprio tempo di reazione ai cambiamenti dell'ambiente, per migliorare la sicurezza.";
+
+        // Riempire poi con la logica di validazione di questo requisito, ad esempio basata su pattern di minimizzazione del tempo di reazione e sulla capacità del sistema di regolare la propria strategia di guida in modo da garantire una maggiore sicurezza.
+    }
+
+    requirement def EnergyEfficiency{
+        doc /* The system must optimize energy efficiency to minimize battery usage and power dissipation. */
+        id = "NFR-S-1";
+        text = "Il sistema deve ottimizzare l'efficienza energetica per minimizzare il consumo della batteria e la dissipazione di potenza.";
+
+        // Riempire poi con la logica di validazione di questo requisito, ad esempio basata su pattern di ottimizzazione dell'efficienza energetica e sulla capacità del sistema di regolare la propria strategia di guida in modo da garantire una maggiore efficienza energetica.
+    }
+
 
 
 
