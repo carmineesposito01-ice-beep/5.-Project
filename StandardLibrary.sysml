@@ -14,6 +14,9 @@ library package Attribute_Definitions{
     /* ===================================================================
         * ATTRIBUTE DEFINITIONS
      * =================================================================== */
+    /* ===================================================================
+         * ATTRIBUTE DEFINITIONS (da cambiare con quelli definiti in Attribute_Definitions)
+    * =================================================================== */
     attribute def ClockFrequency:> QuantityValue{
         doc /* The operating clock frequency of the FPGA system, in megahertz (MHz). */
     }
@@ -72,6 +75,21 @@ library package Attribute_Definitions{
 
 // QUI SOTTO è SBAGLIATO (CORREGGERE)
 library package Interfaces {
+    item def V2X_Payload {
+        doc /* The payload structure for V2X communication, which includes relevant information about the leader vehicle. */
+        attribute leader_velocity : ScalarValues::Real;
+        attribute leader_position : ScalarValues::Real;
+    }
+    
+    port def V2X_ReceiverPort {
+        doc /* A port for receiving V2X data from the leader vehicle, which will be used for decision-making in the system. */
+        in item payload : V2X_Payload;
+    }
+}
+
+
+
+library package State {
     item def V2X_Payload {
         doc /* The payload structure for V2X communication, which includes relevant information about the leader vehicle. */
         attribute leader_velocity : ScalarValues::Real;

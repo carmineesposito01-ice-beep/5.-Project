@@ -5,6 +5,7 @@ library package Use_Case_Definitions{
          * IMPORTS [PARTS]
      * =================================================================== */
     public import FPGA_Hardware::*;
+    private import system_test::*;
 
     /* ===================================================================
          * ACTIONS DEFINITIONS (da valutare se è meglio definirli da questi o direttamente)
@@ -40,7 +41,10 @@ library package Use_Case_Definitions{
          * USE CASE DEFINITIONS
      * =================================================================== */
     use case def N1_MaintainSecurityDistance {
-        doc /* Use case for maintaining a safe distance from the following vehicle, by adjusting the speed and acceleration of the vehicle based on the V2X data. */
+        subject system;
+        objective{
+            doc /* Use case for maintaining a safe distance from the following vehicle, by adjusting the speed and acceleration of the vehicle based on the V2X data. */
+        }
         action acquireV2XData;
         action computeSafeDistance;
         action adjustParameters;
@@ -52,7 +56,10 @@ library package Use_Case_Definitions{
     }
 
     use case def N2_SpeedAdaptation{
-        doc /* Use case for adapting the speed of the vehicle based on the follower's speed. */
+        subject system;
+        objective{
+            doc /* Use case for adapting the speed of the vehicle based on the follower's speed. */
+        }
         action acquireV2XData;
         action computeFollowingSpeed;
         action adjustParameters;
@@ -63,7 +70,10 @@ library package Use_Case_Definitions{
     }
 
     use case def N3_EmergencyBraking{
-        doc /* Use case for emergency braking when the following vehicle is too close. */
+        subject system;
+        objective{
+            doc /* Use case for emergency braking when the following vehicle is too close. */
+        }
         action acquireV2XData;
         action detectFollowingEmergency;
         action applyBrakes;
@@ -74,7 +84,10 @@ library package Use_Case_Definitions{
     }
 
     use case def N4_AnticipateVehiclesBehavior{
-        doc /* Use case for anticipating the behavior of the following vehicle based on historical data and current conditions. */
+        subject system;
+        objective{
+            doc /* Use case for anticipating the behavior of the following vehicle based on historical data and current conditions. */
+        }
         action acquireV2XData;
         action analyzeHistoricalData;
         action predictFollowingBehavior;
@@ -87,7 +100,10 @@ library package Use_Case_Definitions{
     }
 
     use case def N5_CutInDetection{
-        doc /* Use case for detecting cut-in maneuvers by the following vehicle and responding accordingly. */
+        subject system;
+        objective{
+            doc /* Use case for detecting cut-in maneuvers by the following vehicle and responding accordingly. */
+        }
         action acquireV2XData;
         action detectCutInManeuver;
         action adjustParameters;
@@ -98,7 +114,10 @@ library package Use_Case_Definitions{
     }
 
     use case def N6_StopAndGoMitigation{
-        doc /* Use case for mitigating stop-and-go traffic conditions by adjusting the speed of the vehicle based on the behavior of the following vehicle. */
+        subject system;
+        objective{
+            doc /* Use case for mitigating stop-and-go traffic conditions by adjusting the speed of the vehicle based on the behavior of the following vehicle. */
+        }
         action acquireV2XData;
         action understandStopandGoWaves;
         action adjustParameters;
@@ -109,7 +128,10 @@ library package Use_Case_Definitions{
     }
 
     use case def N7_PacketLossResilience{
-        doc /* Use case for ensuring resilience to packet loss in V2X communication, by implementing strategies to maintain safe operation even when data are fragmenteted. */
+        subject system;
+        objective{
+            doc /* Use case for ensuring resilience to packet loss in V2X communication, by implementing strategies to maintain safe operation even when data are fragmenteted. */
+        }
         action acquireV2XData;
         action detectPacketLoss;
         action implementResilienceStrategies;
@@ -120,7 +142,10 @@ library package Use_Case_Definitions{
     }
 
     use case def N8_CrossroadAdaptiveDriving{
-        doc /* Use case for adaptive driving at crossroads, considering the behavior of surrounding vehicles and traffic conditions. */
+        subject system;
+        objective{
+            doc /* Use case for adaptive driving at crossroads, considering the behavior of surrounding vehicles and traffic conditions. */
+        }
         action acquireV2XData;
         action analyzeCrossroadConditions;
         action adjustParameters{
@@ -133,7 +158,10 @@ library package Use_Case_Definitions{
     }
 
     use case def N9_FollowingVehicleClassification{
-        doc /* Use case for classifying the following vehicle based on its behavior and characteristics, to enable more tailored responses. */
+        subject system;
+        objective{
+            doc /* Use case for classifying the following vehicle based on its behavior and characteristics, to enable more tailored responses. */
+        }
         action acquireV2XData;
         action extractVehicleFeatures;
         action classifyFollowingVehicle{

@@ -18,34 +18,7 @@ library package system_test{
 	private import SI::*;
     private import Attribute_Definitions::*;
     private import Requirement_Definitions::*;
-    private import Use_Case_Definitions::*;
-
-    enum def AsilLevel {        
-        doc /*
-                 * Automotive Safety Integrity Level (ASIL) classification for the conditioning unit, indicating the required safety level for its operation.
-        */
-        enum QM;
-        enum A;
-        enum B;
-        enum C;
-        enum D;
-    }
-
-    /* ===================================================================
-         * ATTRIBUTE DEFINITIONS (da cambiare con quelli definiti in Attribute_Definitions)
-    * =================================================================== */
-    attribute def systemClockFrequency_MHz :> Real {
-        doc /* The operating clock frequency of the conditioning unit, in megahertz (MHz). */
-    }
-    attribute def asilRequirement :> AsilLevel {
-        doc /* The Automotive Safety Integrity Level (ASIL) requirement for the conditioning unit, indicating the safety level it must meet. */
-    }
-    attribute def totalLatencyBudget_ms :> Real {
-        doc /* The total latency budget for the conditioning unit, in milliseconds (ms), indicating the maximum allowed time for processing input signals. */
-    }
-    attribute def thermalPowerLimit_W :> Real {
-        doc /* The thermal power limit for the conditioning unit, in watts (W), indicating the maximum power dissipation allowed to prevent overheating. */
-    }
+    private import Use_Case_Definitions::*;   
 
     /* ===================================================================
 		 * PORT DEFINITIONS — Energy and Signal Flows
@@ -85,10 +58,7 @@ library package system_test{
 	
     part def topLevelSystem {
         doc /* The top-level system representing the entire S.L.O.W. architecture. */
-
-        attribute systemClockFrequency_MHz : Real = 200.0;
-        attribute asilRequirement : AsilLevel = AsilLevel::B;
-        attribute totalLatencyBudget_ms : Real = 5.0;
+        attribute clockFrequency: ClockFrequency = 100 [mega*Hz];
         attribute used_power : PowerValue = 15.0 [W]; // Based on post-synthesis power estimates
         attribute logicElements : LogicElements = 50000; // Based on post-synthesis resource usage estimates
         attribute dspBlocks : DSPBlocks = 200; // Based on post-synthesis resource usage estimates
@@ -116,37 +86,38 @@ library package system_test{
          * =================================================================== */
         use case maintainSecurityDistance : N1_MaintainSecurityDistance{
             doc /* Allocation of the Maintain Security Distance use case to the system. */
-            subject = this;
+            subject :>> system = system;
         }
         use case emergencyBraking : N3_EmergencyBraking{
             doc /* Allocation of the Emergency Braking use case to the system. */
-            subject = this;
+            subject :>> system = system;
         }
         use case cutInDetection : N5_CutInDetection{
             doc /* Allocation of the Cut-In Detection use case to the system. */
-            subject = this;
+            subject :>> system = system;
         }
         use case stopAndGoMitigation: N6_StopAndGoMitigation{
             doc /* Allocation of the Stop-and-Go Mitigation use case to the system. */
-            subject = this;
+            subject :>> system = system;
         }
         use case packetLossResilience : N7_PacketLossResilience{
             doc /* Allocation of the Packet Loss Resilience use case to the system. */
-            subject = this;
+            subject :>> system = system;
         }
         use case crossroadAdaptiveDriving : N8_CrossroadAdaptiveDriving{
             doc /* Allocation of the Crossroad Adaptive Driving use case to the system. */
-            subject = this;
+            subject :>> system = system;
         }
         use case followingVehicleClassification : N9_FollowingVehicleClassification{
             doc /* Allocation of the Following Vehicle Classification use case to the system. */
-            subject = this;
+            subject :>> system = system;
         }
         /* ===================================================================
 		     * REQUIREMENT USAGE (WIP)
 	     * =================================================================== */
         satisfy requirement safeDistanceMaintenance: SafeDistanceMaintenance by this{
             doc /* Allocation of the requirement for maintaining a safe distance to the system. */
+            
         }
         satisfy requirement emergencyBraking: EmergencyBraking by this{
             doc /* Allocation of the requirement for emergency braking to the system. */
@@ -191,6 +162,9 @@ library package system_test{
             doc /* Allocation of the requirement for energy efficiency to the system. */
         }
 
+    part system : topLevelSystem {
+        doc /* The system instance that will be used for requirement and use case allocation. */
+    }
 
 
     /* ===================================================================
@@ -208,5 +182,4 @@ library package system_test{
 			 * - Latency and throughput characteristics */
 	}
 
-    
 }

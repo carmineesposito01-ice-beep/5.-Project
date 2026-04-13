@@ -132,7 +132,7 @@ library package Requirement_Definitions {
 	 * =================================================================== */
     requirement def SafeDistanceMaintenance{
         doc /* The system must maintain a safe distance from the following vehicle by adjusting the speed accordingly. */
-        id = "SYS-001";
+        id = "FR-S-001";
         text = "Il sistema deve mantenere una distanza di sicurezza dal veicolo che segue, regolando la velocità di conseguenza.";
         
         attribute actualDistance : QuantityValue;
@@ -141,20 +141,9 @@ library package Requirement_Definitions {
         require constraint {actualDistance >= requiredDistance}
     }
 
-    requirement def RapidAdjustmentSpeed{
-        doc /* The system must rapidly adjust the speed of the vehicle in response to changes in the following vehicle's behavior. */
-        id = "SYS-002";
-        text = "Il sistema deve regolare rapidamente la velocità del veicolo in risposta ai cambiamenti nel comportamento del veicolo che segue.";
-        
-        attribute actualAdjustmentTime : TimeValue;
-        attribute requiredAdjustmentTime : TimeValue;
-
-        require constraint {actualAdjustmentTime <= requiredAdjustmentTime}        
-    }
-
     requirement def EmergencyBraking{
         doc /* The system must apply emergency braking when receive an emergency flag (DENM message). */
-        id = "SYS-003";
+        id = "FR-S-002";
         text = "Il sistema deve applicare la frenata di emergenza quando viene ricevuto un messaggio d'emergenza.";
         
         attribute max_processing_time : TimeValue;
@@ -173,11 +162,9 @@ library package Requirement_Definitions {
         }
     }
 
-
-
     requirement def CutInManagement{
         doc /* The system must detect cut-in maneuvers from other vehicle and respond accordingly. */
-        id = "SYS-005";
+        id = "FR-S-003";
         text = "Il sistema deve rilevare le manovre di taglio di altri veicoli e rispondere di conseguenza.";
         
         attribute max_lateral_detection_time : TimeValue;
@@ -198,7 +185,7 @@ library package Requirement_Definitions {
 
     requirement def WavesDetection{
         doc /* The system must detect stop-and-go waves in the traffic flow, observing following vehicles situation. */
-        id = "FR-S-006";
+        id = "FR-S-004";
         text = "Il sistema deve controllare lo stato dei veicoli che lo precedono, per rilevare in anticipo onde 'stop-and-go'.";
 
         // Riempire poi con la logica di validazione di questo requisito, ad esempio basata su pattern di accelerazione/decelerazione dei veicoli che precedono.
@@ -206,7 +193,7 @@ library package Requirement_Definitions {
 
     requirement def WavesMitigation{
         doc /* The system must mitigate stop-and-go waves by adjusting the speed of the vehicle based on the waves intensity. */
-        id = "FR-S-007";
+        id = "FR-S-005";
         text = "Il sistema deve mitigare le onde 'stop-and-go' regolando la velocità del veicolo in base all'entità dell'onda.";
 
         // Riempire poi con la logica di validazione di questo requisito, ad esempio basata su pattern di accelerazione/decelerazione dei veicoli che precedono e sulla capacità del sistema di assorbire queste variazioni senza causare disagio ai passeggeri.
@@ -214,7 +201,7 @@ library package Requirement_Definitions {
 
     requirement def AdjustToDegradedSignals{
         doc /* The system must adjust its behavior in case of degraded V2X signal quality, for example by increasing the safety distance or reducing the speed. */
-        id = "FR-S-008";
+        id = "FR-S-006";
         text = "Il sistema deve adattare il proprio comportamento in caso di degrado della qualità del segnale V2X, ad esempio aumentando la distanza di sicurezza o riducendo la velocità.";
 
         // Riempire poi con la logica di validazione di questo requisito, ad esempio basata su pattern di degradazione del segnale e sulla capacità del sistema di adattarsi a queste condizioni per mantenere la sicurezza.
@@ -222,14 +209,14 @@ library package Requirement_Definitions {
 
     requirement def ContinuousSignals{
         doc /* The system must ensure continuous and reliable V2X signals, to avoid ghost braking and maintain smooth driving. */
-        id = "FR-S-009";
+        id = "FR-S-007";
         text = "Il sistema deve garantire segnali V2X continui e affidabili, allo scopo di evitare frenate fantasma e mantenere una guida fluida.";
 
         // Riempire poi con la logica di validazione di questo requisito, ad esempio basata su pattern di elaborazione dei segnali e sulla capacità del sistema di mantenere una risposta coerente e affidabile anche in presenza di variazioni nei dati ricevuti.
 
     requirement def InteractionV2I{
         doc /* The system must interact with the infrastructure (V2I) and extract from SPaT messages the necessary information for its operation (e.g., traffic light color, remaining time, etc.). */
-        id = "FR-S-010";
+        id = "FR-S-008";
         text = "Il sistema deve interagire con l'infrastruttura (V2I) ed estrarre dai messaggi SPaT le informazioni necessarie al funzionamento (ex. colore semaforo, tempo residuo, ecc).";
 
         // Riempire poi con la logica di validazione di questo requisito, ad esempio basata su pattern di comunicazione V2I e sulla capacità del sistema di integrare queste informazioni nel processo decisionale per migliorare la sicurezza e l'efficienza della guida.
@@ -237,7 +224,7 @@ library package Requirement_Definitions {
 
     requirement def CrossroadAdaptation{
         doc /* The system must adapt its trend at crossroads, considering the behavior of surrounding vehicles and traffic conditions (taken from V2V and V2I signals (SPaT)). */
-        id = "FR-S-011";
+        id = "FR-S-009";
         text = "Il sistema deve adattare il proprio andamento agli incroci, considerando il comportamento dei veicoli circostanti e le condizioni del traffico (sulla base dei segnali V2V e V2I (SPaT)).";
 
         // Riempire poi con la logica di validazione di questo requisito, ad esempio basata su pattern di comportamento degli incroci e sulla capacità del sistema di adattarsi a queste condizioni per garantire una guida sicura ed efficiente.
@@ -245,7 +232,7 @@ library package Requirement_Definitions {
 
     requirement def TrafficLightFlowOptimization{
         doc /* The system must optimize the traffic flow at intersections by adjusting the speed of the vehicle to catch green lights, based on V2I communication and SPaT messages. */
-        id = "FR-S-012";
+        id = "FR-S-010";
         text = "Il sistema deve ottimizzare il flusso del traffico agli incroci regolando la velocità del veicolo per prendere i semafori verdi, sulla base della comunicazione V2I e dei messaggi SPaT.";
 
         // Riempire poi con la logica di validazione di questo requisito, ad esempio basata su pattern di ottimizzazione del flusso del traffico e sulla capacità del sistema di regolare la velocità in modo da massimizzare l'efficienza della guida e ridurre i tempi di attesa agli incroci.
@@ -253,7 +240,7 @@ library package Requirement_Definitions {
 
     requirement def FollowingsUnderstanding{
         doc /* The system must understand the behavior of the following vehicle, classifying it (e.g., aggressive, cautious) based on its behavior and characteristics. */
-        id = "FR-S-013";
+        id = "FR-S-011";
         text = "Il sistema deve comprendere il comportamento del veicolo che segue, classificandolo (es. aggressivo, prudente) sulla base del suo comportamento e delle sue caratteristiche.";
 
         // Riempire poi con la logica di validazione di questo requisito, ad esempio basata su pattern di comportamento dei veicoli che seguono e sulla capacità del sistema di classificare questi comportamenti per adattare la propria strategia di guida in modo più efficace.
@@ -261,7 +248,7 @@ library package Requirement_Definitions {
 
     requirement def FollowingAdaptation{
         doc /* The system must adapt its behavior based on the classification of the following vehicle, to enhance safety and comfort. */
-        id = "FR-S-014";
+        id = "FR-S-012";
         text = "Il sistema deve adattare il proprio comportamento in base alla classificazione del veicolo che segue, per migliorare la sicurezza e il comfort.";
 
         // Riempire poi con la logica di validazione di questo requisito, ad esempio basata su pattern di adattamento del comportamento e sulla capacità del sistema di regolare la propria strategia di guida in modo da garantire una maggiore sicurezza e comfort per i passeggeri.
