@@ -1,4 +1,4 @@
-library package Use_Case_Definitions{
+library package Use_Case_Definitions_wrong_definitions{
     doc /* This package defines the use cases for car-following project. */
 
     /* ===================================================================
@@ -25,22 +25,28 @@ library package Use_Case_Definitions{
     
     action def acquireV2XData{
         doc /* Action to acquire V2X data from the environment, which includes information about the following vehicle's speed, distance, and behavior. */
-        action receiveV2XData : ReceiveV2XData;
-        action analizeDataIntegrity : AnalizeDataIntegrity;
-        action reconstructMissingData : ReconstructMissingData;
-        action produceReconstructedV2XData : ProduceReconstructedV2XData;
         
-        first receiveV2XData then analizeDataIntegrity;
-        first analizeDataIntegrity then reconstructMissingData;
-        first reconstructMissingData then produceReconstructedV2XData; 
-        first produceReconstructedV2XData then done;
+        first start;
+        then action receiveV2XData:ReceiveV2XData;
+        then action analizeDataIntegrity:AnalizeDataIntegrity;
+        then action reconstructMissingData:ReconstructMissingData;
+        then action produceRecostrctedV2XData:ProduceReconstructedV2XData;
+        then done;
     }
 
 
     /* ===================================================================
          * USE CASE DEFINITIONS
      * =================================================================== */
-    use case def N1_MaintainSecurityDistance {
+    
+    
+    
+    
+    
+    
+    
+    
+     use case def N1_MaintainSecurityDistance {
         subject system;
         objective{
             doc /* Use case for maintaining a safe distance from the following vehicle, by adjusting the speed and acceleration of the vehicle based on the V2X data. */

@@ -82,96 +82,19 @@ library package system_test{
         connection generated_parameters : DataFlow connect elaborator to balancer;
 
         /* ===================================================================
-             * USE CASE ALLOCATION
-         * =================================================================== */
-        use case maintainSecurityDistance : N1_MaintainSecurityDistance{
-            doc /* Allocation of the Maintain Security Distance use case to the system. */
-            subject :>> system = system;
-        }
-        use case emergencyBraking : N3_EmergencyBraking{
-            doc /* Allocation of the Emergency Braking use case to the system. */
-            subject :>> system = system;
-        }
-        use case cutInDetection : N5_CutInDetection{
-            doc /* Allocation of the Cut-In Detection use case to the system. */
-            subject :>> system = system;
-        }
-        use case stopAndGoMitigation: N6_StopAndGoMitigation{
-            doc /* Allocation of the Stop-and-Go Mitigation use case to the system. */
-            subject :>> system = system;
-        }
-        use case packetLossResilience : N7_PacketLossResilience{
-            doc /* Allocation of the Packet Loss Resilience use case to the system. */
-            subject :>> system = system;
-        }
-        use case crossroadAdaptiveDriving : N8_CrossroadAdaptiveDriving{
-            doc /* Allocation of the Crossroad Adaptive Driving use case to the system. */
-            subject :>> system = system;
-        }
-        use case followingVehicleClassification : N9_FollowingVehicleClassification{
-            doc /* Allocation of the Following Vehicle Classification use case to the system. */
-            subject :>> system = system;
-        }
-        /* ===================================================================
-		     * REQUIREMENT USAGE (WIP)
+		     * STATE MACHINE USAGE (TODO)
 	     * =================================================================== */
-        satisfy requirement safeDistanceMaintenance: SafeDistanceMaintenance by this{
-            doc /* Allocation of the requirement for maintaining a safe distance to the system. */
-            
-        }
-        satisfy requirement emergencyBraking: EmergencyBraking by this{
-            doc /* Allocation of the requirement for emergency braking to the system. */
-        }
-        satisfy requirement cutInManagement: CutInManagement by this{
-            doc /* Allocation of the requirement for cut-in management to the system. */
-        }
-        satisfy requirement wavesDetection : WavesDetection by this{
-            doc /* Allocation of the requirement for stop-and-go wave detection to the system. */
-        }
-        satisfy requirement wavesMitigation : WavesMitigation by this{
-            doc /* Allocation of the requirement for stop-and-go wave mitigation to the system. */
-        }
-        satisfy requirement adjustToDegradedSignals : AdjustToDegradedSignals by this{
-            doc /* Allocation of the requirement for adjusting to degraded signals to the system. */
-        }
-        satisfy requirement continuousSignals : ContinuousSignals by this{
-            doc /* Allocation of the requirement for handling continuous signals to the system. */
-        }
-        satisfy requirement interactionV2I : InteractionV2I by this{
-            doc /* Allocation of the requirement for V2I interaction to the system. */
-        }
-        satisfy requirement crossroadAdaptation : CrossroadAdaptation by this{
-            doc /* Allocation of the requirement for crossroad adaptation to the system. */
-        }
-        satisfy requirement trafficLightFlowOptimization : TrafficLightFlowOptimization by this{
-            doc /* Allocation of the requirement for traffic light flow optimization to the system. */
-        }
-        satisfy requirement followingsUnderstanding : FollowingsUnderstanding by this{
-            doc /* Allocation of the requirement for understanding following vehicles to the system. */
-        }
-        satisfy requirement followingAdaptation : FollowingAdaptation by this{
-            doc /* Allocation of the requirement for adapting to following vehicles to the system. */
-        }
-        satisfy requirement jerkMinimization : JerkMinimization by this{
-            doc /* Allocation of the requirement for jerk minimization to the system. */
-        }
-        satisfy requirement reactionTimeMinimize : ReactionTimeMinimize by this{
-            doc /* Allocation of the requirement for minimizing reaction time to the system. */
-        }
-        satisfy requirement energyEfficiency : EnergyEfficiency by this{
-            doc /* Allocation of the requirement for energy efficiency to the system. */
-        }
 
-    part system : topLevelSystem {
-        doc /* The system instance that will be used for requirement and use case allocation. */
+
     }
+
+
+
 
 
     /* ===================================================================
 		 * VIEWPOINT DEFINITIONS — Filtered Views on the System
 	 * =================================================================== */
-    }
-
 	viewpoint def SignalFlowViewpoint {
 		doc /* Viewpoint for signal and data flow visualization.
 			 * Filters: Emphasize ports, interfaces, and data movement.
