@@ -56,6 +56,24 @@ package FPGA_Hardware{
         attribute maxAllowedTime : MaxAllowedTime = 1 [milli*s];
         attribute mtbf : MTBF = 300000 [hour];
 
+
+
+        part follower : Vehicle{
+            event occurrence sendV2V;
+        }
+        part following : Vehicle{
+            event occurrence sendV2V;
+        }
+        actor extraneous : Vehicle;
+        part infrastructure : Infrastructure;
+        part cloud : CloudService;
+        part person : Person;
+        part general_interactor : Interactor;
+            
+
+
+
+
         /* ===================================================================
             * PARTE USAGE
          * =================================================================== */
@@ -75,22 +93,159 @@ package FPGA_Hardware{
             part :>> balancer {
                 doc /* Configuration for the Balancing Unit */
             }
-
+    
 
             /* ===================================================================
                  * USE CASE USAGE
              * =================================================================== */
+            event occurrence receiveV2V;
+            then event occurrence processV2V;
+            then event occurrence controlCarFollowing;
+            
+
+
+    
             use case cacc_synchronization : UC1_CACC_Synchronization{
                 doc /* Allocation of the CACC Synchronization use case to the system. */
-                subject system;
-                actor Vehicle = Vehicle;
+                subject :>> System = system;
+                actor :>> follower_vehicle = follower;
+                actor :>> leader_vehicle = following;
+                
+
+                
+                occurrence test_suo{
+                    ref part local_system = system;
+                    ref part local_follower = follower;
+                    ref part local_following = following;
+                    message 'test' from local_system.controlCarFollowing to local_follower.sendV2V;
+                    then message 'test2' from local_system.controlCarFollowing to local_following.sendV2V;
+                }
+                
+                
+
+                //message sendV2V from leader_vehicle to system;
+                occurrence test_sequence{
+                    ref part follower_vehicle: Vehicle;
+                    part follower1 : Vehicle{
+                    event occurrence sendV2V;
+                }
+                    part following1 : Vehicle{
+                    event occurrence sendV2V;
+                }
+                    part system1{
+                    event occurrence receiveV2V;
+                    then event occurrence processV2V;
+                    then event occurrence controlCarFollowing;
+                    }
+                
+                message 'V2V data' from following1.sendV2V to system1.receiveV2V;
+                then message 'V2V_data' from follower1.sendV2V to system1.receiveV2V;
+                then message 'Elaboration' from system1.processV2V to system1.controlCarFollowing;
+
+
+
+
+                message 'Send_V2V_data' from following.sendV2V to system.receiveV2V;
+                then message 'Send_V2V_data2' from system.processV2V to system.receiveV2V;
+                then message 'Elaborate' from system.processV2V to system.controlCarFollowing;
+                }
+                
+                                  
+                
+                
+            
             }
 
-            use case emergency_braking : UC2_EmergencyBraking{
-                doc /* Allocation of the Emergency Braking use case to the system. */
-                subject system;
-                actor Vehicle = Vehicle;
+            use case abruptCutIn : UC2_AbruptCutIn{
+                subject :>> System = system;
+                actor :>> follower_vehicle = follower;
+
             }
+
+            use case calledCutIn : UC3_CalledCutIn{
+                subject :>> System = system;
+                actor :>> lateral_vehicle = extraneous;
+                actor :>> follower_vehicle = follower;
+
+            }
+
+            use case shockwavesMitigation : UC4_Shockwave_Mitigation{
+                subject :>> System = system;
+                actor :>> follower_vehicle = follower;
+
+            }
+
+            use case adaptingFollowing : UC5_AdaptingFollowing{
+                subject :>> System = system;
+                actor :>> leader_vehicle = following;
+
+            }
+
+            use case crossRoadAdaptation : UC6_CrossroadAdaptation{
+                subject :>> System = system;
+                actor :>> infrastructure = infrastructure;
+
+            }
+
+            use case speedLimitsAdaptation : UC7_SpeedLimitsAdaptation{
+                subject :>> System = system;
+                actor :>> infrastructure = infrastructure;
+                actor :>> follower_vehicle = follower;
+
+            }
+
+            use case roadHazardWarning : UC8_RoadHazardWarning{
+                subject :>> System = system;
+                actor :>> infrastructure = infrastructure;
+
+            }
+
+            use case roadConditionWarning : UC9_RoadConditionWarning{
+                subject :>> System = system;
+                actor :>> infrastructure = infrastructure;
+
+            }
+
+            use case signalViolationProtection : UC10_SignalViolationProtection{
+                subject :>> System = system;
+                actor :>> infrastructure = infrastructure;
+                actor :>> follower_vehicle = follower;
+                actor :>> criminal_vehicle = extraneous;
+
+            }
+
+            use case wrongWayDriverProtection : UC11_WrongWayDriverProtection{
+                subject :>> System = system;
+                actor :>> infrastructure = infrastructure;
+
+            }
+
+            use case specialVehicle : UC12_SpecialVehicle{
+                subject :>> System = system;
+                actor :>> special_vehicle = extraneous;
+                actor :>> infrastructure = infrastructure;
+
+            }
+
+            use case pedestrianProtection : UC13_PedestrianProtection{
+                subject :>> System = system;
+                actor :>> infrastructure = infrastructure;
+
+            }
+
+            use case degradedSignalManagement : UC14_DegradedSignalManagement{
+                subject :>> System = system;
+                actor :>> follower_vehicle = follower;
+
+            }
+
+            use case fragmentedSignalManagement: UC15_FragmentedSignalManagement{
+                subject :>> System = system;
+                actor :>> interactor = general_interactor;
+
+            }
+          
+            
 
             /* ===================================================================
 		         * REQUIREMENT USAGE (WIP)
@@ -261,6 +416,81 @@ package FPGA_Hardware{
         filter @SysML::AttributeUsage;
 
         // VISUALIZATION
+        render viewRendering;
+    }
+
+
+    viewpoint def UseCaseViewpoint {
+        doc /* Viewpoint for use case visualization.
+            * Shows actors, subject system, and use cases with semantic links. */
+    }
+    viewpoint useCaseViewpoint : UseCaseViewpoint;
+
+    view def UseCaseOverviewView {
+        doc /* View definition for actor/use-case visualization. */
+        satisfy useCaseViewpoint;
+    }
+
+    view useCaseOverviewDiagram : UseCaseOverviewView {
+        expose FPGA_Hardware::PYNQZ1::system;
+        expose FPGA_Hardware::PYNQZ1::system::follower;
+        expose FPGA_Hardware::PYNQZ1::system::following;
+        expose FPGA_Hardware::PYNQZ1::system::extraneous;
+        expose FPGA_Hardware::PYNQZ1::system::infrastructure;
+        expose FPGA_Hardware::PYNQZ1::system::cloud;
+        expose FPGA_Hardware::PYNQZ1::system::person;
+        expose FPGA_Hardware::PYNQZ1::system::general_interactor;
+
+        expose FPGA_Hardware::PYNQZ1::system::cacc_synchronization;
+        expose FPGA_Hardware::PYNQZ1::system::abruptCutIn;
+        expose FPGA_Hardware::PYNQZ1::system::calledCutIn;
+        expose FPGA_Hardware::PYNQZ1::system::shockwavesMitigation;
+        expose FPGA_Hardware::PYNQZ1::system::adaptingFollowing;
+        expose FPGA_Hardware::PYNQZ1::system::crossRoadAdaptation;
+        expose FPGA_Hardware::PYNQZ1::system::speedLimitsAdaptation;
+        expose FPGA_Hardware::PYNQZ1::system::roadHazardWarning;
+        expose FPGA_Hardware::PYNQZ1::system::roadConditionWarning;
+        expose FPGA_Hardware::PYNQZ1::system::signalViolationProtection;
+        expose FPGA_Hardware::PYNQZ1::system::wrongWayDriverProtection;
+        expose FPGA_Hardware::PYNQZ1::system::specialVehicle;
+        expose FPGA_Hardware::PYNQZ1::system::pedestrianProtection;
+        expose FPGA_Hardware::PYNQZ1::system::degradedSignalManagement;
+        expose FPGA_Hardware::PYNQZ1::system::fragmentedSignalManagement;
+
+        render viewRendering;
+    }
+
+    view test_exposing : UseCaseOverviewView{
+        expose FPGA_Hardware::PYNQZ1::system::cacc_synchronization;
+        expose FPGA_Hardware::PYNQZ1::system::abruptCutIn;
+        expose FPGA_Hardware::PYNQZ1::system::calledCutIn;
+        expose FPGA_Hardware::PYNQZ1::system::shockwavesMitigation;
+        expose FPGA_Hardware::PYNQZ1::system::adaptingFollowing;
+        expose FPGA_Hardware::PYNQZ1::system::crossRoadAdaptation;
+        expose FPGA_Hardware::PYNQZ1::system::speedLimitsAdaptation;
+        expose FPGA_Hardware::PYNQZ1::system::roadHazardWarning;
+        expose FPGA_Hardware::PYNQZ1::system::roadConditionWarning;
+        expose FPGA_Hardware::PYNQZ1::system::signalViolationProtection;
+        expose FPGA_Hardware::PYNQZ1::system::wrongWayDriverProtection;
+        expose FPGA_Hardware::PYNQZ1::system::specialVehicle;
+        expose FPGA_Hardware::PYNQZ1::system::pedestrianProtection;
+
+        expose FPGA_Hardware::PYNQZ1::system;
+        expose FPGA_Hardware::PYNQZ1::system::cacc_synchronization::*;
+        expose FPGA_Hardware::PYNQZ1::system::abruptCutIn::*;
+        expose FPGA_Hardware::PYNQZ1::system::calledCutIn::*;
+        expose FPGA_Hardware::PYNQZ1::system::shockwavesMitigation::*;
+        expose FPGA_Hardware::PYNQZ1::system::adaptingFollowing::*;
+        expose FPGA_Hardware::PYNQZ1::system::crossRoadAdaptation::*;
+        expose FPGA_Hardware::PYNQZ1::system::speedLimitsAdaptation::*;
+        expose FPGA_Hardware::PYNQZ1::system::roadHazardWarning::*;
+        expose FPGA_Hardware::PYNQZ1::system::roadConditionWarning::*;
+        expose FPGA_Hardware::PYNQZ1::system::signalViolationProtection::*;
+        expose FPGA_Hardware::PYNQZ1::system::wrongWayDriverProtection::*;
+        expose FPGA_Hardware::PYNQZ1::system::specialVehicle::*;
+        expose FPGA_Hardware::PYNQZ1::system::pedestrianProtection::*;
+
+    
         render viewRendering;
     }
 }

@@ -23,7 +23,7 @@ library package Use_Case_Definitions_wrong_definitions{
             doc /* Action to produce the reconstructed V2X data for further use. */
     }
     
-    action def acquireV2XData{
+    action def AcquireV2XData{
         doc /* Action to acquire V2X data from the environment, which includes information about the following vehicle's speed, distance, and behavior. */
         
         first start;
@@ -51,7 +51,7 @@ library package Use_Case_Definitions_wrong_definitions{
         objective{
             doc /* Use case for maintaining a safe distance from the following vehicle, by adjusting the speed and acceleration of the vehicle based on the V2X data. */
         }
-        action acquireV2XData;
+        action acquireV2XData : AcquireV2XData;
         action computeSafeDistance;
         action adjustParameters;
 
@@ -73,6 +73,10 @@ library package Use_Case_Definitions_wrong_definitions{
         first acquireV2XData then computeFollowingSpeed;
         first computeFollowingSpeed then adjustParameters;
         first adjustParameters then done;
+
+        actor foo;
+        message reggq of foo from foo to foo;
+        message res of LoginResponse from sys to user;
     }
 
     use case def N3_EmergencyBraking{
