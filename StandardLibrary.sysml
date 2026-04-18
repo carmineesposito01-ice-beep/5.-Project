@@ -399,7 +399,13 @@ library package Use_Case_Definitions{
     /* ===================================================================
          * USE CASE DEFINITIONS
      * =================================================================== */
-    
+    use case def UC0_SystemUseCases{
+        objective{
+            doc /* This use case represents the overall system use cases, which include various interactions with other vehicles, infrastructure, and external services. */
+        }
+    }
+
+
     use case def UC1_CACC_Synchronization{
         subject System;
         actor follower_vehicle;

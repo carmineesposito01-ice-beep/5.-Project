@@ -64,7 +64,7 @@ package FPGA_Hardware{
         part following : Vehicle{
             event occurrence sendV2V;
         }
-        actor extraneous : Vehicle;
+        part extraneous : Vehicle;
         part infrastructure : Infrastructure;
         part cloud : CloudService;
         part person : Person;
@@ -102,10 +102,45 @@ package FPGA_Hardware{
             then event occurrence processV2V;
             then event occurrence controlCarFollowing;
             
+            use case systemUseCase : UC0_SystemUseCases{
+                doc /* Allocation of the overall system use cases to the system. */
+                subject System = system;
+                actor  follower_vehicle = follower;
+                actor  leader_vehicle = following;
+                actor  lateral_vehicle = extraneous;
+                actor  infrastructure = infrastructure;
+                actor  cloud_service = cloud;
+                actor  person_actor = person;
+                actor  general_interactor_actor = general_interactor;
+                
+                // CONNECTIONS
+                connect follower_vehicle  to cacc_synchronization;
+                connect leader_vehicle to cacc_synchronization;
+                connect follower_vehicle to abruptCutIn;
+                connect lateral_vehicle to calledCutIn;
+                connect follower_vehicle to calledCutIn;
+                connect follower_vehicle to shockwavesMitigation;
+                connect leader_vehicle to adaptingFollowing;
+                connect infrastructure to crossRoadAdaptation;
+                connect infrastructure to speedLimitsAdaptation;
+                connect follower_vehicle to speedLimitsAdaptation;
+                connect infrastructure to roadHazardWarning;
+                connect infrastructure to roadConditionWarning;
+                connect infrastructure to signalViolationProtection;
+                connect follower_vehicle to signalViolationProtection;
+                connect extraneous to signalViolationProtection;
+                connect infrastructure to wrongWayDriverProtection;
+                connect follower_vehicle to specialVehicle;
+                connect infrastructure to specialVehicle;
+                connect person_actor to pedestrianProtection;
+                connect infrastructure to pedestrianProtection;
+                connect follower_vehicle to degradedSignalManagement;
+                connect general_interactor_actor to fragmentedSignalManagement;
 
 
-    
-            use case cacc_synchronization : UC1_CACC_Synchronization{
+                
+
+                use case cacc_synchronization : UC1_CACC_Synchronization{
                 doc /* Allocation of the CACC Synchronization use case to the system. */
                 subject :>> System = system;
                 actor :>> follower_vehicle = follower;
@@ -149,101 +184,96 @@ package FPGA_Hardware{
                 then message 'Send_V2V_data2' from system.processV2V to system.receiveV2V;
                 then message 'Elaborate' from system.processV2V to system.controlCarFollowing;
                 }
+            }
                 
-                                  
-                
-                
-            
+                use case abruptCutIn : UC2_AbruptCutIn{
+                    subject :>> System = system;
+                    actor :>> follower_vehicle = follower;
+                }
+               
+                use case calledCutIn : UC3_CalledCutIn{
+                    subject :>> System = system;
+                    actor :>> lateral_vehicle = extraneous;
+                    actor :>> follower_vehicle = follower;
+
             }
 
-            use case abruptCutIn : UC2_AbruptCutIn{
+                use case shockwavesMitigation : UC4_Shockwave_Mitigation{
                 subject :>> System = system;
                 actor :>> follower_vehicle = follower;
 
             }
 
-            use case calledCutIn : UC3_CalledCutIn{
-                subject :>> System = system;
-                actor :>> lateral_vehicle = extraneous;
-                actor :>> follower_vehicle = follower;
-
-            }
-
-            use case shockwavesMitigation : UC4_Shockwave_Mitigation{
-                subject :>> System = system;
-                actor :>> follower_vehicle = follower;
-
-            }
-
-            use case adaptingFollowing : UC5_AdaptingFollowing{
+                use case adaptingFollowing : UC5_AdaptingFollowing{
                 subject :>> System = system;
                 actor :>> leader_vehicle = following;
 
             }
 
-            use case crossRoadAdaptation : UC6_CrossroadAdaptation{
-                subject :>> System = system;
-                actor :>> infrastructure = infrastructure;
+                use case crossRoadAdaptation : UC6_CrossroadAdaptation{
+                    subject :>> System = system;
+                    actor :>> infrastructure = infrastructure;
+                }
 
+                use case speedLimitsAdaptation : UC7_SpeedLimitsAdaptation{
+                    subject :>> System = system;
+                    actor :>> infrastructure = infrastructure;
+                    actor :>> follower_vehicle = follower;
+                }
+
+                use case roadHazardWarning : UC8_RoadHazardWarning{
+                    subject :>> System = system;
+                    actor :>> infrastructure = infrastructure;
             }
 
-            use case speedLimitsAdaptation : UC7_SpeedLimitsAdaptation{
-                subject :>> System = system;
-                actor :>> infrastructure = infrastructure;
-                actor :>> follower_vehicle = follower;
+                use case roadConditionWarning : UC9_RoadConditionWarning{
+                    subject :>> System = system;
+                    actor :>> infrastructure = infrastructure;
+                }
 
+                use case signalViolationProtection : UC10_SignalViolationProtection{
+                    subject :>> System = system;
+                    actor :>> infrastructure = infrastructure;
+                    actor :>> follower_vehicle = follower;
+                    actor :>> criminal_vehicle = extraneous;
+                }
+
+                use case wrongWayDriverProtection : UC11_WrongWayDriverProtection{
+                    subject :>> System = system;
+                    actor :>> infrastructure = infrastructure;
+                }
+
+                use case specialVehicle : UC12_SpecialVehicle{
+                    subject :>> System = system;
+                    actor :>> special_vehicle = extraneous;
+                    actor :>> infrastructure = infrastructure;
+                }
+
+                use case pedestrianProtection : UC13_PedestrianProtection{
+                    subject :>> System = system;
+                    actor :>> infrastructure = infrastructure;
+                }
+
+                use case degradedSignalManagement : UC14_DegradedSignalManagement{
+                    subject :>> System = system;
+                    actor :>> follower_vehicle = follower;
+                }   
+
+                use case fragmentedSignalManagement: UC15_FragmentedSignalManagement{
+                    subject :>> System = system;
+                    actor :>> interactor = general_interactor;
+                }                
+                
+                
+            
             }
+                
+        }
 
-            use case roadHazardWarning : UC8_RoadHazardWarning{
-                subject :>> System = system;
-                actor :>> infrastructure = infrastructure;
+    
+            
 
-            }
-
-            use case roadConditionWarning : UC9_RoadConditionWarning{
-                subject :>> System = system;
-                actor :>> infrastructure = infrastructure;
-
-            }
-
-            use case signalViolationProtection : UC10_SignalViolationProtection{
-                subject :>> System = system;
-                actor :>> infrastructure = infrastructure;
-                actor :>> follower_vehicle = follower;
-                actor :>> criminal_vehicle = extraneous;
-
-            }
-
-            use case wrongWayDriverProtection : UC11_WrongWayDriverProtection{
-                subject :>> System = system;
-                actor :>> infrastructure = infrastructure;
-
-            }
-
-            use case specialVehicle : UC12_SpecialVehicle{
-                subject :>> System = system;
-                actor :>> special_vehicle = extraneous;
-                actor :>> infrastructure = infrastructure;
-
-            }
-
-            use case pedestrianProtection : UC13_PedestrianProtection{
-                subject :>> System = system;
-                actor :>> infrastructure = infrastructure;
-
-            }
-
-            use case degradedSignalManagement : UC14_DegradedSignalManagement{
-                subject :>> System = system;
-                actor :>> follower_vehicle = follower;
-
-            }
-
-            use case fragmentedSignalManagement: UC15_FragmentedSignalManagement{
-                subject :>> System = system;
-                actor :>> interactor = general_interactor;
-
-            }
+            
           
             
 
@@ -296,7 +326,6 @@ package FPGA_Hardware{
             
 
         }
-    }
 
 
     
@@ -431,31 +460,9 @@ package FPGA_Hardware{
         satisfy useCaseViewpoint;
     }
 
-    view useCaseOverviewDiagram : UseCaseOverviewView {
-        expose FPGA_Hardware::PYNQZ1::system;
-        expose FPGA_Hardware::PYNQZ1::system::follower;
-        expose FPGA_Hardware::PYNQZ1::system::following;
-        expose FPGA_Hardware::PYNQZ1::system::extraneous;
-        expose FPGA_Hardware::PYNQZ1::system::infrastructure;
-        expose FPGA_Hardware::PYNQZ1::system::cloud;
-        expose FPGA_Hardware::PYNQZ1::system::person;
-        expose FPGA_Hardware::PYNQZ1::system::general_interactor;
-
-        expose FPGA_Hardware::PYNQZ1::system::cacc_synchronization;
-        expose FPGA_Hardware::PYNQZ1::system::abruptCutIn;
-        expose FPGA_Hardware::PYNQZ1::system::calledCutIn;
-        expose FPGA_Hardware::PYNQZ1::system::shockwavesMitigation;
-        expose FPGA_Hardware::PYNQZ1::system::adaptingFollowing;
-        expose FPGA_Hardware::PYNQZ1::system::crossRoadAdaptation;
-        expose FPGA_Hardware::PYNQZ1::system::speedLimitsAdaptation;
-        expose FPGA_Hardware::PYNQZ1::system::roadHazardWarning;
-        expose FPGA_Hardware::PYNQZ1::system::roadConditionWarning;
-        expose FPGA_Hardware::PYNQZ1::system::signalViolationProtection;
-        expose FPGA_Hardware::PYNQZ1::system::wrongWayDriverProtection;
-        expose FPGA_Hardware::PYNQZ1::system::specialVehicle;
-        expose FPGA_Hardware::PYNQZ1::system::pedestrianProtection;
-        expose FPGA_Hardware::PYNQZ1::system::degradedSignalManagement;
-        expose FPGA_Hardware::PYNQZ1::system::fragmentedSignalManagement;
+    view useCaseView : UseCaseOverviewView {
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase;
+        
 
         render viewRendering;
     }
