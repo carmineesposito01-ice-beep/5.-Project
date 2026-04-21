@@ -64,11 +64,13 @@ package FPGA_Hardware{
         part following : Vehicle{
             event occurrence sendV2V;
         }
+
         part extraneous : Vehicle;
         part infrastructure : Infrastructure;
         part cloud : CloudService;
         part person : Person;
         part general_interactor : Interactor;
+        part cfm : CarFollowingModel;
             
 
 
@@ -141,98 +143,101 @@ package FPGA_Hardware{
                 
 
                 use case cacc_synchronization : UC1_CACC_Synchronization{
-                doc /* Allocation of the CACC Synchronization use case to the system. */
-                subject :>> System = system;
-                actor :>> follower_vehicle = follower;
-                actor :>> leader_vehicle = following;
-                
+                    doc /* Allocation of the CACC Synchronization use case to the system. */
+                    subject :>> System = system;
+                    actor :>> car_following_model = cfm;
+                    actor :>> follower_vehicle = follower;
+                    actor :>> leader_vehicle = following;
+                    
+                    
+                    occurrence sequence{
+                        ref part uc1_leader = leader_vehicle;
+                        ref part uc1_follower = follower_vehicle;
+                        ref part uc1_system = System;
+                        ref part uc1_cfm = car_following_model;
+                        
 
-                
-                occurrence test_suo{
-                    ref part local_system = system;
-                    ref part local_follower = follower;
-                    ref part local_following = following;
-                    message 'test' from local_system.controlCarFollowing to local_follower.sendV2V;
-                    then message 'test2' from local_system.controlCarFollowing to local_following.sendV2V;
-                }
-                
-                
-
-                //message sendV2V from leader_vehicle to system;
-                occurrence test_sequence{
-                    ref part follower_vehicle: Vehicle;
-                    part follower1 : Vehicle{
-                    event occurrence sendV2V;
-                }
-                    part following1 : Vehicle{
-                    event occurrence sendV2V;
-                }
-                    part system1{
-                    event occurrence receiveV2V;
-                    then event occurrence processV2V;
-                    then event occurrence controlCarFollowing;
+                        message '1.1: V2V data' from uc1_leader.outMex to uc1_system.inMex;
+                        then message '1.2: V2V data' from uc1_follower.outMex to uc1_system.inMex;
+                        then message '2: Control' from uc1_system.outMex to uc1_cfm.inMex;
                     }
-                
-                message 'V2V data' from following1.sendV2V to system1.receiveV2V;
-                then message 'V2V_data' from follower1.sendV2V to system1.receiveV2V;
-                then message 'Elaboration' from system1.processV2V to system1.controlCarFollowing;
-
-
-
-
-                message 'Send_V2V_data' from following.sendV2V to system.receiveV2V;
-                then message 'Send_V2V_data2' from system.processV2V to system.receiveV2V;
-                then message 'Elaborate' from system.processV2V to system.controlCarFollowing;
                 }
-            }
                 
                 use case abruptCutIn : UC2_AbruptCutIn{
                     subject :>> System = system;
-                    actor :>> follower_vehicle = follower;
+                    actor :>> car_following_model = cfm;
+                    actor :>> infrastructure = infrastructure;
+
+                    occurrence sequence{
+                        ref part uc2_system = System;
+                        ref part uc2_infrastructure = infrastructure;
+                        ref part uc2_cfm = car_following_model;
+                        
+                        message '1: Cut-In' from uc2_infrastructure.outMex to uc2_system.inMex;
+                        then message '2: EmergencyBrake' from uc2_system.outMex to uc2_cfm.inMex;
+                    }
                 }
                
                 use case calledCutIn : UC3_CalledCutIn{
                     subject :>> System = system;
+                    actor :>> car_following_model = cfm;
                     actor :>> lateral_vehicle = extraneous;
-                    actor :>> follower_vehicle = follower;
 
-            }
+                    occurrence sequence{
+                        ref part uc3_system = System;
+                        ref part uc3_lateral = lateral_vehicle;
+                        ref part uc3_cfm = car_following_model;
+
+                        message '1: Cut-In Intent' from uc3_lateral.outMex to uc3_system.inMex;
+                        then message '2: Response' from uc3_system.outMex to uc3_lateral.inMex;
+                        then message '3: Control' from uc3_system.outMex to uc3_cfm.inMex;
+
+                    }
+
+                }
 
                 use case shockwavesMitigation : UC4_Shockwave_Mitigation{
                 subject :>> System = system;
+                actor :>> car_following_model = cfm;
                 actor :>> follower_vehicle = follower;
 
-            }
+                }
 
                 use case adaptingFollowing : UC5_AdaptingFollowing{
                 subject :>> System = system;
+                actor :>> car_following_model = cfm;
                 actor :>> leader_vehicle = following;
 
-            }
+                }
 
                 use case crossRoadAdaptation : UC6_CrossroadAdaptation{
                     subject :>> System = system;
+                    actor :>> car_following_model = cfm;
                     actor :>> infrastructure = infrastructure;
                 }
 
                 use case speedLimitsAdaptation : UC7_SpeedLimitsAdaptation{
                     subject :>> System = system;
+                    actor :>> car_following_model = cfm;
                     actor :>> infrastructure = infrastructure;
                     actor :>> follower_vehicle = follower;
                 }
 
                 use case roadHazardWarning : UC8_RoadHazardWarning{
                     subject :>> System = system;
+                    actor :>> car_following_model = cfm;
                     actor :>> infrastructure = infrastructure;
             }
 
                 use case roadConditionWarning : UC9_RoadConditionWarning{
                     subject :>> System = system;
+                    actor :>> car_following_model = cfm;
                     actor :>> infrastructure = infrastructure;
                 }
 
                 use case signalViolationProtection : UC10_SignalViolationProtection{
                     subject :>> System = system;
+                    actor :>> car_following_model = cfm;
                     actor :>> infrastructure = infrastructure;
                     actor :>> follower_vehicle = follower;
                     actor :>> criminal_vehicle = extraneous;
@@ -240,32 +245,35 @@ package FPGA_Hardware{
 
                 use case wrongWayDriverProtection : UC11_WrongWayDriverProtection{
                     subject :>> System = system;
+                    actor :>> car_following_model = cfm;
                     actor :>> infrastructure = infrastructure;
                 }
 
                 use case specialVehicle : UC12_SpecialVehicle{
                     subject :>> System = system;
+                    actor :>> car_following_model = cfm;
                     actor :>> special_vehicle = extraneous;
                     actor :>> infrastructure = infrastructure;
                 }
 
                 use case pedestrianProtection : UC13_PedestrianProtection{
                     subject :>> System = system;
+                    actor :>> car_following_model = cfm;
                     actor :>> infrastructure = infrastructure;
                 }
 
                 use case degradedSignalManagement : UC14_DegradedSignalManagement{
                     subject :>> System = system;
+                    actor :>> car_following_model = cfm;
                     actor :>> follower_vehicle = follower;
                 }   
 
                 use case fragmentedSignalManagement: UC15_FragmentedSignalManagement{
                     subject :>> System = system;
+                    actor :>> car_following_model = cfm;
                     actor :>> interactor = general_interactor;
                 }                
                 
-                
-            
             }
                 
         }
@@ -434,8 +442,8 @@ package FPGA_Hardware{
     view def ResourceUsageView{
         doc /* View for visualizing the resource usage of the FPGA hardware, showing how the various components and subsystems utilize the available resources. */
         satisfy fpgaEngineerViewpoint;
-
     }
+
 
     view resourceUsageView : ResourceUsageView{
         // EXPOSE ELEMENTS
@@ -449,55 +457,120 @@ package FPGA_Hardware{
     }
 
 
-    viewpoint def UseCaseViewpoint {
+    viewpoint def EngineerViewpoint {
         doc /* Viewpoint for use case visualization.
             * Shows actors, subject system, and use cases with semantic links. */
     }
-    viewpoint useCaseViewpoint : UseCaseViewpoint;
+    viewpoint systemEngineerViewpoint : EngineerViewpoint;
 
-    view def UseCaseOverviewView {
+    view def UseCaseView {
         doc /* View definition for actor/use-case visualization. */
-        satisfy useCaseViewpoint;
+        satisfy systemEngineerViewpoint;
     }
 
-    view useCaseView : UseCaseOverviewView {
+    view def SequenceView {
+        doc /* View definition for sequence diagram visualization. */
+        satisfy systemEngineerViewpoint;
+    }
+
+    view useCaseView : UseCaseView {
         expose FPGA_Hardware::PYNQZ1::system::systemUseCase;
         
-
+        attribute depth = 1;
+        attribute fileName = "UseCaseView";
+        attribute fileType = "png";
         render viewRendering;
     }
 
-    view test_exposing : UseCaseOverviewView{
-        expose FPGA_Hardware::PYNQZ1::system::cacc_synchronization;
-        expose FPGA_Hardware::PYNQZ1::system::abruptCutIn;
-        expose FPGA_Hardware::PYNQZ1::system::calledCutIn;
-        expose FPGA_Hardware::PYNQZ1::system::shockwavesMitigation;
-        expose FPGA_Hardware::PYNQZ1::system::adaptingFollowing;
-        expose FPGA_Hardware::PYNQZ1::system::crossRoadAdaptation;
-        expose FPGA_Hardware::PYNQZ1::system::speedLimitsAdaptation;
-        expose FPGA_Hardware::PYNQZ1::system::roadHazardWarning;
-        expose FPGA_Hardware::PYNQZ1::system::roadConditionWarning;
-        expose FPGA_Hardware::PYNQZ1::system::signalViolationProtection;
-        expose FPGA_Hardware::PYNQZ1::system::wrongWayDriverProtection;
-        expose FPGA_Hardware::PYNQZ1::system::specialVehicle;
-        expose FPGA_Hardware::PYNQZ1::system::pedestrianProtection;
+    view uc1_SequenceView : SequenceView {
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::cacc_synchronization::sequence;
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::cacc_synchronization::sequence::*;
+        
+        
+        render viewRendering;
+    }
 
-        expose FPGA_Hardware::PYNQZ1::system;
-        expose FPGA_Hardware::PYNQZ1::system::cacc_synchronization::*;
-        expose FPGA_Hardware::PYNQZ1::system::abruptCutIn::*;
-        expose FPGA_Hardware::PYNQZ1::system::calledCutIn::*;
-        expose FPGA_Hardware::PYNQZ1::system::shockwavesMitigation::*;
-        expose FPGA_Hardware::PYNQZ1::system::adaptingFollowing::*;
-        expose FPGA_Hardware::PYNQZ1::system::crossRoadAdaptation::*;
-        expose FPGA_Hardware::PYNQZ1::system::speedLimitsAdaptation::*;
-        expose FPGA_Hardware::PYNQZ1::system::roadHazardWarning::*;
-        expose FPGA_Hardware::PYNQZ1::system::roadConditionWarning::*;
-        expose FPGA_Hardware::PYNQZ1::system::signalViolationProtection::*;
-        expose FPGA_Hardware::PYNQZ1::system::wrongWayDriverProtection::*;
-        expose FPGA_Hardware::PYNQZ1::system::specialVehicle::*;
-        expose FPGA_Hardware::PYNQZ1::system::pedestrianProtection::*;
+    view uc2_SequenceView : SequenceView {
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::abruptCutIn::sequence;
+        
+        render viewRendering;
+    }
 
-    
+    view uc3_SequenceView : SequenceView {
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::calledCutIn::sequence;
+        
+        render viewRendering;
+    }
+
+    view uc4_SequenceView : SequenceView {
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::shockwavesMitigation::sequence;
+        
+        render viewRendering;
+    }
+
+    view uc5_SequenceView : SequenceView {
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::adaptingFollowing::sequence;
+        
+        render viewRendering;
+    }
+
+    view uc6_SequenceView : SequenceView {
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::crossRoadAdaptation::sequence;
+        
+        render viewRendering;
+    }
+
+    view uc7_SequenceView : SequenceView {
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::speedLimitsAdaptation::sequence;
+        
+        render viewRendering;
+    }
+
+    view uc8_SequenceView : SequenceView {
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::roadHazardWarning::sequence;
+        
+        render viewRendering;
+    }
+
+    view uc9_SequenceView : SequenceView {
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::roadConditionWarning::sequence;
+        
+        render viewRendering;
+    }
+
+    view uc10_SequenceView : SequenceView {
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::signalViolationProtection::sequence;
+        
+        render viewRendering;
+    }
+
+    view uc11_SequenceView : SequenceView {
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::wrongWayDriverProtection::sequence;
+        
+        render viewRendering;
+    }
+
+    view uc12_SequenceView : SequenceView {
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::specialVehicle::sequence;
+        
+        render viewRendering;
+    }
+
+    view uc13_SequenceView : SequenceView {
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::pedestrianProtection::sequence;
+        
+        render viewRendering;
+    }
+
+    view uc14_SequenceView : SequenceView {
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::degradedSignalManagement::sequence;
+        
+        render viewRendering;
+    }
+
+    view uc15_SequenceView : SequenceView {
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::fragmentedSignalManagement::sequence;
+        
         render viewRendering;
     }
 }
