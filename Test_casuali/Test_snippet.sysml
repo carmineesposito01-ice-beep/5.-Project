@@ -125,3 +125,47 @@ package 'Tom Sawyer Sequence View' {
         then message from server.inviaRisposta to client.riceviRisposta;
     }
 }
+
+
+
+
+
+
+
+
+occurrence test_suo{
+                        ref part local_system = system;
+                        ref part local_follower = follower;
+                        ref part local_following = following;
+                        message 'test' from local_system.controlCarFollowing to local_follower.sendV2V;
+                        then message 'test2' from local_system.controlCarFollowing to local_following.sendV2V;
+                    }
+                
+                
+
+                    //message sendV2V from leader_vehicle to system;
+                    occurrence test_sequence{
+                        ref part follower_vehicle: Vehicle;
+                        part follower1 : Vehicle{
+                        event occurrence sendV2V;
+                    }
+                        part following1 : Vehicle{
+                        event occurrence sendV2V;
+                    }
+                        part system1{
+                        event occurrence receiveV2V;
+                        then event occurrence processV2V;
+                        then event occurrence controlCarFollowing;
+                        }
+                
+                    message 'V2V data' from following1.sendV2V to system1.receiveV2V;
+                    then message 'V2V_data' from follower1.sendV2V to system1.receiveV2V;
+                    then message 'Elaboration' from system1.processV2V to system1.controlCarFollowing;
+
+
+
+
+                message 'Send_V2V_data' from following.sendV2V to system.receiveV2V;
+                then message 'Send_V2V_data2' from system.processV2V to system.receiveV2V;
+                then message 'Elaborate' from system.processV2V to system.controlCarFollowing;
+                }

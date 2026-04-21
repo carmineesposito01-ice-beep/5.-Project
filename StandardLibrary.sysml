@@ -383,6 +383,10 @@ library package Use_Case_Definitions{
         doc /* The cloud service actor represents any remote service that interacts with the system, such as a traffic management system or a data analytics platform. */
     }
 
+    part def CarFollowingModel{
+        doc /* The car-following model represents the internal logic of the system that determines how the vehicle should adjust its speed and trajectory based on the received data and the behavior of surrounding vehicles. */
+    }
+
     item def Signals{
         doc /* The signals represent the various types of data that the system receives and processes, including V2X data, sensor data, and environmental data. */
     }
@@ -407,127 +411,294 @@ library package Use_Case_Definitions{
 
 
     use case def UC1_CACC_Synchronization{
-        subject System;
-        actor follower_vehicle;
-        actor leader_vehicle;
+        subject System : Parts::Part{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor follower_vehicle{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor leader_vehicle{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor car_following_model{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
         objective{
             doc /* Use case for synchronizing the vehicle's trend with the following vehicle, based on the received V2V data. */
         }                   
     }
 
     use case def UC2_AbruptCutIn{
-        subject System;
-        actor lateral_vehicle;
-        actor follower_vehicle;
+        subject System : Parts::Part{
+            action inMex;
+            action outMex;
+        }
+        actor car_following_model{
+            action inMex;
+            action outMex;
+        }
+        actor infrastructure{
+            action inMex;
+            action outMex;
+        }
         objective{
             doc /* Use case for managing abrupt cut-in maneuvers from other vehicles, by adjusting the speed and trajectory of the vehicle to maintain safety. */
         }    
     }
 
     use case def UC3_CalledCutIn{
-        subject System;
-        actor lateral_vehicle;
-        actor follower_vehicle;
+        subject System : Parts::Part{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor car_following_model{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor lateral_vehicle{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor follower_vehicle{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
         objective{
             doc /* Use case for managing called cut-in maneuvers from other vehicles, by adjusting the speed and trajectory of the vehicle to maintain safety. */
         }
     }
 
     use case def UC4_Shockwave_Mitigation{
-        subject System;
-        actor follower_vehicle;
+        subject System : Parts::Part{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor car_following_model{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor follower_vehicle{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
         objective{
             doc /* Use case for mitigating shockwaves in traffic flow, by adjusting the speed of the vehicle based on the behavior of the following vehicle and the received V2V data. */
         }
     }
 
     use case def UC5_AdaptingFollowing{
-        subject System;
-        actor leader_vehicle;
+        subject System : Parts::Part{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor car_following_model{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor leader_vehicle{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
         objective{
             doc /* Use case for adapting the vehicle's following behavior based on the classification of the following vehicle, to enhance safety and comfort. */
         }
     }
 
     use case def UC6_CrossroadAdaptation{
-        subject System;
-        actor infrastructure;
+        subject System : Parts::Part{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor car_following_model{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor infrastructure{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
         objective{
             doc /* Use case for adapting the vehicle's trend at crossroads, considering the behavior of surrounding vehicles and traffic conditions (taken from V2V and V2I signals (SPaT)). */
         }
     }
 
     use case def UC7_SpeedLimitsAdaptation{
-        subject System;
-        actor infrastructure;
-        actor follower_vehicle;
+        subject System : Parts::Part{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor car_following_model{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor infrastructure{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor follower_vehicle{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
         objective{
             doc /* Use case for adjusting the vehicle's speed based on speed limits received from V2I communication, to enhance safety and comply with traffic regulations. */
         }
     }
 
     use case def UC8_RoadHazardWarning{
-        subject System;
-        actor infrastructure;
+        subject System : Parts::Part{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor car_following_model{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor infrastructure{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
         objective{
             doc /* Use case for responding to road hazard warnings received from V2I communication, by adjusting the speed and trajectory of the vehicle to maintain safety. */
         }
     }
 
     use case def UC9_RoadConditionWarning{
-        subject System;
-        actor infrastructure;
+        subject System : Parts::Part{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor car_following_model{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor infrastructure{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
         objective{
             doc /* Use case for responding to road condition warnings received from V2I communication, by adjusting the speed and trajectory of the vehicle to maintain safety. */
         }
     }
 
     use case def UC10_SignalViolationProtection{
-        subject System;
-        actor infrastructure;
-        actor criminal_vehicle;
-        actor follower_vehicle;
+        subject System : Parts::Part{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor car_following_model{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor infrastructure{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor criminal_vehicle{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor follower_vehicle{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
         objective{
             doc /* Use case for protecting against signal violations at intersections, by adjusting the speed and trajectory of the vehicle based on traffic light status received from V2I communication. */
         }
     }
 
     use case def UC11_WrongWayDriverProtection{
-        subject System;
-        actor infrastructure;
+        subject System : Parts::Part{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor car_following_model{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor infrastructure{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
         objective{
             doc /* Use case for protecting against wrong-way drivers, by adjusting the speed and trajectory of the vehicle based on warnings received from V2I communication. */
         }
     }
 
     use case def UC12_SpecialVehicle{
-        subject System;
-        actor special_vehicle;
-        actor infrastructure;
+        subject System : Parts::Part{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor car_following_model{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor special_vehicle{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor infrastructure{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
         objective{
             doc /* Use case for responding to special vehicle warnings received from V2I communication, by adjusting the speed and trajectory of the vehicle to maintain safety. */
         }
     }
 
     use case def UC13_PedestrianProtection{
-        subject System;
-        actor infrastructure;
+        subject System : Parts::Part{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor car_following_model{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor infrastructure{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
         objective{
             doc /* Use case for protecting pedestrians, by adjusting the speed and trajectory of the vehicle based on warnings received from V2I communication or detected by the vehicle's sensors. */
         }
     }
 
     use case def UC14_DegradedSignalManagement{
-        subject System;
-        actor follower_vehicle;
+        subject System : Parts::Part{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor car_following_model{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor follower_vehicle{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
         objective{
             doc /* Use case for managing degraded V2X signal quality, by pass the controll to the local sensor system. */
         }
     }
 
     use case def UC15_FragmentedSignalManagement{
-        subject System;
-        actor interactor;
+        subject System : Parts::Part{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor car_following_model{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor interactor{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
         objective{
             doc /* Use case for managing fragmented V2X signal quality, by implementing strategies to maintain safe operation even when data are fragmenteted. */
         }
