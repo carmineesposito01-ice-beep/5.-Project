@@ -387,6 +387,10 @@ library package Use_Case_Definitions{
         doc /* The car-following model represents the internal logic of the system that determines how the vehicle should adjust its speed and trajectory based on the received data and the behavior of surrounding vehicles. */
     }
 
+    part def CarFollowingModel{
+        doc /* The car-following model represents the internal logic of the system that determines how the vehicle should adjust its speed and trajectory based on the received data and the behavior of surrounding vehicles. */
+    }
+
     item def Signals{
         doc /* The signals represent the various types of data that the system receives and processes, including V2X data, sensor data, and environmental data. */
     }
@@ -427,6 +431,22 @@ library package Use_Case_Definitions{
             event occurrence inMex;
             event occurrence outMex;
         }
+        subject System : Parts::Part{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor follower_vehicle{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor leader_vehicle{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor car_following_model{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
         objective{
             doc /* Use case for synchronizing the vehicle's trend with the following vehicle, based on the received V2V data. */
         }                   
@@ -445,12 +465,40 @@ library package Use_Case_Definitions{
             action inMex;
             action outMex;
         }
+        subject System : Parts::Part{
+            action inMex;
+            action outMex;
+        }
+        actor car_following_model{
+            action inMex;
+            action outMex;
+        }
+        actor infrastructure{
+            action inMex;
+            action outMex;
+        }
         objective{
             doc /* Use case for managing abrupt cut-in maneuvers from other vehicles, by adjusting the speed and trajectory of the vehicle to maintain safety. */
         }    
     }
 
     use case def UC3_CalledCutIn{
+        subject System : Parts::Part{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor car_following_model{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor lateral_vehicle{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor follower_vehicle{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
         subject System : Parts::Part{
             event occurrence inMex;
             event occurrence outMex;
@@ -503,12 +551,36 @@ library package Use_Case_Definitions{
             event occurrence inMex;
             event occurrence outMex;
         }
+        subject System : Parts::Part{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor car_following_model{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor leader_vehicle{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
         objective{
             doc /* Use case for adapting the vehicle's following behavior based on the classification of the following vehicle, to enhance safety and comfort. */
         }
     }
 
     use case def UC6_CrossroadAdaptation{
+        subject System : Parts::Part{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor car_following_model{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor infrastructure{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
         subject System : Parts::Part{
             event occurrence inMex;
             event occurrence outMex;
@@ -543,6 +615,22 @@ library package Use_Case_Definitions{
             event occurrence inMex;
             event occurrence outMex;
         }
+        subject System : Parts::Part{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor car_following_model{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor infrastructure{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor follower_vehicle{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
         objective{
             doc /* Use case for adjusting the vehicle's speed based on speed limits received from V2I communication, to enhance safety and comply with traffic regulations. */
         }
@@ -561,12 +649,36 @@ library package Use_Case_Definitions{
             event occurrence inMex;
             event occurrence outMex;
         }
+        subject System : Parts::Part{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor car_following_model{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor infrastructure{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
         objective{
             doc /* Use case for responding to road hazard warnings received from V2I communication, by adjusting the speed and trajectory of the vehicle to maintain safety. */
         }
     }
 
     use case def UC9_RoadConditionWarning{
+        subject System : Parts::Part{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor car_following_model{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor infrastructure{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
         subject System : Parts::Part{
             event occurrence inMex;
             event occurrence outMex;
@@ -605,12 +717,44 @@ library package Use_Case_Definitions{
             event occurrence inMex;
             event occurrence outMex;
         }
+        subject System : Parts::Part{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor car_following_model{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor infrastructure{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor criminal_vehicle{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor follower_vehicle{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
         objective{
             doc /* Use case for protecting against signal violations at intersections, by adjusting the speed and trajectory of the vehicle based on traffic light status received from V2I communication. */
         }
     }
 
     use case def UC11_WrongWayDriverProtection{
+        subject System : Parts::Part{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor car_following_model{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor infrastructure{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
         subject System : Parts::Part{
             event occurrence inMex;
             event occurrence outMex;
@@ -645,12 +789,40 @@ library package Use_Case_Definitions{
             event occurrence inMex;
             event occurrence outMex;
         }
+        subject System : Parts::Part{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor car_following_model{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor special_vehicle{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor infrastructure{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
         objective{
             doc /* Use case for responding to special vehicle warnings received from V2I communication, by adjusting the speed and trajectory of the vehicle to maintain safety. */
         }
     }
 
     use case def UC13_PedestrianProtection{
+        subject System : Parts::Part{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor car_following_model{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor infrastructure{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
         subject System : Parts::Part{
             event occurrence inMex;
             event occurrence outMex;
@@ -681,12 +853,36 @@ library package Use_Case_Definitions{
             event occurrence inMex;
             event occurrence outMex;
         }
+        subject System : Parts::Part{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor car_following_model{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor follower_vehicle{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
         objective{
             doc /* Use case for managing degraded V2X signal quality, by pass the controll to the local sensor system. */
         }
     }
 
     use case def UC15_FragmentedSignalManagement{
+        subject System : Parts::Part{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor car_following_model{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
+        actor interactor{
+            event occurrence inMex;
+            event occurrence outMex;
+        }
         subject System : Parts::Part{
             event occurrence inMex;
             event occurrence outMex;

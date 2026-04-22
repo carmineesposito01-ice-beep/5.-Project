@@ -65,11 +65,13 @@ package FPGA_Hardware{
             event occurrence sendV2V;
         }
 
+
         part extraneous : Vehicle;
         part infrastructure : Infrastructure;
         part cloud : CloudService;
         part person : Person;
         part general_interactor : Interactor;
+        part cfm : CarFollowingModel;
         part cfm : CarFollowingModel;
             
 
@@ -217,6 +219,7 @@ package FPGA_Hardware{
                 use case calledCutIn : UC3_CalledCutIn{
                     subject :>> System = system;
                     actor :>> car_following_model = cfm;
+                    actor :>> car_following_model = cfm;
                     actor :>> lateral_vehicle = extraneous;
 
                     occurrence sequence{
@@ -253,6 +256,7 @@ package FPGA_Hardware{
                         
                     }
 
+                }
                 }
 
                 use case shockwavesMitigation : UC4_Shockwave_Mitigation{
@@ -293,9 +297,11 @@ package FPGA_Hardware{
                     }
 
                 }
+                }
 
                 use case adaptingFollowing : UC5_AdaptingFollowing{
                 subject :>> System = system;
+                actor :>> car_following_model = cfm;
                 actor :>> car_following_model = cfm;
                 actor :>> leader_vehicle = following;
 
@@ -335,6 +341,7 @@ package FPGA_Hardware{
 
                 use case crossRoadAdaptation : UC6_CrossroadAdaptation{
                     subject :>> System = system;
+                    actor :>> car_following_model = cfm;
                     actor :>> car_following_model = cfm;
                     actor :>> infrastructure = infrastructure;
 
@@ -379,6 +386,7 @@ package FPGA_Hardware{
                 use case speedLimitsAdaptation : UC7_SpeedLimitsAdaptation{
                     subject :>> System = system;
                     actor :>> car_following_model = cfm;
+                    actor :>> car_following_model = cfm;
                     actor :>> infrastructure = infrastructure;
                     actor :>> follower_vehicle = follower;
                 
@@ -410,6 +418,7 @@ package FPGA_Hardware{
                 use case roadHazardWarning : UC8_RoadHazardWarning{
                     subject :>> System = system;
                     actor :>> car_following_model = cfm;
+                    actor :>> car_following_model = cfm;
                     actor :>> infrastructure = infrastructure;
                 
                     occurrence sequence{
@@ -435,6 +444,7 @@ package FPGA_Hardware{
 
                 use case roadConditionWarning : UC9_RoadConditionWarning{
                     subject :>> System = system;
+                    actor :>> car_following_model = cfm;
                     actor :>> car_following_model = cfm;
                     actor :>> infrastructure = infrastructure;
                 
@@ -463,6 +473,7 @@ package FPGA_Hardware{
 
                 use case signalViolationProtection : UC10_SignalViolationProtection{
                     subject :>> System = system;
+                    actor :>> car_following_model = cfm;
                     actor :>> car_following_model = cfm;
                     actor :>> infrastructure = infrastructure;
                     actor :>> follower_vehicle = follower;
@@ -501,6 +512,7 @@ package FPGA_Hardware{
 
                 use case wrongWayDriverProtection : UC11_WrongWayDriverProtection{
                     subject :>> System = system;
+                    actor :>> car_following_model = cfm;
                     actor :>> car_following_model = cfm;
                     actor :>> infrastructure = infrastructure;
                 
@@ -545,6 +557,7 @@ package FPGA_Hardware{
 
                 use case specialVehicle : UC12_SpecialVehicle{
                     subject :>> System = system;
+                    actor :>> car_following_model = cfm;
                     actor :>> car_following_model = cfm;
                     actor :>> special_vehicle = extraneous;
                     actor :>> infrastructure = infrastructure;
@@ -592,6 +605,7 @@ package FPGA_Hardware{
                 use case pedestrianProtection : UC13_PedestrianProtection{
                     subject :>> System = system;
                     actor :>> car_following_model = cfm;
+                    actor :>> car_following_model = cfm;
                     actor :>> infrastructure = infrastructure;
                 
                     occurrence sequence{
@@ -634,6 +648,7 @@ package FPGA_Hardware{
                 use case degradedSignalManagement : UC14_DegradedSignalManagement{
                     subject :>> System = system;
                     actor :>> car_following_model = cfm;
+                    actor :>> car_following_model = cfm;
                     actor :>> follower_vehicle = follower;
                 
                     occurrence sequence{
@@ -662,6 +677,7 @@ package FPGA_Hardware{
 
                 use case fragmentedSignalManagement: UC15_FragmentedSignalManagement{
                     subject :>> System = system;
+                    actor :>> car_following_model = cfm;
                     actor :>> car_following_model = cfm;
                     actor :>> interactor = general_interactor;
                 
@@ -866,6 +882,7 @@ package FPGA_Hardware{
     }
 
 
+
     view resourceUsageView : ResourceUsageView{
         // EXPOSE ELEMENTS
         expose FPGA_Hardware::PYNQZ1;
@@ -879,11 +896,14 @@ package FPGA_Hardware{
 
 
     viewpoint def EngineerViewpoint {
+    viewpoint def EngineerViewpoint {
         doc /* Viewpoint for use case visualization.
             * Shows actors, subject system, and use cases with semantic links. */
     }
     viewpoint systemEngineerViewpoint : EngineerViewpoint;
+    viewpoint systemEngineerViewpoint : EngineerViewpoint;
 
+    view def UseCaseView {
     view def UseCaseView {
         doc /* View definition for actor/use-case visualization. */
         satisfy systemEngineerViewpoint;
@@ -892,8 +912,15 @@ package FPGA_Hardware{
     view def SequenceView {
         doc /* View definition for sequence diagram visualization. */
         satisfy systemEngineerViewpoint;
+        satisfy systemEngineerViewpoint;
     }
 
+    view def SequenceView {
+        doc /* View definition for sequence diagram visualization. */
+        satisfy systemEngineerViewpoint;
+    }
+
+    view useCaseView : UseCaseView {
     view useCaseView : UseCaseView {
         expose FPGA_Hardware::PYNQZ1::system::systemUseCase;
         
@@ -1002,6 +1029,21 @@ package FPGA_Hardware{
         render viewRendering;
     }
 
+    view uc13_SequenceView : SequenceView {
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::pedestrianProtection::sequence;
+        
+        render viewRendering;
+    }
+
+    view uc14_SequenceView : SequenceView {
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::degradedSignalManagement::sequence;
+        
+        render viewRendering;
+    }
+
+    view uc15_SequenceView : SequenceView {
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::fragmentedSignalManagement::sequence;
+        
     view uc13_SequenceView : SequenceView {
         expose FPGA_Hardware::PYNQZ1::system::systemUseCase::pedestrianProtection::sequence;
         
