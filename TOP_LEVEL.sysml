@@ -161,6 +161,23 @@ package FPGA_Hardware{
                         then message '1.2: V2V data' from uc1_follower.outMex to uc1_system.inMex;
                         then message '2: Control' from uc1_system.outMex to uc1_cfm.inMex;
                     }
+
+                    action def action_flow{
+                        action receiveV2V;
+                        action generateParameter;
+                        fork fork1;
+                        action sendV2V;
+                        action controll_CFM;
+
+
+                        first start then receiveV2V;
+                        first receiveV2V then generateParameter;
+                        first generateParameter then fork1;
+                        first fork1 then sendV2V;
+                        first sendV2V then receiveV2V;
+                        first fork1 then controll_CFM;
+                        first controll_CFM then receiveV2V;
+                    }                    
                 }
                 
                 use case abruptCutIn : UC2_AbruptCutIn{
@@ -176,7 +193,26 @@ package FPGA_Hardware{
                         message '1: Cut-In' from uc2_infrastructure.outMex to uc2_system.inMex;
                         then message '2: EmergencyBrake' from uc2_system.outMex to uc2_cfm.inMex;
                     }
+
+                action def action_flow{
+                        action receiveV2V;
+                        action controllDistance;
+                        decide distance;
+                        action emergencyBrake;
+                        merge merge1;
+                        action sendEmergencyBrakeAlert;
+
+                        first start then receiveV2V;
+                        first receiveV2V then controllDistance;
+                        first controllDistance then distance;
+                        first distance then sendEmergencyBrakeAlert;
+                        first sendEmergencyBrakeAlert then emergencyBrake;
+                        first distance then merge1;
+                        first emergencyBrake then merge1;
+                        first merge1 then done;
+                    }
                 }
+                
                
                 use case calledCutIn : UC3_CalledCutIn{
                     subject :>> System = system;
@@ -190,16 +226,71 @@ package FPGA_Hardware{
 
                         message '1: Cut-In Intent' from uc3_lateral.outMex to uc3_system.inMex;
                         then message '2: Response' from uc3_system.outMex to uc3_lateral.inMex;
-                        then message '3: Control' from uc3_system.outMex to uc3_cfm.inMex;
+                        then message '3: Control (based on Response)' from uc3_system.outMex to uc3_cfm.inMex;
 
+                    }
+
+                    action def action_flow{
+                        action receiveCutInRequest;
+                        action evaluateRequest;
+                        action sendAnswer;
+                        action increaseHeadway;
+                        action waitCutIn;
+                        action reduceHeadway;
+
+                        decide verifyAnswer;
+                                         
+                        
+                        first start then receiveCutInRequest;
+                        first receiveCutInRequest then evaluateRequest;
+                        first evaluateRequest then sendAnswer;
+                        first sendAnswer then verifyAnswer;
+                        first verifyAnswer then increaseHeadway;
+                          first increaseHeadway then waitCutIn;
+                          first waitCutIn then reduceHeadway;
+                          first reduceHeadway then done;
+                        first verifyAnswer then done;
+                        
                     }
 
                 }
 
                 use case shockwavesMitigation : UC4_Shockwave_Mitigation{
-                subject :>> System = system;
-                actor :>> car_following_model = cfm;
-                actor :>> follower_vehicle = follower;
+                    subject :>> System = system;
+                    actor :>> car_following_model = cfm;
+                    actor :>> leader_vehicle = following;
+
+                    occurrence sequence{
+                        ref part uc4_system = System;                        
+                        ref part uc4_cfm = car_following_model;
+                        ref part uc4_leader_vehicle = leader_vehicle;
+
+                        message '1: Send V2V' from uc4_leader_vehicle.outMex to uc4_system.inMex;
+                        then message '2: Correct Headway' from uc4_system.outMex to uc4_cfm.inMex;
+                    }
+
+                    action def action_flow{
+                        action receiveV2V;
+                        merge node;
+                        action stringInstabilityDetermination;
+                        decide verifySI;
+                        action shockwaveMitigation;
+                        merge merge1;
+                        action normalControl;
+
+
+
+                        first start then receiveV2V;
+                        first receiveV2V then node;
+                        first node then stringInstabilityDetermination;
+                        first stringInstabilityDetermination then verifySI;
+                        first verifySI then shockwaveMitigation;
+                          first shockwaveMitigation then merge1;
+                        first verifySI then normalControl;
+                          first normalControl then merge1;
+                        first merge1 then node;
+
+                    }
 
                 }
 
@@ -208,12 +299,81 @@ package FPGA_Hardware{
                 actor :>> car_following_model = cfm;
                 actor :>> leader_vehicle = following;
 
+                occurrence sequence{
+                    ref part uc5_system = System;                        
+                    ref part uc5_cfm = car_following_model;
+                    ref part uc5_leader_vehicle = leader_vehicle;
+
+                    message '1: Send V2V' from uc5_leader_vehicle.outMex to uc5_system.inMex;
+                    then message '2: Adapt to Following' from uc5_system.outMex to uc5_cfm.inMex;
                 }
+
+                action def actionflow{
+                    action receiveV2V;
+                    merge node;
+                    action analyzeData;
+                    action defineLeaderType;
+                    decide verifyType;
+                    action determineBehaviour;
+                    action determineALevel;
+                    merge merge1;
+                    action modifyVariables;
+
+                    first start then receiveV2V;
+                    first receiveV2V then node;
+                    first node then analyzeData;
+                    first analyzeData then defineLeaderType;
+                    first defineLeaderType then verifyType;
+                    first verifyType then determineBehaviour;
+                      first determineBehaviour then merge1;
+                    first verifyType then determineALevel;
+                      first determineALevel then merge1;
+                    first merge1 then modifyVariables;
+                    first modifyVariables then node;
+                }
+            }
 
                 use case crossRoadAdaptation : UC6_CrossroadAdaptation{
                     subject :>> System = system;
                     actor :>> car_following_model = cfm;
                     actor :>> infrastructure = infrastructure;
+
+                    occurrence sequence{
+                        ref part uc6_system = System;                        
+                        ref part uc6_cfm = car_following_model;
+                        ref part uc6_infrastructure = infrastructure;
+
+                        message '1: Crossroad Info' from uc6_infrastructure.outMex to uc6_system.inMex;
+                        then message '2: Adapt to Crossroad' from uc6_system.outMex to uc6_cfm.inMex;
+                    }
+
+                    action def action_flow{
+                        action receiveV2I;
+                        action analyzeCrossroadInfo;
+                        action greenWaveFeasibility;
+                        decide verifyGreenWave;
+                        action defineAdvantage;
+                        decide verifyAdvantage;
+                        merge merge1;
+                        action greenWaveMitigation;
+                        merge merge2;
+                        action stopProcedure;
+                        
+
+                        first start then receiveV2I;
+                        first receiveV2I then analyzeCrossroadInfo;
+                        first analyzeCrossroadInfo then greenWaveFeasibility;
+                        first greenWaveFeasibility then verifyGreenWave;
+                        first verifyGreenWave then merge1;
+                        first verifyGreenWave then defineAdvantage;
+                        first defineAdvantage then verifyAdvantage;
+                        first verifyAdvantage then merge1;
+                        first verifyAdvantage then greenWaveMitigation;
+                        first merge1 then stopProcedure;
+                        first greenWaveMitigation then merge2;
+                        first stopProcedure then merge2;
+                        first merge2 then done;
+                    }
                 }
 
                 use case speedLimitsAdaptation : UC7_SpeedLimitsAdaptation{
@@ -221,18 +381,84 @@ package FPGA_Hardware{
                     actor :>> car_following_model = cfm;
                     actor :>> infrastructure = infrastructure;
                     actor :>> follower_vehicle = follower;
+                
+                    occurrence sequence{
+                        ref part uc7_system = System;                        
+                        ref part uc7_cfm = car_following_model;
+                        ref part uc7_infrastructure = infrastructure;
+                        ref part uc7_follower_vehicle = follower_vehicle;
+
+                        message '1: Speed Limit Info' from uc7_infrastructure.outMex to uc7_system.inMex;
+                        then message '2: Adapt to Speed Limit' from uc7_system.outMex to uc7_cfm.inMex;
+                        then message '3: Notify Follower' from uc7_system.outMex to uc7_follower_vehicle.inMex;
+                    }
+
+                    action def action_flow{
+                        action receiveV2I;
+                        merge node;
+                        action analyzeSpeedLimitInfo;
+                        action modifyMaxSpeed;
+
+                        first start then node;
+                        first node then receiveV2I;
+                        first receiveV2I then analyzeSpeedLimitInfo;
+                        first analyzeSpeedLimitInfo then modifyMaxSpeed;
+                        first modifyMaxSpeed then node;
+                    }
                 }
 
                 use case roadHazardWarning : UC8_RoadHazardWarning{
                     subject :>> System = system;
                     actor :>> car_following_model = cfm;
                     actor :>> infrastructure = infrastructure;
-            }
+                
+                    occurrence sequence{
+                        ref part uc8_system = System;                        
+                        ref part uc8_cfm = car_following_model;
+                        ref part uc8_infrastructure = infrastructure;
+
+                        message '1: Road Hazard Info' from uc8_infrastructure.outMex to uc8_system.inMex;
+                        then message '2: Adapt Following' from uc8_system.outMex to uc8_cfm.inMex;
+                    }
+
+                    action def action_flow{
+                        action receiveV2I;
+                        action analyzeHazardInfo;
+                        action modifyFollowing;
+
+                        first start then receiveV2I;
+                        first receiveV2I then analyzeHazardInfo;
+                        first analyzeHazardInfo then modifyFollowing;
+                        first modifyFollowing then done;
+                    }
+                }
 
                 use case roadConditionWarning : UC9_RoadConditionWarning{
                     subject :>> System = system;
                     actor :>> car_following_model = cfm;
                     actor :>> infrastructure = infrastructure;
+                
+                    occurrence sequence{
+                        ref part uc9_system = System;                        
+                        ref part uc9_cfm = car_following_model;
+                        ref part uc9_infrastructure = infrastructure;
+
+                        message '1: Road Condition Info' from uc9_infrastructure.outMex to uc9_system.inMex;
+                        then message '2: Adapt Following' from uc9_system.outMex to uc9_cfm.inMex;
+                    }
+
+                    action def action_flow{
+                        action receiveV2I;
+                        action analyzeConditionInfo;
+                        action modifyFollowing;
+                        merge node;
+
+                        first start then node;
+                        first node then receiveV2I;
+                        first receiveV2I then analyzeConditionInfo;
+                        first analyzeConditionInfo then modifyFollowing;
+                        first modifyFollowing then node;
+                    }
                 }
 
                 use case signalViolationProtection : UC10_SignalViolationProtection{
@@ -241,12 +467,80 @@ package FPGA_Hardware{
                     actor :>> infrastructure = infrastructure;
                     actor :>> follower_vehicle = follower;
                     actor :>> criminal_vehicle = extraneous;
+                
+                    occurrence sequence{
+                        ref part uc10_system = System;                        
+                        ref part uc10_cfm = car_following_model;
+                        ref part uc10_infrastructure = infrastructure;
+                        ref part uc10_follower_vehicle = follower_vehicle;
+                        ref part uc10_criminal_vehicle = criminal_vehicle;
+
+                        message '1: Signal Violation Info' from uc10_infrastructure.outMex to uc10_system.inMex;
+                        then message '2: Protect from Violation' from uc10_system.outMex to uc10_cfm.inMex;
+                        then message '3: Notify Follower' from uc10_system.outMex to uc10_follower_vehicle.inMex;
+                    }
+
+                    action def action_flow{
+                        action receiveV2I;
+                        action analyzeViolationInfo;
+                        decide verifyDistance;
+                        action emergencyBrake;
+                        action reduceSpeed;
+                        merge merge1;
+
+                        first start then receiveV2I;
+                        first receiveV2I then analyzeViolationInfo;
+                        first analyzeViolationInfo then verifyDistance;
+                        first verifyDistance then emergencyBrake;
+                        first verifyDistance then reduceSpeed;
+                        first emergencyBrake then merge1;
+                        first reduceSpeed then merge1;
+                        first merge1 then done;
+                    }
                 }
 
                 use case wrongWayDriverProtection : UC11_WrongWayDriverProtection{
                     subject :>> System = system;
                     actor :>> car_following_model = cfm;
                     actor :>> infrastructure = infrastructure;
+                
+                    occurrence sequence{
+                        ref part uc11_system = System;                        
+                        ref part uc11_cfm = car_following_model;
+                        ref part uc11_infrastructure = infrastructure;
+
+                        message '1: Wrong-Way Driver Info' from uc11_infrastructure.outMex to uc11_system.inMex;
+                        then message '2.1: Increase lateral headway' from uc11_system.outMex to uc11_cfm.inMex;
+                        then message '2.2: Avoid procedure' from uc11_system.outMex to uc11_cfm.inMex;
+                    }
+
+                    action def action_flow{
+                        action receiveV2I;
+                        merge node;
+                        action analyzeWarningInfo;
+                        action calculateDistance;
+                        action increaseLateralHeadway;
+                        action waitAvoidment;
+                        decide verifyAvoidment;
+                        action reduceLateralHeadway;
+                        fork fork1;
+                        join join1;
+
+
+                        first start then receiveV2I;
+                        first receiveV2I then node;
+                        first node then analyzeWarningInfo;
+                        first analyzeWarningInfo then fork1;
+                        first fork1 then calculateDistance;
+                          first calculateDistance then join1;
+                        first fork1 then increaseLateralHeadway;
+                          first increaseLateralHeadway then join1;
+                        first join1 then waitAvoidment;
+                        first waitAvoidment then verifyAvoidment;
+                        first verifyAvoidment then node;
+                        first verifyAvoidment then reduceLateralHeadway;
+                        first reduceLateralHeadway then done; 
+                    }
                 }
 
                 use case specialVehicle : UC12_SpecialVehicle{
@@ -254,24 +548,151 @@ package FPGA_Hardware{
                     actor :>> car_following_model = cfm;
                     actor :>> special_vehicle = extraneous;
                     actor :>> infrastructure = infrastructure;
+                
+                    occurrence sequence{
+                        ref part uc12_system = System;                        
+                        ref part uc12_cfm = car_following_model;
+                        ref part uc12_special_vehicle = special_vehicle;
+                        ref part uc12_infrastructure = infrastructure;
+
+                        message '1: Special Vehicle Info' from uc12_infrastructure.outMex to uc12_system.inMex;
+                        then message '2.1: Increase lateral headway' from uc12_system.outMex to uc12_cfm.inMex;
+                        then message '2.2: Pull Over' from uc12_system.outMex to uc12_cfm.inMex;
+                    }
+
+                    action def action_flow{
+                        action receiveV2I;
+                        merge node;
+                        action analyzeWarningInfo;
+                        action calculateDistance;
+                        action increaseLateralHeadway;
+                        action waitAvoidment;
+                        decide verifyAvoidment;
+                        action reduceLateralHeadway;
+                        fork fork1;
+                        join join1;
+                        
+
+                        first start then receiveV2I;
+                        first receiveV2I then node;
+                        first node then analyzeWarningInfo;
+                        first analyzeWarningInfo then fork1;
+                        first fork1 then calculateDistance;
+                          first calculateDistance then join1;
+                        first fork1 then increaseLateralHeadway;
+                          first increaseLateralHeadway then join1;
+                        first join1 then waitAvoidment;
+                        first waitAvoidment then verifyAvoidment;
+                        first verifyAvoidment then node;
+                        first verifyAvoidment then reduceLateralHeadway;
+                        first reduceLateralHeadway then done; 
+                    }
                 }
 
                 use case pedestrianProtection : UC13_PedestrianProtection{
                     subject :>> System = system;
                     actor :>> car_following_model = cfm;
                     actor :>> infrastructure = infrastructure;
+                
+                    occurrence sequence{
+                        ref part uc13_system = System;                        
+                        ref part uc13_cfm = car_following_model;
+                        ref part uc13_infrastructure = infrastructure;
+
+                        message '1: Pedestrian Info' from uc13_infrastructure.outMex to uc13_system.inMex;
+                        then message '2.1: Increase headway' from uc13_system.outMex to uc13_cfm.inMex;
+                        then message '2.2: Stop' from uc13_system.outMex to uc13_cfm.inMex;
+                    }
+
+                    action def action_flow{
+                        action receiveV2I;
+                        merge node;
+                        action extractInfo;
+                        action calculateArrivingTime;
+                        decide verifyTime;
+                        action reduceSpeed;
+                        action brake;
+                        action emergencyBrake;
+                        merge merge1;
+
+
+                        first start then receiveV2I;
+                        first receiveV2I then extractInfo;
+                        first extractInfo then calculateArrivingTime;
+                        first calculateArrivingTime then verifyTime;
+                        first verifyTime then merge1;
+                        first verifyTime then reduceSpeed;
+                          first reduceSpeed then merge1;
+                        first verifyTime then brake;
+                          first brake then merge1;
+                        first verifyTime then emergencyBrake;
+                          first emergencyBrake then merge1;
+                        first merge1 then done;
+                    }
                 }
 
                 use case degradedSignalManagement : UC14_DegradedSignalManagement{
                     subject :>> System = system;
                     actor :>> car_following_model = cfm;
                     actor :>> follower_vehicle = follower;
+                
+                    occurrence sequence{
+                        ref part uc14_system = System;                        
+                        ref part uc14_cfm = car_following_model;
+                        ref part uc14_follower_vehicle = follower_vehicle;
+
+                        message '1: No Signal' from uc14_follower_vehicle.outMex to uc14_system.inMex;
+                        then message '2: Shut down' from uc14_system.outMex to uc14_cfm.inMex;
+                    }
+
+                    action def action_flow{
+                        decide node;
+                        action controlLastSignal;
+                        action verifyTime;
+                        action shutdown;
+
+                        first start then node;
+                        first node then controlLastSignal;
+                        first controlLastSignal then verifyTime;
+                        first verifyTime then shutdown;
+                          first shutdown then node;
+                        first verifyTime then node;
+                    }
                 }   
 
                 use case fragmentedSignalManagement: UC15_FragmentedSignalManagement{
                     subject :>> System = system;
                     actor :>> car_following_model = cfm;
                     actor :>> interactor = general_interactor;
+                
+                    occurrence sequence{
+                        ref part uc15_system = System;                        
+                        ref part uc15_cfm = car_following_model;
+                        ref part uc15_interactor = interactor;
+
+                        message '1: Fragmented Signal' from uc15_interactor.outMex to uc15_system.inMex;
+                        then message '2: Mitigation' from uc15_system.outMex to uc15_system.inMex;
+                        then message '3: Control' from uc15_system.outMex to uc15_cfm.inMex;
+                    }
+
+                    action def action_flow{
+                        decide node;
+                        action controlQualitySignal;
+                        action verifyQuality;
+                        action repairSignal;
+                        merge merge1;
+                        action passSignal;
+
+
+                        first start then node;
+                        first node then controlQualitySignal;
+                        first controlQualitySignal then verifyQuality;
+                        first verifyQuality then merge1;
+                        first verifyQuality then repairSignal;
+                          first repairSignal then merge1;
+                        first merge1 then passSignal;
+                        first passSignal then node;
+                    }
                 }                
                 
             }
@@ -482,12 +903,37 @@ package FPGA_Hardware{
         render viewRendering;
     }
 
-    view uc1_SequenceView : SequenceView {
+    view useCaseView_V2 : StandardViewDefinitions::GeneralView {
+        attribute depth = 1;
+        attribute fileName = "UseCaseView";
+        attribute fileType = "png";
+        
+		expose PYNQZ1::system::systemUseCase::follower_vehicle;
+		expose PYNQZ1::system::systemUseCase::leader_vehicle;
+		expose PYNQZ1::system::systemUseCase::cloud_service;
+		expose PYNQZ1::system::systemUseCase::person_actor;
+		expose PYNQZ1::system::systemUseCase::general_interactor_actor;
+		expose PYNQZ1::system::systemUseCase::cacc_synchronization;
+		expose PYNQZ1::system::systemUseCase::abruptCutIn;
+		expose PYNQZ1::system::systemUseCase::calledCutIn;
+		expose PYNQZ1::system::systemUseCase::shockwavesMitigation;
+		expose PYNQZ1::system::systemUseCase::crossRoadAdaptation;
+		expose PYNQZ1::system::systemUseCase::fragmentedSignalManagement;
+		expose PYNQZ1::system::systemUseCase::degradedSignalManagement;
+		expose PYNQZ1::system::systemUseCase::pedestrianProtection;
+		expose PYNQZ1::system::systemUseCase::specialVehicle;
+		expose PYNQZ1::system::systemUseCase::wrongWayDriverProtection;
+		expose PYNQZ1::system::systemUseCase::signalViolationProtection;
+		expose PYNQZ1::system::systemUseCase::roadConditionWarning;
+		expose PYNQZ1::system::systemUseCase::roadHazardWarning;
+		expose PYNQZ1::system::systemUseCase::speedLimitsAdaptation;
+		expose PYNQZ1::system::systemUseCase::adaptingFollowing;
+		expose PYNQZ1::system::systemUseCase::cacc_synchronization::car_following_model;
+		expose PYNQZ1::system::systemUseCase::infrastructure;
+	}
+
+    view uc1_SequenceView : StandardViewDefinitions::SequenceView {
         expose FPGA_Hardware::PYNQZ1::system::systemUseCase::cacc_synchronization::sequence;
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::cacc_synchronization::sequence::*;
-        
-        
-        render viewRendering;
     }
 
     view uc2_SequenceView : SequenceView {

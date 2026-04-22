@@ -481,7 +481,7 @@ library package Use_Case_Definitions{
             event occurrence inMex;
             event occurrence outMex;
         }
-        actor follower_vehicle{
+        actor leader_vehicle{
             event occurrence inMex;
             event occurrence outMex;
         }
