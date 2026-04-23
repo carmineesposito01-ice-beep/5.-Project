@@ -141,7 +141,79 @@ package FPGA_Hardware{
                 connect follower_vehicle to degradedSignalManagement;
                 connect general_interactor_actor to fragmentedSignalManagement;
 
+                action def general_Action_Flow{
+                    merge node1;
+                    action inputAcquisition{
+                        doc /* Action for acquiring input data from various sources (V2V, V2I, sensors). */
+                        action inputGateway{
+                            doc /* Action for routing input data to the appropriate processing units. */
+                            action receiveV2V{
+                                doc /* Action for receiving V2V messages. */
+                                action receiveCAM;
+                                action receiveSPaT;
+                                action receiveCutInRequest;
+                                fork rV2Vfork1;
+                                join rV2Vjoin1;
 
+                                first start then rV2Vfork1;
+                                first rV2Vfork1 then receiveCAM;
+                                first rV2Vfork1 then receiveSPaT;
+                                first rV2Vfork1 then receiveCutInRequest;
+                                first receiveCAM then rV2Vjoin1;
+                                first receiveSPaT then rV2Vjoin1;
+                                first receiveCutInRequest then rV2Vjoin1;
+                                first rV2Vjoin1 then done;
+                            }
+                            action receiveV2I;
+                        }
+                        action signalValidation{
+                            doc /* Action for validating received signals and messages. */
+                            action controlLastSignal;
+                            action controlQualitySignal;
+                            action repairSignal;
+                            merge sVnode1;
+                            decide sVdecide1;
+                            decide sVdecide2;
+
+                            first start then sVnode1;
+                            first sVnode1 then controlLastSignal;
+                            first controlLastSignal then sVdecide1;
+                            first sVdecide1 then sVnode1;
+                            first sVdecide1 then controlQualitySignal;
+                            first controlQualitySignal then sVdecide2;
+                            first sVdecide2 then done;
+                            first sVdecide2 then repairSignal;
+                            first repairSignal then done;
+                        }
+
+                        first start then inputGateway;
+                        first inputGateway then signalValidation;
+                        first signalValidation then done;
+                    }
+                    action dataProcessing{
+                        doc /* Action for analyze data and produce output parameters. */
+                        action dataAnalysis;
+                        fork dPfork1;
+                        action sendV2V;
+                        action generateParameters;
+                        join dPjoin1;
+
+                        first start then dataAnalysis;
+                        first dataAnalysis then dPfork1;
+                        first dPfork1 then sendV2V;
+                        first dPfork1 then generateParameters;
+                        first sendV2V then dPjoin1;
+                        first generateParameters then dPjoin1;
+                        first dPjoin1 then done;
+                    }
+
+                    first start then node1;
+                    first node1 then inputAcquisition;
+                    first inputAcquisition then dataProcessing;
+                    first dataProcessing then node1;
+
+                    
+                }
                 
 
                 use case cacc_synchronization : UC1_CACC_Synchronization{
@@ -257,7 +329,6 @@ package FPGA_Hardware{
                     }
 
                 }
-                }
 
                 use case shockwavesMitigation : UC4_Shockwave_Mitigation{
                     subject :>> System = system;
@@ -297,7 +368,7 @@ package FPGA_Hardware{
                     }
 
                 }
-                }
+            
 
                 use case adaptingFollowing : UC5_AdaptingFollowing{
                 subject :>> System = system;
@@ -896,14 +967,11 @@ package FPGA_Hardware{
 
 
     viewpoint def EngineerViewpoint {
-    viewpoint def EngineerViewpoint {
         doc /* Viewpoint for use case visualization.
             * Shows actors, subject system, and use cases with semantic links. */
     }
     viewpoint systemEngineerViewpoint : EngineerViewpoint;
-    viewpoint systemEngineerViewpoint : EngineerViewpoint;
-
-    view def UseCaseView {
+    
     view def UseCaseView {
         doc /* View definition for actor/use-case visualization. */
         satisfy systemEngineerViewpoint;
@@ -912,15 +980,9 @@ package FPGA_Hardware{
     view def SequenceView {
         doc /* View definition for sequence diagram visualization. */
         satisfy systemEngineerViewpoint;
-        satisfy systemEngineerViewpoint;
     }
 
-    view def SequenceView {
-        doc /* View definition for sequence diagram visualization. */
-        satisfy systemEngineerViewpoint;
-    }
 
-    view useCaseView : UseCaseView {
     view useCaseView : UseCaseView {
         expose FPGA_Hardware::PYNQZ1::system::systemUseCase;
         
@@ -958,6 +1020,13 @@ package FPGA_Hardware{
 		expose PYNQZ1::system::systemUseCase::cacc_synchronization::car_following_model;
 		expose PYNQZ1::system::systemUseCase::infrastructure;
 	}
+
+    view actionflow : StandardViewDefinitions::ActionFlowView{
+        attribute depth = 2;
+        attribute fileName = "ActionFlowView";
+        attribute fileType = "png";
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow;
+    }
 
     view uc1_SequenceView : StandardViewDefinitions::SequenceView {
         expose FPGA_Hardware::PYNQZ1::system::systemUseCase::cacc_synchronization::sequence;
