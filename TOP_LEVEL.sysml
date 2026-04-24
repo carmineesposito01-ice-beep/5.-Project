@@ -164,7 +164,32 @@ package FPGA_Hardware{
                                 first receiveCutInRequest then rV2Vjoin1;
                                 first rV2Vjoin1 then done;
                             }
-                            action receiveV2I;
+                            action receiveV2I{
+                                doc /* Action for receiving V2I messages. */
+                                action receiveSPaT;
+                                action receiveCrossroadInfo;
+                                action receiveSpeedLimitInfo;
+                                action receiveHazardInfo;
+                                action receiveConditionInfo;
+                                action receiveViolationInfo;
+                                fork rV2Ifork1;
+                                join rV2Ijoin1;
+
+                                first start then rV2Ifork1;
+                                first rV2Ifork1 then receiveSPaT;
+                                first rV2Ifork1 then receiveCrossroadInfo;
+                                first rV2Ifork1 then receiveSpeedLimitInfo;
+                                first rV2Ifork1 then receiveHazardInfo;
+                                first rV2Ifork1 then receiveConditionInfo;
+                                first rV2Ifork1 then receiveViolationInfo;
+                                first receiveSPaT then rV2Ijoin1;
+                                first receiveCrossroadInfo then rV2Ijoin1;
+                                first receiveSpeedLimitInfo then rV2Ijoin1;
+                                first receiveHazardInfo then rV2Ijoin1;
+                                first receiveConditionInfo then rV2Ijoin1;
+                                first receiveViolationInfo then rV2Ijoin1;
+                                first rV2Ijoin1 then done;
+                            }
                         }
                         action signalValidation{
                             doc /* Action for validating received signals and messages. */
@@ -192,7 +217,59 @@ package FPGA_Hardware{
                     }
                     action dataProcessing{
                         doc /* Action for analyze data and produce output parameters. */
-                        action dataAnalysis;
+                        action dataAnalysis{
+                            doc /* Action for analyzing the acquired data to extract relevant information. */
+                            action analyzeV2VData{
+                                doc /* Action for analyzing V2V data to determine the state of surrounding vehicles. */
+                                action analyzeCAM;
+                                action analyzeSPaT;
+                                action analyzeCutInRequest;
+                                fork aV2Vfork1;
+                                join aV2Vjoin1;
+
+                                first start then aV2Vfork1;
+                                first aV2Vfork1 then analyzeCAM;
+                                first aV2Vfork1 then analyzeSPaT;
+                                first aV2Vfork1 then analyzeCutInRequest;
+                                first analyzeCAM then aV2Vjoin1;
+                                first aV2Vjoin1 then done;
+                            }
+                            action analyzeV2IData{
+                                doc /* Action for analyzing V2I data to understand the current traffic situation and infrastructure status. */
+                                action analyzeSPaT;
+                                action analyzeCrossroadInfo;
+                                action analyzeSpeedLimitInfo;
+                                action analyzeHazardInfo;
+                                action analyzeConditionInfo;
+                                action analyzeViolationInfo;
+                                fork aV2Ifork1;
+                                join aV2Ijoin1;
+
+                                first start then aV2Ifork1;
+                                first aV2Ifork1 then analyzeSPaT;
+                                first aV2Ifork1 then analyzeCrossroadInfo;
+                                first aV2Ifork1 then analyzeSpeedLimitInfo;
+                                first aV2Ifork1 then analyzeHazardInfo;
+                                first aV2Ifork1 then analyzeConditionInfo;
+                                first aV2Ifork1 then analyzeViolationInfo;
+                                first analyzeSPaT then aV2Ijoin1;
+                                first analyzeCrossroadInfo then aV2Ijoin1;
+                                first analyzeSpeedLimitInfo then aV2Ijoin1;
+                                first analyzeHazardInfo then aV2Ijoin1;
+                                first analyzeConditionInfo then aV2Ijoin1;
+                                first analyzeViolationInfo then aV2Ijoin1;
+                                first aV2Ijoin1 then done;
+                            }
+                            fork dAfork1;
+                            join dAjoin1;
+
+                            first start then dAfork1;
+                            first dAfork1 then analyzeV2VData;
+                            first dAfork1 then analyzeV2IData;
+                            first analyzeV2VData then dAjoin1;
+                            first analyzeV2IData then dAjoin1;
+                            first dAjoin1 then done;
+                        }
                         fork dPfork1;
                         action sendV2V;
                         action generateParameters;
@@ -1026,6 +1103,91 @@ package FPGA_Hardware{
         attribute fileName = "ActionFlowView";
         attribute fileType = "png";
         expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow;
+
+        // Root action nodes
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::start;
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::node1;
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition;
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::dataProcessing;
+
+        // inputAcquisition subtree
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition::start;
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition::done;
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition::inputGateway;
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition::signalValidation;
+
+        // receiveV2V subtree
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition::inputGateway::receiveV2V;
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition::inputGateway::receiveV2V::start;
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition::inputGateway::receiveV2V::done;
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition::inputGateway::receiveV2V::receiveCAM;
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition::inputGateway::receiveV2V::receiveSPaT;
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition::inputGateway::receiveV2V::receiveCutInRequest;
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition::inputGateway::receiveV2V::rV2Vfork1;
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition::inputGateway::receiveV2V::rV2Vjoin1;
+
+        // receiveV2I subtree
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition::inputGateway::receiveV2I;
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition::inputGateway::receiveV2I::start;
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition::inputGateway::receiveV2I::done;
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition::inputGateway::receiveV2I::receiveSPaT;
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition::inputGateway::receiveV2I::receiveCrossroadInfo;
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition::inputGateway::receiveV2I::receiveSpeedLimitInfo;
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition::inputGateway::receiveV2I::receiveHazardInfo;
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition::inputGateway::receiveV2I::receiveConditionInfo;
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition::inputGateway::receiveV2I::receiveViolationInfo;
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition::inputGateway::receiveV2I::rV2Ifork1;
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition::inputGateway::receiveV2I::rV2Ijoin1;
+
+        // signalValidation subtree
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition::signalValidation::start;
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition::signalValidation::done;
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition::signalValidation::controlLastSignal;
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition::signalValidation::controlQualitySignal;
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition::signalValidation::repairSignal;
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition::signalValidation::sVnode1;
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition::signalValidation::sVdecide1;
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition::signalValidation::sVdecide2;
+
+        // dataProcessing subtree
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::dataProcessing::start;
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::dataProcessing::done;
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::dataProcessing::dataAnalysis;
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::dataProcessing::dPfork1;
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::dataProcessing::sendV2V;
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::dataProcessing::generateParameters;
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::dataProcessing::dPjoin1;
+
+        // dataAnalysis subtree
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::dataProcessing::dataAnalysis::start;
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::dataProcessing::dataAnalysis::done;
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::dataProcessing::dataAnalysis::analyzeV2VData;
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::dataProcessing::dataAnalysis::analyzeV2IData;
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::dataProcessing::dataAnalysis::dAfork1;
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::dataProcessing::dataAnalysis::dAjoin1;
+
+        // analyzeV2VData subtree
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::dataProcessing::dataAnalysis::analyzeV2VData::start;
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::dataProcessing::dataAnalysis::analyzeV2VData::done;
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::dataProcessing::dataAnalysis::analyzeV2VData::analyzeCAM;
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::dataProcessing::dataAnalysis::analyzeV2VData::analyzeSPaT;
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::dataProcessing::dataAnalysis::analyzeV2VData::analyzeCutInRequest;
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::dataProcessing::dataAnalysis::analyzeV2VData::aV2Vfork1;
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::dataProcessing::dataAnalysis::analyzeV2VData::aV2Vjoin1;
+
+        // analyzeV2IData subtree
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::dataProcessing::dataAnalysis::analyzeV2IData::start;
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::dataProcessing::dataAnalysis::analyzeV2IData::done;
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::dataProcessing::dataAnalysis::analyzeV2IData::analyzeSPaT;
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::dataProcessing::dataAnalysis::analyzeV2IData::analyzeCrossroadInfo;
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::dataProcessing::dataAnalysis::analyzeV2IData::analyzeSpeedLimitInfo;
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::dataProcessing::dataAnalysis::analyzeV2IData::analyzeHazardInfo;
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::dataProcessing::dataAnalysis::analyzeV2IData::analyzeConditionInfo;
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::dataProcessing::dataAnalysis::analyzeV2IData::analyzeViolationInfo;
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::dataProcessing::dataAnalysis::analyzeV2IData::aV2Ifork1;
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::dataProcessing::dataAnalysis::analyzeV2IData::aV2Ijoin1;
+
+        render viewRendering;
     }
 
     view uc1_SequenceView : StandardViewDefinitions::SequenceView {
