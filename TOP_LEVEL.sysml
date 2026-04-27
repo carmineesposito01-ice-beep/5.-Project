@@ -89,10 +89,9 @@ package FPGA_Hardware{
         part person : Person;
         part general_interactor : Interactor;
         part cfm : CarFollowingModel;
-        part cfm : CarFollowingModel;
             
 
-
+    
 
 
         /* ===================================================================
@@ -308,6 +307,483 @@ package FPGA_Hardware{
 
                     
                 }
+
+
+
+                // ==========================================
+                    // ACTION FLOW FOR V2X CAR-FOLLOWING SYSTEM
+                // ==========================================
+                action def V2X_CarFollowing_System {
+    doc /* Main action flow of the V2X-only car-following system. Covers input acquisition, signal validation, data processing, and output generation, including degraded operation handling. */
+    merge loopStart;
+    
+    action inputAcquisition {
+        doc /* Acquires all raw data from V2V, V2I, and onboard sensors (GNSS/IMU). */
+        action inputGateway {
+            doc /* Parallel reception of V2V and V2I messages. */
+            action receiveV2V {
+                doc /* Handles all V2V communication. */
+                action receiveCAM;
+                action receiveMCM;
+                action receiveCutInRequest;
+                fork v2vFork;
+                join v2vJoin;
+                first start then v2vFork;
+                first v2vFork then receiveCAM;
+                first v2vFork then receiveMCM;
+                first v2vFork then receiveCutInRequest;
+                first receiveCAM then v2vJoin;
+                first receiveMCM then v2vJoin;
+                first receiveCutInRequest then v2vJoin;
+                first v2vJoin then done;
+            }
+            action receiveV2I {
+                doc /* Handles all V2I communication. */
+                action receiveSPaT;
+                action receiveMAP;
+                action receiveIVS;
+                action receiveDENM;
+                action receiveEVA;
+                action receiveVRU;
+                action receiveCPM;
+                action receiveSVW;
+                fork v2iFork;
+                join v2iJoin;
+                first start then v2iFork;
+                first v2iFork then receiveSPaT;
+                first v2iFork then receiveMAP;
+                first v2iFork then receiveIVS;
+                first v2iFork then receiveDENM;
+                first v2iFork then receiveEVA;
+                first v2iFork then receiveVRU;
+                first v2iFork then receiveCPM;
+                first v2iFork then receiveSVW;
+                first receiveSPaT then v2iJoin;
+                first receiveMAP then v2iJoin;
+                first receiveIVS then v2iJoin;
+                first receiveDENM then v2iJoin;
+                first receiveEVA then v2iJoin;
+                first receiveVRU then v2iJoin;
+                first receiveCPM then v2iJoin;
+                first receiveSVW then v2iJoin;
+                first v2iJoin then done;
+            }
+            first start then receiveV2V;
+            first start then receiveV2I;
+            first receiveV2V then done;
+            first receiveV2I then done;
+        }
+
+        action signalValidation {
+            doc /* Validates freshness, consistency, authenticity, and cybersecurity of every received message. */
+            action validateCAM;
+            action validateMCM;
+            action validateSPaT;
+            action validateMAP;
+            action validateIVS;
+            action validateDENM;
+            action validateEVA;
+            action validateVRU;
+            action validateCPM;
+            action validateSVW;
+            action cybersecurityChecks {
+                doc /* Checks for intrusions, replay attacks, and message frequency anomalies. */
+                action detectIntrusion;
+                action detectReplayAttack;
+                action monitorFrequency;
+                action logSecurityEvents;
+                fork secFork;
+                join secJoin;
+                first start then secFork;
+                first secFork then detectIntrusion;
+                first secFork then detectReplayAttack;
+                first secFork then monitorFrequency;
+                first secFork then logSecurityEvents;
+                first detectIntrusion then secJoin;
+                first detectReplayAttack then secJoin;
+                first monitorFrequency then secJoin;
+                first logSecurityEvents then secJoin;
+                first secJoin then done;
+            }
+            merge allValidated;
+            decide globalValidity;
+            first start then validateCAM;
+            first start then validateMCM;
+            first start then validateSPaT;
+            first start then validateMAP;
+            first start then validateIVS;
+            first start then validateDENM;
+            first start then validateEVA;
+            first start then validateVRU;
+            first start then validateCPM;
+            first start then validateSVW;
+            first start then cybersecurityChecks;
+            first validateCAM then allValidated;
+            first validateMCM then allValidated;
+            first validateSPaT then allValidated;
+            first validateMAP then allValidated;
+            first validateIVS then allValidated;
+            first validateDENM then allValidated;
+            first validateEVA then allValidated;
+            first validateVRU then allValidated;
+            first validateCPM then allValidated;
+            first validateSVW then allValidated;
+            first cybersecurityChecks then allValidated;
+            first allValidated then globalValidity;
+            first globalValidity then done;         // all valid: proceed to data processing
+            first globalValidity then done;         // some invalid: message discarded (handled inside validation actions)
+        }
+
+        first start then inputGateway;
+        first inputGateway then signalValidation;
+        first signalValidation then done;
+    }
+
+    decide communicationStatus {
+        doc /* Evaluates if V2V and V2I are sufficiently reliable to continue CACC operation. */
+    }
+    
+    action degradedOperation {
+        doc /* If communication is lost or severely degraded, disable CACC and fall back to passive mode. */
+        action disableCACC;
+        action notifyDriverOrSupervisor;
+        action transitionToPassive;
+        first start then disableCACC;
+        first disableCACC then notifyDriverOrSupervisor;
+        first notifyDriverOrSupervisor then transitionToPassive;
+        first transitionToPassive then done;
+    }
+
+    action dataProcessing {
+        doc /* Analyzes validated data and determines the vehicle control strategy. */
+        action analyzeV2VData {
+            doc /* Extracts surrounding vehicle states and intentions. */
+            action analyzeCAM;
+            action analyzeMCM;
+            action analyzeCutInRequest;
+            fork aV2vFork;
+            join aV2vJoin;
+            first start then aV2vFork;
+            first aV2vFork then analyzeCAM;
+            first aV2vFork then analyzeMCM;
+            first aV2vFork then analyzeCutInRequest;
+            first analyzeCAM then aV2vJoin;
+            first analyzeMCM then aV2vJoin;
+            first analyzeCutInRequest then aV2vJoin;
+            first aV2vJoin then done;
+        }
+        action analyzeV2IData {
+            doc /* Interprets infrastructure data (traffic lights, hazards, limits, etc.). */
+            action analyzeSPaT;
+            action analyzeMAP;
+            action analyzeIVS;
+            action analyzeDENM;
+            action analyzeEVA;
+            action analyzeVRU;
+            action analyzeCPM;
+            action analyzeSVW;
+            fork aV2iFork;
+            join aV2iJoin;
+            first start then aV2iFork;
+            first aV2iFork then analyzeSPaT;
+            first aV2iFork then analyzeMAP;
+            first aV2iFork then analyzeIVS;
+            first aV2iFork then analyzeDENM;
+            first aV2iFork then analyzeEVA;
+            first aV2iFork then analyzeVRU;
+            first aV2iFork then analyzeCPM;
+            first aV2iFork then analyzeSVW;
+            first analyzeSPaT then aV2iJoin;
+            first analyzeMAP then aV2iJoin;
+            first analyzeIVS then aV2iJoin;
+            first analyzeDENM then aV2iJoin;
+            first analyzeEVA then aV2iJoin;
+            first analyzeVRU then aV2iJoin;
+            first analyzeCPM then aV2iJoin;
+            first analyzeSVW then aV2iJoin;
+            first aV2iJoin then done;
+        }
+        action decisionMaking {
+            doc /* Combines all analyses and chooses the highest priority maneuver. */
+            action determineLeaderProfile;
+            action computeFollowingParameters;
+            action evaluateGLOSA;
+            action evaluateCutInManuever;
+            action evaluateWrongWayVehicle;
+            action evaluateEmergencyVehicle;
+            action evaluatePedestrianRisk;
+            action evaluateSignalViolation;
+            action evaluateStringStability;
+            merge priorityMerge;
+            decide highestPriorityAction;
+            first start then determineLeaderProfile;
+            first determineLeaderProfile then computeFollowingParameters;
+            first computeFollowingParameters then priorityMerge;
+            first start then evaluateGLOSA;
+            first evaluateGLOSA then priorityMerge;
+            first start then evaluateCutInManuever;
+            first evaluateCutInManuever then priorityMerge;
+            first start then evaluateWrongWayVehicle;
+            first evaluateWrongWayVehicle then priorityMerge;
+            first start then evaluateEmergencyVehicle;
+            first evaluateEmergencyVehicle then priorityMerge;
+            first start then evaluatePedestrianRisk;
+            first evaluatePedestrianRisk then priorityMerge;
+            first start then evaluateSignalViolation;
+            first evaluateSignalViolation then priorityMerge;
+            first start then evaluateStringStability;
+            first evaluateStringStability then priorityMerge;
+            first priorityMerge then highestPriorityAction;
+            first highestPriorityAction then done;    // selected maneuver (e.g., emergency brake, evasion, normal following)
+            first highestPriorityAction then done;    // if no special event, default to standard car-following
+        }
+        fork dataFork;
+        join dataJoin;
+        first start then dataFork;
+        first dataFork then analyzeV2VData;
+        first dataFork then analyzeV2IData;
+        first analyzeV2VData then dataJoin;
+        first analyzeV2IData then dataJoin;
+        first dataJoin then decisionMaking;
+        first decisionMaking then done;
+    }
+
+    action outputGeneration {
+        doc /* Produces vehicle control commands and sends updated CAM. */
+        action generateControlCommands {
+            doc /* Computes acceleration, braking, and steering commands. */
+            action computeLongitudinalCommand;
+            action computeLateralCommand;
+            fork cmdFork;
+            join cmdJoin;
+            first start then cmdFork;
+            first cmdFork then computeLongitudinalCommand;
+            first cmdFork then computeLateralCommand;
+            first computeLongitudinalCommand then cmdJoin;
+            first computeLateralCommand then cmdJoin;
+            first cmdJoin then done;
+        }
+        action sendUpdatedCAM;
+        action updateHMIDisplay;
+        fork outFork;
+        join outJoin;
+        first start then outFork;
+        first outFork then generateControlCommands;
+        first outFork then sendUpdatedCAM;
+        first outFork then updateHMIDisplay;
+        first generateControlCommands then outJoin;
+        first sendUpdatedCAM then outJoin;
+        first updateHMIDisplay then outJoin;
+        first outJoin then done;
+    }
+
+    first start then loopStart;
+    first loopStart then inputAcquisition;
+    first inputAcquisition then communicationStatus;
+    first communicationStatus then degradedOperation;
+    first communicationStatus then dataProcessing;
+    first degradedOperation then loopStart;
+    first dataProcessing then outputGeneration;
+    first outputGeneration then loopStart;
+}
+
+
+                // ==========================================
+                    // STATE MACHINE FOR V2X CAR-FOLLOWING SYSTEM
+                // ==========================================
+                state def V2XCarFollowingSystem {
+                    doc /* State machine for the V2X car-following system, managing operational states, communication status, and fault handling. */
+                    // Segnali per notifiche HMI
+                    item def StatusUpdate {
+                        doc /* A message structure for sending status updates to the HMI. */
+                        attribute messageS : String;
+                    }
+    
+                    // Attributi del sistema (rilevanti per lo stato)
+                    attribute v2vStatus : CommStatusKind;
+                    attribute v2iStatus : CommStatusKind;
+                    attribute v2vSignalLostDuration : Real;       // [ms]
+                    attribute v2vSignalLossTimeout : Real = 500.0; // [ms]
+                    attribute fragmentationRate : Real;            // [%]
+                    attribute fragmentationThreshold : Real = 15.0;// [%]
+                    attribute fragmentationPersistentDuration : Real; // [s]
+                    attribute fragmentationPersistenceLimit : Real = 3.0; // [s]
+                    attribute cyberAttackConfirmed : Boolean;
+                    attribute heartbeatFailureDetected : Boolean;
+                    attribute criticalInternalFault : Boolean;
+                    attribute v2vSignalRestored : Boolean;
+                    attribute dataValidationPositive : Boolean;
+                    attribute initComplete : Boolean;
+                    attribute shutdownCommand : Boolean;
+
+                    // Porte
+                    ref port v2v : V2VCommPort;
+                    ref port v2i : V2ICommPort;
+                    ref port vehicleBus : VehicleBusPort;
+                    ref port hmi : HMIPort;
+                    ref port securityMonitor : SecurityMonitorPort;
+
+                    // ===== INGRESSO INIZIALE =====
+                    entry;
+                        then disabled;
+
+                    // ===== SUPER-STATO: DISABLED =====
+                    state disabled {
+                        entry action {
+                            send new StatusUpdate(messageS = "System disabled") via hmi;
+                        }
+
+                        transition disabled2active
+                            first disabled
+                            accept when (initComplete) and (not shutdownCommand)
+                            do action {
+                                send new StatusUpdate(messageS = "System enabling") via hmi;
+                            }
+                            then active;
+
+                        transition disabledStay
+                            first disabled
+                            accept when (shutdownCommand)
+                            then disabled;
+    
+                    }
+                    // ===== SUPER-STATO: ACTIVE =====
+                    state active {
+                        entry action {
+                            send new StatusUpdate(messageS = "System active") via hmi;
+                        } 
+                        then activeInitial;
+
+                        state activeInitial;
+
+                        // RISOLUZIONE ERRORE 3: Aggiunte parentesi per evitare la concatenazione dei token (es. OKandv2iStatus)
+                        transition init2normal
+                            first activeInitial
+                            accept when ((v2vStatus == CommStatusKind::OK) and (v2iStatus == CommStatusKind::OK))
+                            then normalOperation;
+
+                        transition init2partialV2I
+                            first activeInitial
+                            accept when ((v2vStatus == CommStatusKind::OK) and (v2iStatus != CommStatusKind::OK))
+                            then partialV2IFailure;
+                        
+
+                        // ----- Sotto-stato: NormalOperation -----
+                        state normalOperation {
+                            transition normal2partialV2I
+                                first normalOperation
+                                accept when (v2iStatus != CommStatusKind::OK)
+                                then partialV2IFailure;            
+                        }
+
+                        // ----- Sotto-stato: PartialV2IFailure -----
+                        state partialV2IFailure {
+                            transition partialV2I2normal
+                                first partialV2IFailure
+                                accept when (v2iStatus == CommStatusKind::OK)
+                                then normalOperation;
+
+                            transition partialV2I2partialV2V
+                                first partialV2IFailure
+                                accept when ((v2vStatus != CommStatusKind::OK) or (fragmentationRate > fragmentationThreshold))
+                                then partialV2VFailure;
+
+                            transition partialV2I2passive_cyber
+                                first partialV2IFailure
+                                accept when (cyberAttackConfirmed)
+                                do action { send new StatusUpdate(messageS = "Cyber attack – fallback") via hmi; }
+                                then passive;
+
+                            transition partialV2I2passive_hb
+                                first partialV2IFailure
+                                accept when ((heartbeatFailureDetected) or (criticalInternalFault))
+                                do action { send new StatusUpdate(messageS = "Critical fault – fallback") via hmi; }
+                                then passive;        
+                        }
+
+                        // ----- Sotto-stato: PartialV2VFailure -----
+                        state partialV2VFailure {
+                            entry action startSignalReconstruction;
+
+                            transition partialV2VBack2normal
+                                first partialV2VFailure
+                                accept when ((v2vStatus == CommStatusKind::OK) and not ((v2vSignalLostDuration > v2vSignalLossTimeout) or (fragmentationPersistentDuration > fragmentationPersistenceLimit)))
+                                then normalOperation;
+
+                            transition partialV2V2passive_timeout
+                                first partialV2VFailure
+                                accept when (v2vSignalLostDuration > v2vSignalLossTimeout)
+                                do action { send new StatusUpdate(messageS = "V2V lost – fallback") via hmi; }
+                                then passive;
+
+                            transition partialV2V2passive_frag
+                                first partialV2VFailure
+                                accept when (fragmentationPersistentDuration > fragmentationPersistenceLimit)
+                                do action { send new StatusUpdate(messageS = "V2V fragmentation – fallback") via hmi; }
+                                then passive;
+
+                            transition partialV2V2passive_cyber
+                                first partialV2VFailure
+                                accept when (cyberAttackConfirmed)
+                                do action { send new StatusUpdate(messageS = "Cyber attack – fallback") via hmi; }
+                                then passive;
+
+                            transition partialV2V2passive_hb
+                                first partialV2VFailure
+                                accept when ((heartbeatFailureDetected) or (criticalInternalFault))
+                                do action { send new StatusUpdate(messageS = "Critical fault – fallback") via hmi; }
+                                then passive;
+                        }
+
+                        // ----- Sotto-stato: CyberAttackDegraded -----
+                        state cyberAttackDegraded;
+
+                        transition cyber2passive
+                            first cyberAttackDegraded
+                            then passive;
+    
+                    }
+                    // ===== SUPER-STATO: PASSIVE =====
+                    state passive {
+                        entry action {
+                            send new StatusUpdate(messageS = "CACC disabled – passive mode") via hmi;
+                        }
+
+                        transition passive2active
+                            first passive
+                            accept when ((v2vSignalRestored) and (dataValidationPositive))
+                            do action {
+                                send new StatusUpdate(messageS = "V2V restored – reactivating") via hmi;
+                            }
+                            then active;
+
+                        transition passive2disabled
+                            first passive
+                            accept when (shutdownCommand)
+                            do action { send new StatusUpdate(messageS = "System shutdown") via hmi; }
+                            then disabled;
+                    }
+
+                    // ==========================================
+                        // TRANSIZIONI GLOBALI DI FALLBACK
+                    // ==========================================
+    
+                    transition activeDirect2passive_hb
+                        first active
+                        accept when ((heartbeatFailureDetected) or (criticalInternalFault))
+                        do action { send new StatusUpdate(messageS = "Critical fault – fallback") via hmi; }
+                        then passive;
+
+                    transition activeDirect2passive_cyber
+                        first active
+                        accept when (cyberAttackConfirmed)
+                        do action { send new StatusUpdate(messageS = "Cyber attack – fallback") via hmi; }
+                        then passive;
+                }          
+    
+
+   
+                
                 
 
                 use case cacc_synchronization : UC1_CACC_Synchronization{
@@ -348,6 +824,7 @@ package FPGA_Hardware{
                     }                    
                 }
                 
+
                 use case abruptCutIn : UC2_AbruptCutIn{
                     subject :>> System = system;
                     actor :>> car_following_model = cfm;
@@ -384,7 +861,6 @@ package FPGA_Hardware{
                
                 use case calledCutIn : UC3_CalledCutIn{
                     subject :>> System = system;
-                    actor :>> car_following_model = cfm;
                     actor :>> car_following_model = cfm;
                     actor :>> lateral_vehicle = extraneous;
 
@@ -423,6 +899,7 @@ package FPGA_Hardware{
                     }
 
                 }
+
 
                 use case shockwavesMitigation : UC4_Shockwave_Mitigation{
                     subject :>> System = system;
@@ -467,7 +944,6 @@ package FPGA_Hardware{
                 use case adaptingFollowing : UC5_AdaptingFollowing{
                 subject :>> System = system;
                 actor :>> car_following_model = cfm;
-                actor :>> car_following_model = cfm;
                 actor :>> leader_vehicle = following;
 
                 occurrence sequence{
@@ -504,9 +980,9 @@ package FPGA_Hardware{
                 }
             }
 
+
                 use case crossRoadAdaptation : UC6_CrossroadAdaptation{
                     subject :>> System = system;
-                    actor :>> car_following_model = cfm;
                     actor :>> car_following_model = cfm;
                     actor :>> infrastructure = infrastructure;
 
@@ -548,9 +1024,9 @@ package FPGA_Hardware{
                     }
                 }
 
+
                 use case speedLimitsAdaptation : UC7_SpeedLimitsAdaptation{
                     subject :>> System = system;
-                    actor :>> car_following_model = cfm;
                     actor :>> car_following_model = cfm;
                     actor :>> infrastructure = infrastructure;
                     actor :>> follower_vehicle = follower;
@@ -580,9 +1056,9 @@ package FPGA_Hardware{
                     }
                 }
 
+
                 use case roadHazardWarning : UC8_RoadHazardWarning{
                     subject :>> System = system;
-                    actor :>> car_following_model = cfm;
                     actor :>> car_following_model = cfm;
                     actor :>> infrastructure = infrastructure;
                 
@@ -607,9 +1083,9 @@ package FPGA_Hardware{
                     }
                 }
 
+
                 use case roadConditionWarning : UC9_RoadConditionWarning{
                     subject :>> System = system;
-                    actor :>> car_following_model = cfm;
                     actor :>> car_following_model = cfm;
                     actor :>> infrastructure = infrastructure;
                 
@@ -636,9 +1112,9 @@ package FPGA_Hardware{
                     }
                 }
 
+
                 use case signalViolationProtection : UC10_SignalViolationProtection{
                     subject :>> System = system;
-                    actor :>> car_following_model = cfm;
                     actor :>> car_following_model = cfm;
                     actor :>> infrastructure = infrastructure;
                     actor :>> follower_vehicle = follower;
@@ -675,9 +1151,9 @@ package FPGA_Hardware{
                     }
                 }
 
+
                 use case wrongWayDriverProtection : UC11_WrongWayDriverProtection{
                     subject :>> System = system;
-                    actor :>> car_following_model = cfm;
                     actor :>> car_following_model = cfm;
                     actor :>> infrastructure = infrastructure;
                 
@@ -720,9 +1196,9 @@ package FPGA_Hardware{
                     }
                 }
 
+
                 use case specialVehicle : UC12_SpecialVehicle{
                     subject :>> System = system;
-                    actor :>> car_following_model = cfm;
                     actor :>> car_following_model = cfm;
                     actor :>> special_vehicle = extraneous;
                     actor :>> infrastructure = infrastructure;
@@ -767,9 +1243,9 @@ package FPGA_Hardware{
                     }
                 }
 
+
                 use case pedestrianProtection : UC13_PedestrianProtection{
                     subject :>> System = system;
-                    actor :>> car_following_model = cfm;
                     actor :>> car_following_model = cfm;
                     actor :>> infrastructure = infrastructure;
                 
@@ -810,9 +1286,9 @@ package FPGA_Hardware{
                     }
                 }
 
+
                 use case degradedSignalManagement : UC14_DegradedSignalManagement{
                     subject :>> System = system;
-                    actor :>> car_following_model = cfm;
                     actor :>> car_following_model = cfm;
                     actor :>> follower_vehicle = follower;
                 
@@ -840,9 +1316,9 @@ package FPGA_Hardware{
                     }
                 }   
 
+
                 use case fragmentedSignalManagement: UC15_FragmentedSignalManagement{
                     subject :>> System = system;
-                    actor :>> car_following_model = cfm;
                     actor :>> car_following_model = cfm;
                     actor :>> interactor = general_interactor;
                 
@@ -876,68 +1352,17 @@ package FPGA_Hardware{
                     }
                 }                
                 
-            }
-                
-        }
-
-    
             
-
-            
-          
+                       
             
 
             /* ===================================================================
 		         * REQUIREMENT USAGE (WIP)
 	         * =================================================================== */
-            
-            satisfy requirement emergencyBraking: EmergencyBraking by this{
-                doc /* Allocation of the requirement for emergency braking to the system. */
-            }
-            satisfy requirement cutInManagement: CutInManagement by this{
-                doc /* Allocation of the requirement for cut-in management to the system. */
-            }
-            satisfy requirement wavesDetection : WavesDetection by this{
-                doc /* Allocation of the requirement for stop-and-go wave detection to the system. */
-            }
-            satisfy requirement wavesMitigation : WavesMitigation by this{
-                doc /* Allocation of the requirement for stop-and-go wave mitigation to the system. */
-            }
-            satisfy requirement adjustToDegradedSignals : AdjustToDegradedSignals by this{
-                doc /* Allocation of the requirement for adjusting to degraded signals to the system. */
-            }
-            satisfy requirement continuousSignals : ContinuousSignals by this{
-                doc /* Allocation of the requirement for handling continuous signals to the system. */
-            }
-            satisfy requirement interactionV2I : InteractionV2I by this{
-                doc /* Allocation of the requirement for V2I interaction to the system. */
-            }
-            satisfy requirement crossroadAdaptation : CrossroadAdaptation by this{
-                doc /* Allocation of the requirement for crossroad adaptation to the system. */
-            }
-            satisfy requirement trafficLightFlowOptimization : TrafficLightFlowOptimization by this{
-                doc /* Allocation of the requirement for traffic light flow optimization to the system. */
-            }
-            satisfy requirement followingsUnderstanding : FollowingsUnderstanding by this{
-                doc /* Allocation of the requirement for understanding following vehicles to the system. */
-            }
-            satisfy requirement followingAdaptation : FollowingAdaptation by this{
-                doc /* Allocation of the requirement for adapting to following vehicles to the system. */
-            }
-            satisfy requirement jerkMinimization : JerkMinimization by this{
-                doc /* Allocation of the requirement for jerk minimization to the system. */
-            }
-            satisfy requirement reactionTimeMinimize : ReactionTimeMinimize by this{
-                doc /* Allocation of the requirement for minimizing reaction time to the system. */
-            }
-            satisfy requirement energyEfficiency : EnergyEfficiency by this{
-                doc /* Allocation of the requirement for energy efficiency to the system. */
-            }
-            
-
+            }    
         }
-
-
+        
+    }
     
     
 
@@ -1011,6 +1436,7 @@ package FPGA_Hardware{
     
 
 
+package Views{
 
 
 
@@ -1116,95 +1542,28 @@ package FPGA_Hardware{
 	}
 
     view actionflow : StandardViewDefinitions::ActionFlowView{
-        attribute depth = 2;
+        attribute depth = 4;
         attribute fileName = "ActionFlowView";
         attribute fileType = "png";
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow;
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::V2X_CarFollowing_System::**;
 
-        // Root action nodes
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::start;
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::node1;
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition;
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::dataProcessing;
+        filter @SysML::PartUsage;
+    }
 
-        // inputAcquisition subtree
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition::start;
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition::done;
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition::inputGateway;
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition::signalValidation;
+    view stateTransitionFlow : StandardViewDefinitions::StateTransitionView {
+        attribute depth = 4;
+        attribute fileName = "StateTransitionFlow";
+        attribute fileType = "png";
+        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::V2XCarFollowingSystem;
+    }
 
-        // receiveV2V subtree
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition::inputGateway::receiveV2V;
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition::inputGateway::receiveV2V::start;
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition::inputGateway::receiveV2V::done;
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition::inputGateway::receiveV2V::receiveCAM;
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition::inputGateway::receiveV2V::receiveSPaT;
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition::inputGateway::receiveV2V::receiveCutInRequest;
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition::inputGateway::receiveV2V::rV2Vfork1;
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition::inputGateway::receiveV2V::rV2Vjoin1;
+    view generalView : StandardViewDefinitions::GeneralView{
+        attribute depth = 4;
+        attribute fileName = "GeneralView";
+        attribute fileType = "png";
+        expose FPGA_Hardware::PYNQZ1::system;
+        filter @SysML::PortUsage;
 
-        // receiveV2I subtree
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition::inputGateway::receiveV2I;
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition::inputGateway::receiveV2I::start;
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition::inputGateway::receiveV2I::done;
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition::inputGateway::receiveV2I::receiveSPaT;
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition::inputGateway::receiveV2I::receiveCrossroadInfo;
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition::inputGateway::receiveV2I::receiveSpeedLimitInfo;
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition::inputGateway::receiveV2I::receiveHazardInfo;
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition::inputGateway::receiveV2I::receiveConditionInfo;
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition::inputGateway::receiveV2I::receiveViolationInfo;
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition::inputGateway::receiveV2I::rV2Ifork1;
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition::inputGateway::receiveV2I::rV2Ijoin1;
-
-        // signalValidation subtree
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition::signalValidation::start;
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition::signalValidation::done;
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition::signalValidation::controlLastSignal;
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition::signalValidation::controlQualitySignal;
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition::signalValidation::repairSignal;
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition::signalValidation::sVnode1;
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition::signalValidation::sVdecide1;
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::inputAcquisition::signalValidation::sVdecide2;
-
-        // dataProcessing subtree
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::dataProcessing::start;
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::dataProcessing::done;
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::dataProcessing::dataAnalysis;
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::dataProcessing::dPfork1;
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::dataProcessing::sendV2V;
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::dataProcessing::generateParameters;
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::dataProcessing::dPjoin1;
-
-        // dataAnalysis subtree
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::dataProcessing::dataAnalysis::start;
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::dataProcessing::dataAnalysis::done;
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::dataProcessing::dataAnalysis::analyzeV2VData;
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::dataProcessing::dataAnalysis::analyzeV2IData;
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::dataProcessing::dataAnalysis::dAfork1;
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::dataProcessing::dataAnalysis::dAjoin1;
-
-        // analyzeV2VData subtree
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::dataProcessing::dataAnalysis::analyzeV2VData::start;
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::dataProcessing::dataAnalysis::analyzeV2VData::done;
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::dataProcessing::dataAnalysis::analyzeV2VData::analyzeCAM;
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::dataProcessing::dataAnalysis::analyzeV2VData::analyzeSPaT;
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::dataProcessing::dataAnalysis::analyzeV2VData::analyzeCutInRequest;
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::dataProcessing::dataAnalysis::analyzeV2VData::aV2Vfork1;
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::dataProcessing::dataAnalysis::analyzeV2VData::aV2Vjoin1;
-
-        // analyzeV2IData subtree
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::dataProcessing::dataAnalysis::analyzeV2IData::start;
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::dataProcessing::dataAnalysis::analyzeV2IData::done;
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::dataProcessing::dataAnalysis::analyzeV2IData::analyzeSPaT;
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::dataProcessing::dataAnalysis::analyzeV2IData::analyzeCrossroadInfo;
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::dataProcessing::dataAnalysis::analyzeV2IData::analyzeSpeedLimitInfo;
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::dataProcessing::dataAnalysis::analyzeV2IData::analyzeHazardInfo;
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::dataProcessing::dataAnalysis::analyzeV2IData::analyzeConditionInfo;
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::dataProcessing::dataAnalysis::analyzeV2IData::analyzeViolationInfo;
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::dataProcessing::dataAnalysis::analyzeV2IData::aV2Ifork1;
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::general_Action_Flow::dataProcessing::dataAnalysis::analyzeV2IData::aV2Ijoin1;
-
-        render viewRendering;
     }
 
     view uc1_SequenceView : StandardViewDefinitions::SequenceView {
@@ -1291,6 +1650,7 @@ package FPGA_Hardware{
 
     view uc15_SequenceView : SequenceView {
         expose FPGA_Hardware::PYNQZ1::system::systemUseCase::fragmentedSignalManagement::sequence;
+    }
         
     view uc13_SequenceView : SequenceView {
         expose FPGA_Hardware::PYNQZ1::system::systemUseCase::pedestrianProtection::sequence;
@@ -1309,6 +1669,9 @@ package FPGA_Hardware{
         
         render viewRendering;
     }
-}
+
 
     
+}
+
+}

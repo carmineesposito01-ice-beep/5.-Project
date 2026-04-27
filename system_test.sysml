@@ -350,6 +350,11 @@ library package system_test{
         out controlCommand: VehicleControlCommand;
     }
 
+    port def HMIPort {
+        doc /* A port for human-machine interface communications. */
+        out notification: DriverNotification;
+    }
+
     port def SecurityMonitorPort {
         doc /* A port for monitoring security-related data and alerts. */
         out alert: SecurityAlert;
