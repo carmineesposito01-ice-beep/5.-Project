@@ -15,7 +15,24 @@ package FPGA_Hardware{
 
     private import system_test::*;
     
-    
+    /* ===================================================================
+        * PART DEFINITIONS
+     * =================================================================== */
+
+    interface def SupplyEnergy {
+        doc /* Interface for energy supply connections. */
+        end supplier : SupplyPort;
+        end consumer : ~SupplyPort;
+        flow from supplier.supplyOut to consumer.supplyIn;
+    }
+
+    interface def DataFlow {
+        doc /* Interface for data flow connections. */
+        end source : DataPort;
+        end sink : ~DataPort;
+        flow from source.dataOut to sink.dataIn;
+    }
+
     /* ===================================================================
         * PART DEFINITIONS
      * =================================================================== */

@@ -68,6 +68,19 @@ library package Attribute_Definitions{
     attribute def MTBF:> TimeValue{
         doc /* The mean time between failures (MTBF) of the FPGA system, which is a measure of its reliability. */
     }
+
+    attribute def CarFollowingParams {
+        doc /* Parameters for car-following behavior, used in car-following algorithms. */
+        attribute headwayTime : Real;  // s
+        attribute maxAcceleration : Real; // m/s^2
+        attribute maxDeceleration : Real; // m/s^2
+    }
+
+    attribute def DecelerationProfile {
+        doc /* Profile for deceleration behavior, used in car-following algorithms. */
+        attribute maxDeceleration : Real; // m/s^2
+        attribute jerk : Real; // m/s^3
+    }
 }
 
 library package Requirement_Definitions {
