@@ -1,4 +1,4 @@
-library package system_test{
+package system_test{
     doc /* This is the top-level system that will intagrate all subsystem for the application. */
 
     /* ===================================================================
@@ -38,7 +38,7 @@ library package system_test{
         attribute vehicleLength : Real; // m
         attribute vehicleWidth : Real; // m
         attribute vehicleRole : VehicleRoleKind; // es. publicTransport, emergency
-        attribute certificateDigest : Binary; // per cybersecurity
+        attribute certificateDigest : Boolean; // per cybersecurity
     }
 
     item def SPaT{
