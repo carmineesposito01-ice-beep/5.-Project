@@ -1625,7 +1625,7 @@ package Views{
     view requirementView : RequirementView {
         doc /* Requirement view: mostra i blocchi satisfy-requirement dell'istanza pynqZ1
              * con i requisiti annidati e i valori actual vs required. */
-        expose FPGA_Hardware::Usage::pynqZ1;
+        expose FPGA_Hardware::PYNQZ1::system;
         @ViewRendering { fileName = "Requirement-View"; }
         @AnalysisInfo {
             label       = "Requirement View";
@@ -1644,6 +1644,791 @@ package Views{
         expose Views;
         @AnalysisInfo { label = "Analysis Dashboard"; icon = "📊"; }
     }
+
+    
+}
+
+package Requirement{
+    private import ScalarValues::*;
+	private import Quantities::*;
+	private import MeasurementReferences::*;
+	private import ISQ::*;
+	private import SI::*;
+
+
+    /* ===================================================================
+		 * SYSTEM REQUIREMENTS (WIP)
+	 * =================================================================== */
+    
+    requirement cam_receptionRate : CAM_ReceptionRate {
+        @RequirementStatus { 
+            status = "Draft"; 
+            approver = ""; 
+            date = ""; 
+        }
+                
+        attribute :>> requiredRate = 10 [Hz];
+    }
+    satisfy cam_receptionRate by FPGA_Hardware::PYNQZ1::system;
+
+    requirement cam_basedFollowingComputation : CAM_BasedFollowingComputation {
+        @RequirementStatus { 
+            status = "Draft"; 
+            approver = ""; 
+            date = ""; 
+        }
+                
+        
+    }
+    satisfy cam_basedFollowingComputation by FPGA_Hardware::PYNQZ1::system;
+
+    requirement cam_transmission : CAM_Transmission{
+        @RequirementStatus { 
+            status = "Draft"; 
+            approver = ""; 
+            date = ""; 
+        }
+    }
+    satisfy cam_trasmission by FPGA_Hardware::PYNQZ1::system;
+
+    requirement cutInDetection : CutInDetection{
+        @RequirementStatus { 
+            status = "Draft"; 
+            approver = ""; 
+            date = ""; 
+        }
+    }
+    satisfy cutInDetection by FPGA_Hardware::PYNQZ1::system;
+
+    requirement cutInEmergencyBraking : CutInEmergencyBraking{
+        @RequirementStatus { 
+            status = "Draft"; 
+            approver = ""; 
+            date = ""; 
+        }
+    }
+    satisfy cutInEmergencyBraking by FPGA_Hardware::PYNQZ1::system;
+
+    requirement cutInRequest{
+        requirement cutInRequestFeasibilityCheck : CutInRequestFeasibilityCheck{
+            @RequirementStatus { 
+                status = "Draft"; 
+                approver = ""; 
+                date = ""; 
+            }
+
+        }
+
+        requirement cutInAccept : CutInAccept{
+            @RequirementStatus { 
+                status = "Draft"; 
+                approver = ""; 
+                date = ""; 
+            }
+        } 
+
+        requirement cutInReject : CutInReject{
+            @RequirementStatus { 
+                status = "Draft"; 
+                approver = ""; 
+                date = ""; 
+            }
+        }
+
+
+
+    }
+    satisfy cutInRequest by FPGA_Hardware::PYNQZ1::system;
+
+    
+    requirement cutInCompletionRevert : CutInCompletionRevert{
+        @RequirementStatus { 
+            status = "Draft"; 
+            approver = ""; 
+            date = ""; 
+        }
+    }
+    satisfy cutInCompletionRevert by FPGA_Hardware::PYNQZ1::system;
+
+    requirement shockwaveMitigazion{
+        requirement jamRateCalculation : JamRateCalculation{
+            @RequirementStatus { 
+                status = "Draft"; 
+                approver = ""; 
+                date = ""; 
+            }
+        }
+
+        requirement jamMitigationHeadwayIncrease : JamMitigationHeadwayIncrease{
+            @RequirementStatus { 
+                status = "Draft"; 
+                approver = ""; 
+                date = "";
+            }
+        }
+    }
+    satisfy shockwaveMitigazion by FPGA_Hardware::PYNQZ1::system;
+
+
+    requirement leaderClassification{
+        requirement leaderProfileClassification : LeaderProfileClassification{
+            @RequirementStatus { 
+                status = "Draft"; 
+                approver = ""; 
+                date = "";
+            }
+        }
+
+        requirement profileBasedParameterModifiers : ProfileBasedParameterModifiers{
+            @RequirementStatus { 
+                status = "Draft"; 
+                approver = ""; 
+                date = "";
+            }
+        } 
+    }
+    satisfy leaderClassification by FPGA_Hardware::PYNQZ1::system;
+
+    requirement crossroadAdaptation{
+        requirement spat_map_Reception: SPAT_MAP_Reception{
+            @RequirementStatus { 
+                status = "Draft"; 
+                approver = ""; 
+                date = "";
+            }
+        }
+
+        requirement glosaFeasibilityCalculation : GLOSAFeasibilityCalculation{
+            @RequirementStatus { 
+                status = "Draft"; 
+                approver = ""; 
+                date = "";
+            }
+        }
+
+        requirement glosaSpeedAdaptation : GLOSASpeedAdaptation{
+            @RequirementStatus { 
+                status = "Draft"; 
+                approver = ""; 
+                date = "";
+            }
+        }
+
+        requirement GLOSANonGreenDeceleration : GLOSANonGreenDeceleration{
+            @RequirementStatus { 
+                status = "Draft"; 
+                approver = ""; 
+                date = "";
+            }
+        }
+    }
+    satisfy crossroadAdaptation by FPGA_Hardware::PYNQZ1::system;
+
+    requirement speedLimitEnforcement : SpeedLimitEnforcement{
+        @RequirementStatus { 
+            status = "Draft"; 
+            approver = ""; 
+            date = "";
+        }
+    }
+
+    requirement roadHazardWarningResponse : RoadHazardWarningResponse{
+        @RequirementStatus { 
+            status = "Draft"; 
+            approver = ""; 
+            date = "";
+        }
+    }
+    satisfy roadHazardWarningResponse by FPGA_Hardware::PYNQZ1::system;
+
+    requirement signalViolationWarningReception : SignalViolationWarningReception{
+        @RequirementStatus { 
+            status = "Draft"; 
+            approver = ""; 
+            date = "";
+        }
+    }
+    satisfy signalViolationWarningReception by FPGA_Hardware::PYNQZ1::system;
+
+    requirement swm{
+        requirement swm_ReceptionForAction : SVW_ReceptionForAction{
+            @RequirementStatus { 
+                status = "Draft"; 
+                approver = ""; 
+                date = "";
+            }
+        }
+
+        requirement swm_EmergencyBrake : SVW_EmergencyBrake{
+            @RequirementStatus { 
+                status = "Draft"; 
+                approver = ""; 
+                date = "";
+            }
+        }
+
+        requirement swm_ModerateDeceleration : SVW_ModerateDeceleration{
+            @RequirementStatus { 
+                status = "Draft"; 
+                approver = ""; 
+                date = "";
+            }
+        }
+    }
+    satisfy swm by FPGA_Hardware::PYNQZ1::system;
+
+    requirement wrongWay_Adaptation{
+        requirement WrongWayVehicle_LateralHeadwayIncrease : WrongWayVehicle_LateralHeadwayIncrease{
+            @RequirementStatus { 
+                status = "Draft"; 
+                approver = ""; 
+                date = "";
+            }
+        }
+
+        requirement wrongWayVehicle_EvasionManeuver : WrongWayVehicle_EvasionManeuver{
+            @RequirementStatus { 
+                status = "Draft"; 
+                approver = ""; 
+                date = "";
+            }
+        }
+
+        requirement wrongWayVehicle_RestoreLateralHeadway : WrongWayVehicle_RestoreLateralHeadway{
+            @RequirementStatus { 
+                status = "Draft"; 
+                approver = ""; 
+                date = "";
+            }
+        }
+    }
+    satisfy wrongWay_Adaptation by FPGA_Hardware::PYNQZ1::system;
+
+    requirement emergencyVehicle{
+        requirement emergencyVehicle_LateralHeadwayIncrease : EmergencyVehicle_LateralHeadwayIncrease{
+            @RequirementStatus { 
+                status = "Draft"; 
+                approver = ""; 
+                date = "";
+            }
+        }
+
+        requirement emergencyVehicle_RestoreLateralHeadway : EmergencyVehicle_RestoreLateralHeadway{
+            @RequirementStatus { 
+                status = "Draft"; 
+                approver = ""; 
+                date = "";
+            }
+        }
+    }
+    satisfy emergencyVehicle by FPGA_Hardware::PYNQZ1::system;
+
+    requirement pedestrian{
+        requirement pedestrian_TTACalculation : Pedestrian_TTACalculation{
+            @RequirementStatus { 
+                status = "Draft"; 
+                approver = ""; 
+                date = "";
+            }
+        }
+
+        requirement pedestrian_ProceedIfTTAHigh : Pedestrian_ProceedIfTTAHigh{
+            @RequirementStatus { 
+                status = "Draft"; 
+                approver = ""; 
+                date = "";
+            }
+        }
+
+        requirement pedestrian_SlowDownForTTA : Pedestrian_SlowDownForTTA{
+            @RequirementStatus { 
+                status = "Draft"; 
+                approver = ""; 
+                date = "";
+            }
+        }
+
+        requirement pedestrian_EmergencyBrakeForTTA : Pedestrian_EmergencyBrakeForTTA{
+            @RequirementStatus { 
+                status = "Draft"; 
+                approver = ""; 
+                date = "";
+            }
+        }
+
+        requirement pedestrian_ResumeAfterAlarm : Pedestrian_ResumeAfterAlarm{
+            @RequirementStatus { 
+                status = "Draft"; 
+                approver = ""; 
+                date = "";
+            }
+        }
+    }
+    satisfy pedestrian by FPGA_Hardware::PYNQZ1::system;
+
+    requirement state_Comunication : State_Comunications{
+        @RequirementStatus { 
+            status = "Draft"; 
+            approver = ""; 
+            date = "";
+        }
+    }
+    satisfy state_Comunication by FPGA_Hardware::PYNQZ1::system;
+    
+    
+    /* ===================================================================
+		 * SYSTEM REQUIREMENTS (WIP)
+	 * =================================================================== */
+    
+    requirement noRearEndCollision_V2VError : NoRearEndCollision_V2VError {
+        @RequirementStatus { 
+            status = "Draft"; 
+            approver = ""; 
+            date = "";
+        }
+    }
+    satisfy noRearEndCollision_V2VError by FPGA_Hardware::PYNQZ1::system;
+
+    requirement noCollisionDuringAssistedCutIn : NoCollisionDuringAssistedCutIn {
+        @RequirementStatus { 
+            status = "Draft"; 
+            approver = ""; 
+            date = "";
+        }
+    }
+    satisfy noCollisionDuringAssistedCutIn by FPGA_Hardware::PYNQZ1::system;
+
+    requirement noIntersectionCollision_V2IError : NoIntersectionCollision_V2IError {
+        @RequirementStatus { 
+            status = "Draft"; 
+            approver = ""; 
+            date = "";
+        }
+    }
+    satisfy noIntersectionCollision_V2IError by FPGA_Hardware::PYNQZ1::system;
+    
+    requirement noPedestrianIncident : NoPedestrianIncident {
+        @RequirementStatus { 
+            status = "Draft"; 
+            approver = ""; 
+            date = "";
+        }
+    }
+    satisfy noPedestrianIncident by FPGA_Hardware::PYNQZ1::system;
+    
+    requirement noEmergencyVehicleCollision : NoEmergencyVehicleCollision {
+        @RequirementStatus { 
+            status = "Draft"; 
+            approver = ""; 
+            date = "";
+        }
+    }
+    satisfy noEmergencyVehicleCollision by FPGA_Hardware::PYNQZ1::system;
+    
+    requirement noWrongWayVehicleCollision : NoWrongWayVehicleCollision {
+        @RequirementStatus { 
+            status = "Draft"; 
+            approver = ""; 
+            date = "";
+        }
+    }
+    satisfy noWrongWayVehicleCollision by FPGA_Hardware::PYNQZ1::system;
+    
+    requirement noStringInstabilityAmplification : NoStringInstabilityAmplification {
+        @RequirementStatus { 
+            status = "Draft"; 
+            approver = ""; 
+            date = "";
+        }
+    }
+    satisfy noStringInstabilityAmplification by FPGA_Hardware::PYNQZ1::system;
+    
+    requirement legalSpeedLimitCompliance : LegalSpeedLimitCompliance {
+        @RequirementStatus { 
+            status = "Draft"; 
+            approver = ""; 
+            date = "";
+        }
+    }
+    satisfy legalSpeedLimitCompliance by FPGA_Hardware::PYNQZ1::system;
+    
+    requirement noUnnecessaryOrExcessiveEmergencyBrake : NoUnnecessaryOrExcessiveEmergencyBrake {
+        @RequirementStatus { 
+            status = "Draft"; 
+            approver = ""; 
+            date = "";
+        }
+    }
+    satisfy noUnnecessaryOrExcessiveEmergencyBrake by FPGA_Hardware::PYNQZ1::system;
+    
+    requirement noUnstableOrExcessiveEvasionManeuver : NoUnstableOrExcessiveEvasionManeuver {
+        @RequirementStatus { 
+            status = "Draft"; 
+            approver = ""; 
+            date = "";
+        }
+    }
+    satisfy noUnstableOrExcessiveEvasionManeuver by FPGA_Hardware::PYNQZ1::system;
+
+
+
+
+    // ==================== 2.3 SOTIF Requirements (ISO 21448) integrated with ISO 34502 ====================
+
+    requirement leaderProfile_ConservativeFallback : LeaderProfile_ConservativeFallback {
+        @RequirementStatus { 
+            status = "Draft"; 
+            approver = ""; 
+            date = "";
+        }
+    }
+    satisfy leaderProfile_ConservativeFallback by FPGA_Hardware::PYNQZ1::system;
+
+    requirement jamRate_FalsePositiveHandling : JamRate_FalsePositiveHandling {
+        @RequirementStatus { 
+            status = "Draft"; 
+            approver = ""; 
+            date = "";
+        }
+    }
+    satisfy jamRate_FalsePositiveHandling by FPGA_Hardware::PYNQZ1::system;
+
+    requirement jamRate_FalsePositiveHandling : JamRate_FalsePositiveHandling {
+        @RequirementStatus { 
+            status = "Draft"; 
+            approver = ""; 
+            date = "";
+        }
+    }
+
+    requirement glosa_UnreachableGreenWaveHandling : GLOSA_UnreachableGreenWaveHandling {
+        @RequirementStatus { 
+            status = "Draft"; 
+            approver = ""; 
+            date = "";
+        }
+    }
+    satisfy glosa_UnreachableGreenWaveHandling by FPGA_Hardware::PYNQZ1::system;
+
+    requirement denm_ConfidenceLevelValidation : DENM_ConfidenceLevelValidation {
+        @RequirementStatus { 
+            status = "Draft"; 
+            approver = ""; 
+            date = "";
+        }
+    }
+    satisfy denm_ConfidenceLevelValidation by FPGA_Hardware::PYNQZ1::system;
+
+    requirement denm_ConfidenceLevelValidation : DENM_ConfidenceLevelValidation{
+        @RequirementStatus { 
+            status = "Draft"; 
+            approver = ""; 
+            date = "";
+        }
+    }
+    satisfy denm_ConfidenceLevelValidation by FPGA_Hardware::PYNQZ1::system;
+
+    requirement pedestrian_OnboardVerification : Pedestrian_OnboardVerification {
+        @RequirementStatus { 
+            status = "Draft"; 
+            approver = ""; 
+            date = "";
+        }
+    }
+    satisfy pedestrian_OnboardVerification by FPGA_Hardware::PYNQZ1::system;
+    
+
+    requirement emergencyManeuver_ODDRestrictions : EmergencyManeuver_ODDRestrictions {
+        @RequirementStatus { 
+            status = "Draft"; 
+            approver = ""; 
+            date = "";
+        }
+    }
+    satisfy emergencyManeuver_ODDRestrictions by FPGA_Hardware::PYNQZ1::system;
+
+    // ==================== 2.4 Safety Requirements from ISO 34502 (Scenario-Based Safety Evaluation) ====================
+
+    requirement scenarioCatalogGeneration : ScenarioCatalogGeneration{
+        @RequirementStatus { 
+            status = "Draft"; 
+            approver = ""; 
+            date = "";
+        }
+    }
+    satisfy scenarioCatalogGeneration by FPGA_Hardware::PYNQZ1::system;
+
+    requirement scenarioBasedSafetyIntegration : ScenarioBasedSafetyIntegration {
+        @RequirementStatus { 
+            status = "Draft"; 
+            approver = ""; 
+            date = "";
+        }
+    }
+    satisfy scenarioBasedSafetyIntegration by FPGA_Hardware::PYNQZ1::system;
+
+    requirement scenarioResultsAgainstAcceptanceCriteria : ScenarioResultsAgainstAcceptanceCriteria {
+        @RequirementStatus { 
+            status = "Draft"; 
+            approver = ""; 
+            date = "";
+        }
+    }
+    satisfy scenarioResultsAgainstAcceptanceCriteria by FPGA_Hardware::PYNQZ1::system;
+    
+
+    requirement odd_ScenarioCoverageDocumentation : ODD_ScenarioCoverageDocumentation {
+        @RequirementStatus { 
+            status = "Draft"; 
+            approver = ""; 
+            date = "";
+        }
+    }
+    satisfy odd_ScenarioCoverageDocumentation by FPGA_Hardware::PYNQZ1::system;
+
+    requirement v2x_DegradedChannelScenarios : V2X_DegradedChannelScenarios {
+        @RequirementStatus { 
+            status = "Draft"; 
+            approver = ""; 
+            date = "";
+        }
+    }
+    satisfy v2x_DegradedChannelScenarios by FPGA_Hardware::PYNQZ1::system;
+
+    requirement v2x_CybersecurityTestScenarios : V2X_CybersecurityTestScenarios {
+        @RequirementStatus { 
+            status = "Rejected"; 
+            approver = ""; 
+            date = "";
+        }
+    }
+    satisfy v2x_CybersecurityTestScenarios by FPGA_Hardware::PYNQZ1::system;
+    
+    //TODO: Terminare di allocare i Requirement
+    
+
+    // SYS-OPR-001: V2V signal loss for > 500 ms → disable CACC, inform driver, transition to passive within 100 ms
+    requirement def V2vSignalLossFallback {
+        doc /* SYS-OPR-001: If the V2V signal is lost for more than 500 ms, the system shall disable CACC control, notify the driver (or higher‑level Vehicle Control), and transition to a passive state (yield control to onboard sensors) within 100 ms. */
+        id = "SYS-OPR-001";
+        text = "On V2V signal loss > 500 ms, disable CACC and transition to passive within 100 ms.";
+        attribute v2vSignalLostDuration : Real; // ms
+        attribute lossTimeout : Real = 500.0; // ms
+        attribute caccDisabled : Boolean;
+        attribute driverNotified : Boolean;
+        attribute transitionToPassiveTime : Real; // ms from loss detection
+        attribute maxTransitionTime : Real = 100.0; // ms
+        require constraint {
+            (v2vSignalLostDuration > lossTimeout) implies
+            (caccDisabled and driverNotified and transitionToPassiveTime <= maxTransitionTime)
+        }
+    }
+
+    // SYS-OPR-002: V2V signal restored within 5 s + data validation → CACC re‑enabled with 2 s smooth transition
+    requirement def V2vSignalRestoreAndReactivation {
+        doc /* SYS-OPR-002: If the V2V signal is restored within 5 s and data validation is positive, the system may re‑enable CACC mode with a gradual 2‑second transition. */
+        id = "SYS-OPR-002";
+        text = "If V2V signal recovered within 5 s and data valid, reactivate CACC with 2 s smooth transition.";
+        attribute v2vSignalRecovered : Boolean;
+        attribute recoveryWindow : Real = 5.0; // s
+        attribute dataValidationPositive : Boolean;
+        attribute caccReactivationAllowed : Boolean;
+        attribute reactivationSmoothTime : Real; // s
+        attribute requiredSmoothTime : Real = 2.0; // s
+        require constraint {
+            (v2vSignalRecovered and dataValidationPositive) implies
+            (caccReactivationAllowed and reactivationSmoothTime >= requiredSmoothTime)
+        }
+    }
+
+    // SYS-OPR-003: Message fragmentation > 15% in 1 s → activate signal reconstruction; if persists > 3 s → trigger SYS-OPR-001
+    requirement def MessageFragmentationHandling {
+        doc /* SYS-OPR-003: When message fragmentation exceeds 15% within a 1‑second window, the system shall activate a signal reconstruction algorithm. If fragmentation persists for more than 3 s, apply SYS-OPR-001. */
+        id = "SYS-OPR-003";
+        text = "Fragmentation > 15% in 1 s → reconstruct; if persistent > 3 s → fallback as OPR-001.";
+        attribute fragmentationRate : Real; // % in last 1 s window
+        attribute fragmentationThreshold : Real = 15.0; // %
+        attribute reconstructionActive : Boolean;
+        attribute fragmentationPersistentDuration : Real; // s
+        attribute persistenceLimit : Real = 3.0; // s
+        attribute fallbackToOPR001Triggered : Boolean;
+        require constraint {
+            (fragmentationRate > fragmentationThreshold implies reconstructionActive) and
+            ((reconstructionActive and fragmentationPersistentDuration > persistenceLimit) implies fallbackToOPR001Triggered)
+        }
+    }
+
+    // SYS-OPR-004: V2I communication failure → disable V2I functions, use map data for speed limits, proceed with car‑following
+    requirement def V2iFailureFallback {
+        doc /* SYS-OPR-004: Upon a V2I communication failure, all V2I functions shall be safely disabled. The system shall rely on map data to retrieve necessary information (e.g., speed limits) and continue with car‑following. */
+        id = "SYS-OPR-004";
+        text = "On V2I failure, disable V2I functions and use map data for speed limits.";
+        attribute v2iCommunicationFailed : Boolean;
+        attribute v2iFunctionsDisabledSafely : Boolean;
+        attribute mapBasedDataUsed : Boolean;
+        attribute carFollowingActive : Boolean;
+        require constraint {
+            v2iCommunicationFailed implies (v2iFunctionsDisabledSafely and mapBasedDataUsed and carFollowingActive)
+        }
+    }
+
+    // SYS-OPR-005: GLOSA failure or missing traffic light signal → revert to standard car‑following within safety constraints
+    requirement def GLOSAFailureRecovery {
+        doc /* SYS-OPR-005: In case of GLOSA failure or missing traffic light signal, the system shall revert to standard car‑following while respecting safety constraints. */
+        id = "SYS-OPR-005";
+        text = "On GLOSA failure, revert to standard car‑following within safety constraints.";
+        attribute glosaFailure : Boolean;
+        attribute standardCarFollowingResumed : Boolean;
+        attribute safetyConstraintsSatisfied : Boolean;
+        require constraint {
+            glosaFailure implies (standardCarFollowingResumed and safetyConstraintsSatisfied)
+        }
+    }
+
+    // SYS-OPR-006: Internal heartbeat monitoring → detect failure of critical modules, activate fail‑safe mode within 200 ms
+    requirement def HeartbeatMonitoring {
+        doc /* SYS-OPR-006: The system shall implement an internal heartbeat mechanism to monitor the health of all critical software modules. A detected failure shall activate the appropriate fail‑safe mode within 200 ms. */
+        id = "SYS-OPR-006";
+        text = "Heartbeat monitoring: on critical module failure, fail‑safe within 200 ms.";
+        attribute heartbeatFailureDetected : Boolean;
+        attribute failSafeActivationTime : Real; // ms
+        attribute maxFailSafeTime : Real = 200.0; // ms
+        attribute failSafeModeActivated : Boolean;
+        require constraint {
+            heartbeatFailureDetected implies (failSafeModeActivated and failSafeActivationTime <= maxFailSafeTime)
+        }
+    }
+
+    // SYS-OPR-007: Fail‑safe architecture; on internal critical fault, stop sending parameters to actuation model within FTTI
+    requirement def FailSafeArchitecture {
+        doc /* SYS-OPR-007: The V2X system shall operate under a Fail‑Safe architecture. Upon a critical internal fault, it shall stop sending actuation parameters within the Fault Tolerant Time Interval (FTTI), ensuring a safe disengagement. */
+        id = "SYS-OPR-007";
+        text = "Fail‑Safe architecture: cease actuation commands within FTTI on critical fault.";
+        attribute criticalInternalFault : Boolean;
+        attribute ftti : Real; // ms, Fault Tolerant Time Interval (attribute of system)
+        attribute actuationCommandStopped : Boolean;
+        attribute commandStopTime : Real; // ms from fault
+        require constraint {
+            criticalInternalFault implies (actuationCommandStopped and commandStopTime <= ftti)
+        }
+    }
+
+    // ==================== Performance Requirements ====================
+    requirement def V2V_SafetyEndToEndLatency {
+        doc /* SYS-PERF-001: End-to-end latency for safety V2V communication (CAM) must be less than 100 ms. */
+        id = "SYS-PERF-001";
+        text = "V2V safety end-to-end latency shall be < 100 ms.";
+        attribute actualV2vLatency : Real; // ms
+        attribute maxAllowedLatency : Real = 100.0; // ms
+        require constraint { actualV2vLatency <= maxAllowedLatency }
+    }
+
+    requirement def V2I_SafetyEndToEndLatency {
+        doc /* SYS-PERF-002: End-to-end latency for safety V2I communication (SPaT, DENM) must be less than 200 ms. */
+        id = "SYS-PERF-002";
+        text = "V2I safety end-to-end latency shall be < 200 ms.";
+        attribute actualV2iLatency : Real; // ms
+        attribute maxAllowedLatency : Real = 200.0; // ms
+        require constraint { actualV2iLatency <= maxAllowedLatency }
+    }
+
+    requirement def CAM_MinimumUpdateRate {
+        doc /* SYS-PERF-003: The guaranteed minimum update rate for CAM messages must be 10 Hz. */
+        id = "SYS-PERF-003";
+        text = "CAM update rate shall be ≥ 10 Hz.";
+        attribute actualUpdateRate : Real; // Hz
+        attribute minRequiredRate : Real = 10.0; // Hz
+        require constraint { actualUpdateRate >= minRequiredRate }
+    }
+
+    requirement def SafetyDistanceEstimationAccuracy {
+        doc /* SYS-PERF-004: The safety distance estimation accuracy shall be ±3 m for speeds below 50 km/h and ±2 % for speeds above 50 km/h. */
+        id = "SYS-PERF-004";
+        text = "Distance estimation error ≤ 3 m (speed <50 km/h) or ≤ 2% (speed ≥ 50 km/h).";
+        attribute speed : Real; // km/h
+        attribute absoluteErrorLowSpeed : Real; // m (absolute value)
+        attribute relativeErrorHighSpeedPercent : Real; // % (absolute relative error)
+        require constraint {
+            if speed < 50.0 then
+                abs(absoluteErrorLowSpeed) <= 3.0
+            else
+                relativeErrorHighSpeedPercent <= 2.0
+        }
+    }
+
+    requirement def GLOSA_ComputationTime {
+        doc /* SYS-PERF-005: The GLOSA computation time must be less than 50 ms. */
+        id = "SYS-PERF-005";
+        text = "GLOSA computation shall complete in < 50 ms.";
+        attribute actualGlosaComputationTime : Real; // ms
+        attribute maxAllowedTime : Real = 50.0; // ms
+        require constraint { actualGlosaComputationTime <= maxAllowedTime }
+    }
+
+    // ==================== Process Requirements (ASPICE v4.0) ====================
+    requirement def RequirementsTraceability {
+        doc /* SYS-PROC-001: Requirements shall be traced to original stakeholder needs (SYS.2.BP6) and linked to verification criteria and test cases (SYS.2.BP5, SYS.4.BP5). */
+        id = "SYS-PROC-001";
+        text = "Requirements shall be fully traced to stakeholder needs and test cases.";
+        attribute traceabilityEstablished : Boolean;
+        require constraint { traceabilityEstablished == true }
+    }
+
+    requirement def RequirementsReview {
+        doc /* SYS-PROC-002: Requirements shall be reviewed to ensure completeness, unambiguity, and testability (SYS.2.BP3, SUP.4). */
+        id = "SYS-PROC-002";
+        text = "Each requirement shall be reviewed for completeness, unambiguity, and testability.";
+        attribute allRequirementsReviewed : Boolean;
+        require constraint { allRequirementsReviewed == true }
+    }
+
+    requirement def ExternalInterfaceSpecification {
+        doc /* SYS-PROC-003: External system interfaces (V2V/V2I communication bus, HMI, GNSS/IMU) must be formally specified, including safety and cybersecurity properties. */
+        id = "SYS-PROC-003";
+        text = "External interfaces shall be formally specified with safety and cybersecurity attributes.";
+        attribute interfacesFormallySpecified : Boolean;
+        require constraint { interfacesFormallySpecified == true }
+    }
+
+    requirement def SafetyCaseDevelopment {
+        doc /* SYS-PROC-004: A Safety Case according to UL 4600 shall be developed, including risk analysis, SOTIF validation, and demonstration of robust degraded operations. */
+        id = "SYS-PROC-004";
+        text = "A UL 4600 Safety Case shall be developed, covering risk, SOTIF, and degraded ops.";
+        attribute safetyCaseDeveloped : Boolean;
+        require constraint { safetyCaseDeveloped == true }
+    }
+
+    requirement def TARA_Conduction {
+        doc /* SYS-PROC-005: A TARA (Threat Analysis and Risk Assessment) shall be conducted for all V2X interfaces, producing traceable cybersecurity requirements (ISO/SAE 21434 §15). */
+        id = "SYS-PROC-005";
+        text = "A TARA shall be performed for all V2X interfaces, yielding traceable cybersecurity requirements.";
+        attribute taraConducted : Boolean;
+        attribute cyberReqsTraceable : Boolean;
+        require constraint { taraConducted and cyberReqsTraceable }
+    }
+
+    requirement def ScenarioCatalogDefinition {
+        doc /* SYS-PROC-006: The development process shall include definition and validation of a safety scenario catalog conforming to ISO 34502, with documented ODD coverage. */
+        id = "SYS-PROC-006";
+        text = "A validated scenario catalog per ISO 34502 with documented ODD coverage shall be established.";
+        attribute scenarioCatalogValidated : Boolean;
+        attribute oddCoverageDocumented : Boolean;
+        require constraint { scenarioCatalogValidated and oddCoverageDocumented }
+    }
+
+
+
+
+
+
+
+
+    
+    
+    
+
+
+   
 
     
 }

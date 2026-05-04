@@ -792,7 +792,7 @@ library package Requirement_Definitions {
         id = "SYS-F-001";
         text = "The system shall receive CAM messages at a minimum frequency of 10 Hz.";
         attribute actualReceiveRate : Real;   // Hz
-        attribute requiredRate : Real = 10.0; // Hz
+        attribute requiredRate : Real; // Hz
         require constraint { actualReceiveRate >= requiredRate }
     }
 
@@ -868,30 +868,30 @@ library package Requirement_Definitions {
         require constraint { feasibilityResult == ResponseKind::reject implies mcmRejectSent }
     }
 
-    // SYS-F-007a: ripristino car‑following dopo cut‑in
+    // SYS-F-007: ripristino car‑following dopo cut‑in
     requirement def CutInCompletionRevert {
-        doc /* SYS-F-007a: After the cut‑in is completed or cancelled, the system shall revert to standard car‑following logic. */
-        id = "SYS-F-007a";
+        doc /* SYS-F-007: After the cut‑in is completed or cancelled, the system shall revert to standard car‑following logic. */
+        id = "SYS-F-007";
         text = "After the cut‑in is completed or cancelled, the system shall revert to standard car‑following logic.";
         attribute cutInActive : Boolean;
         attribute carFollowingMode : CarFollowingModeKind;
         require constraint { not cutInActive implies carFollowingMode == CarFollowingModeKind::CACC }
     }
 
-    // SYS-F-007b: calcolo Jam Rate da CAM follower
+    // SYS-F-008a: calcolo Jam Rate da CAM follower
     requirement def JamRateCalculation {
-        doc /* SYS-F-007b: The system shall receive CAM from multiple following vehicles and compute the string instability probability (Jam Rate). */
-        id = "SYS-F-007b";
+        doc /* SYS-F-008a: The system shall receive CAM from multiple following vehicles and compute the string instability probability (Jam Rate). */
+        id = "SYS-F-008a";
         text = "The system shall receive CAM from multiple following vehicles and compute the string instability probability (Jam Rate).";
         attribute multipleFollowerCAMs : Boolean;
         attribute jamRateCalculated : Boolean;
         require constraint { multipleFollowerCAMs implies jamRateCalculated }
     }
 
-    // SYS-F-008a: aumento headway quando instabilità supera soglia
+    // SYS-F-008b: aumento headway quando instabilità supera soglia
     requirement def JamMitigationHeadwayIncrease {
-        doc /* SYS-F-008a: If instability exceeds a defined threshold, the system shall increase headway by 10% (default) while staying within safe ranges. */
-        id = "SYS-F-008a";
+        doc /* SYS-F-008b: If instability exceeds a defined threshold, the system shall increase headway by 10% (default) while staying within safe ranges. */
+        id = "SYS-F-008b";
         text = "If instability exceeds a defined threshold, the system shall increase headway by 10% (default) while staying within safe ranges.";
         attribute currentJamRate : Real;
         attribute jamThreshold : Real;
@@ -915,10 +915,10 @@ library package Requirement_Definitions {
         require constraint { camHistoryAvailable implies (leaderProfileDetermined and leaderProfileConfidence >= 0.0) }
     }
 
-    // SYS-F-008b: applicazione modificatori parametri in base al profilo
+    // SYS-F-009b: applicazione modificatori parametri in base al profilo
     requirement def ProfileBasedParameterModifiers {
-        doc /* SYS-F-008b: Based on the identified profile, the system shall apply modifiers to car‑following parameters. */
-        id = "SYS-F-008b";
+        doc /* SYS-F-009b: Based on the identified profile, the system shall apply modifiers to car‑following parameters. */
+        id = "SYS-F-009b";
         text = "Based on the identified profile, the system shall apply modifiers to car‑following parameters.";
         attribute leaderProfile : LeaderProfileKind;
         attribute headwayTime : Real;
@@ -930,16 +930,16 @@ library package Requirement_Definitions {
         }
     }
 
-    // SYS-F-009: ricezione informazioni ciclo semaforico (SPaT/MAP)
+    // SYS-F-0010a: ricezione informazioni ciclo semaforico (SPaT/MAP)
     requirement def SPAT_MAP_Reception {
-        doc /* SYS-F-009: The system shall receive traffic light information (SPaT/MAP) from the V2I infrastructure. */
-        id = "SYS-F-009";
+        doc /* SYS-F-0010: The system shall receive traffic light information (SPaT/MAP) from the V2I infrastructure. */
+        id = "SYS-F-0010";
         text = "The system shall receive traffic light information (SPaT/MAP) from the V2I infrastructure.";
         attribute spatMapDataAvailable : Boolean;
         require constraint { spatMapDataAvailable == true }
     }
 
-    // SYS-F-010a: calcolabilità onda verde (GLOSA)
+    // SYS-F-010b: calcolabilità onda verde (GLOSA)
     requirement def GLOSAFeasibilityCalculation {
         doc /* SYS-F-010a: The system shall compute whether a green wave (GLOSA) is achievable. */
         id = "SYS-F-010a";
@@ -949,7 +949,7 @@ library package Requirement_Definitions {
         require constraint { spatMapDataAvailable implies glosaFeasible != null }
     }
 
-    // SYS-F-010b: adattamento velocità se onda verde raggiungibile
+    // SYS-F-010c: adattamento velocità se onda verde raggiungibile
     requirement def GLOSASpeedAdaptation {
         doc /* SYS-F-010b: If the green wave is attainable, the system shall adapt the speed within longitudinal comfort limits. */
         id = "SYS-F-010b";
@@ -967,7 +967,7 @@ library package Requirement_Definitions {
         }
     }
 
-    // SYS-F-010c: decelerazione progressiva se onda verde non raggiungibile
+    // SYS-F-010d: decelerazione progressiva se onda verde non raggiungibile
     requirement def GLOSANonGreenDeceleration {
         doc /* SYS-F-010c: If the green wave is not attainable, the system shall perform a progressive and comfortable deceleration. */
         id = "SYS-F-010c";
@@ -1159,6 +1159,14 @@ library package Requirement_Definitions {
         attribute pedestrianAlarmActive : Boolean;
         attribute carFollowingMode : CarFollowingModeKind;
         require constraint { not pedestrianAlarmActive implies carFollowingMode == CarFollowingModeKind::CACC }
+    }
+
+    // SYS-F-018: comunicazione disponibilità platooning/funzionamento
+    requirement def State_Comunications{
+        doc /* SYS-F-018: The system need to comunicate his state at external system (top-level systems, or external) */
+        id = "SYS-F-018";
+        text = "The system need to comunicate his state at external system (top-level systems, or external).";
+        
     }
 
     // ==================== 2.1 Safety Goal & Integrity Requirements (ISO 26262) ====================
