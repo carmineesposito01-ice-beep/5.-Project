@@ -1,3 +1,53 @@
+library package Metadata_Definitions{
+    doc /* This package defines the metadata for the system, including documentation and import statements for necessary libraries. */
+    private import ScalarValues::*;
+	private import Quantities::*;
+	private import MeasurementReferences::*;
+	private import ISQ::*;
+	private import SI::*;
+    private import Time::*;
+    
+    enum def ReqState{
+        doc /* Enumeration to represent the state of requirements, such as "Draft", "Review", "Approved" and "Rejected" */
+        Draft;
+        Review;
+        Approved;
+        Rejected;
+    }
+
+    metadata def RequirementStatus{
+        doc /* Metadata to track the status of requirements, including review status, approver, and date. */
+        attribute status : ReqState; // e.g., "Draft", "Review", "Approved", "Rejected"
+        attribute approver : String; // e.g., "HW Lead"
+        attribute date : String; // e.g., "2026-04-25"
+    }
+
+    metadata def AnalysisInfo {
+        doc /* Annotates a view instance with display and analysis-grouping metadata.
+             * Used by the Visualizer to build the Analysis Dashboard tree and
+             * to show human-readable labels in the views list. */
+        attribute label       : ScalarValues::String;   // e.g. "Use Case View"
+        attribute groupName   : ScalarValues::String;   // group header label
+        attribute domain      : ScalarValues::String;   // e.g. "Functional"
+        attribute icon        : ScalarValues::String;   // emoji icon
+        attribute level       : ScalarValues::String;   // "L1" | "L2" | "L3" | ""
+        attribute kind        : ScalarValues::String;   // "BlackBox" | "WhiteBox" | ""
+        attribute component   : ScalarValues::String;   // "" = system; component name = subsystem
+        attribute parentGroup : ScalarValues::String;   // "B_W" = BB/WB hierarchy; "" = standalone
+    }
+
+    metadata def ViewRendering {
+        doc /* Export hints for a view instance.
+             * fileName is used as the base name for PNG/SVG export downloads. */
+        attribute fileName : ScalarValues::String;   // e.g. "ActionFlowView"
+    }
+                    
+}
+
+
+
+
+
 library package Attribute_Definitions{
     doc /* FPGA System Definition:
          * This package defines the overall structure where the system will be allocated, with all the main components and their interactions.
@@ -10,10 +60,6 @@ library package Attribute_Definitions{
 	private import SI::*;
 
     
-
-    /* ===================================================================
-        * ATTRIBUTE DEFINITIONS
-     * =================================================================== */
     /* ===================================================================
          * ATTRIBUTE DEFINITIONS (da cambiare con quelli definiti in Attribute_Definitions)
     * =================================================================== */
@@ -81,7 +127,532 @@ library package Attribute_Definitions{
         attribute maxDeceleration : Real; // m/s^2
         attribute jerk : Real; // m/s^3
     }
+
+     /* ===================================================================
+		 * MESSAGE TYPE DEFINITIONS (V2X)
+	 * =================================================================== */
+    item def CAM{
+        doc /* Cooperative Awareness Message (CAM) - Contains information about the vehicle's position, speed, and heading. */
+        // Cooperative Awareness Message – ETSI EN 302 637-2
+        attribute stationID : Integer;
+        attribute generationDeltaTime : Integer; // ms
+        attribute latitude : Real; // gradi WGS84
+        attribute longitude : Real;
+        attribute altitude : Real; // m
+        attribute speed : Real; // m/s
+        attribute heading : Real; // gradi
+        attribute acceleration : Real; // m/s^2
+        attribute driveDirection : DriveDirectionKind;
+        attribute vehicleLength : Real; // m
+        attribute vehicleWidth : Real; // m
+        attribute vehicleRole : VehicleRoleKind; // es. publicTransport, emergency
+        attribute certificateDigest : Boolean; // per cybersecurity
+    }
+
+    item def SPaT{
+        doc /* Signal Phase and Timing (SPaT) - Contains information about traffic signal phases and timing at intersections. */
+        // Signal Phase and Timing – SAE J2735
+        attribute intersectionID : Integer;
+        attribute timestamp : Integer; // decimi di secondo nell'ora corrente
+        attribute states : MovementState[*];
+    }
+    item def MAP{
+        doc /* Map Data (MAP) - Contains information about the road network and infrastructure. */
+        // Map Data – SAE J2735
+        attribute intersectionID : Integer;
+        attribute lanes : Lane[*];
+        attribute referencePoint : GeoReference;
+    }
+    item def DENM{
+        doc /* Denial Message (DENM) - Contains information about road hazards and emergencies. */
+        // Decentralized Environmental Notification Message – ETSI EN 302 637-3
+        attribute cause : CauseCodeKind; // es. accidente, lavori, ghiaccio
+        attribute subCause : Integer;
+        attribute latitude : Real;
+        attribute longitude : Real;
+        attribute relevanceDistance : Real; // m
+        attribute eventPositionConfidence : ConfidenceLevel;
+        attribute eventSpeedConfidence : ConfidenceLevel;
+        attribute heading : Real; // gradi
+        attribute speed : Real; // m/s
+    }
+    item def IVS{
+        doc /* Intelligent Vehicle Safety (IVS) - Contains information about vehicle safety systems and alerts. */
+        // In-Vehicle Signage – ISO/TS 17425 (trasmesso via TIM, messaggio J2735)
+        attribute signType : SignTypeKind; // es. limite di velocità
+        attribute speedLimit : Real; // km/h
+        attribute roadSignCode : String; // codice segnale stradale
+        attribute applicableLane : Integer; // opzionale
+        attribute startLatitude : Real;
+        attribute startLongitude : Real;
+        attribute endLatitude : Real;
+        attribute endLongitude : Real;
+    }
+    item def EVA{
+        doc /* Environmental Vision Application (EVA) - Contains information about the vehicle's environment and perception. */
+        // Emergency Vehicle Alert – SAE J2735
+        attribute vehicleID : Integer;
+        attribute vehicleType : EmergencyVehicleTypeKind; // police, ambulance...
+        attribute latitude : Real;
+        attribute longitude : Real;
+        attribute speed : Real; // m/s
+        attribute heading : Real; // gradi
+        attribute routePath : GeoPath; // opzionale, percorso previsto
+    }
+    item def VRU{
+        doc /* Vulnerable Road User (VRU) - Contains information about pedestrians and cyclists. */
+        // Vulnerable Road User Awareness Message (VAM) – ETSI TS 103 300-3
+        attribute vruID : Integer;
+        attribute vruType : VRUTypeKind; // pedone, ciclista
+        attribute latitude : Real;
+        attribute longitude : Real;
+        attribute speed : Real; // m/s
+        attribute heading : Real; // gradi
+        attribute clusterSize : Integer; // opzionale, dimensione gruppo
+    }
+    item def CPM{
+        doc /* Coordinated Perception Message (CPM) - Contains information about the vehicle's perception of its surroundings. */
+        // Collective Perception Message – ETSI TS 103 324
+        attribute stationID : Integer;
+        attribute sensorCapabilities : SensorCapability[*];
+        attribute perceivedObjects : PerceivedObject[*];
+    }
+    item def MCM{
+        doc /* Message for Coordination (MCM) - Contains information about vehicle coordination and communication. */
+        // Maneuver Coordination Message – ETSI TS 103 561
+        attribute stationID : Integer;
+        attribute generationDeltaTime : Integer;
+        attribute plannedTrajectory : TrajectoryPoint[*];
+        attribute desiredTrajectory : TrajectoryPoint[*]; // manovra richiesta
+        attribute maneuverType : ManeuverTypeKind; // es. cutIn, merge
+        attribute requestID : Integer; // identificativo richiesta
+        attribute response : ResponseKind; // accettato/rifiutato
+    }
+    item def GNSSData{
+        doc /* Global Navigation Satellite System Data (GNSSData) - Contains information about GPS and other satellite navigation data. */
+    }
+    item def IMUData{
+        doc /* Inertial Measurement Unit Data (IMUData) - Contains information about the vehicle's inertial measurement unit. */
+    }
+    item def OdometryData{
+        doc /* Odometry Data (OdometryData) - Contains information about the vehicle's odometry measurements. */
+    }
+    item def VehicleControlCommand{
+        doc /* Vehicle Control Command (VehicleControlCommand) - Contains information about commands for controlling the vehicle. */
+    }
+    item def SoftwareUpdatePackage{
+        doc /* Software Update Package (SoftwareUpdatePackage) - Contains information about software updates for the vehicle. */
+    }
+    item def SecurityAlert{
+        doc /* Security Alert (SecurityAlert) - Contains information about security threats and alerts. */
+    }
+    item def DriverNotification{
+        doc /* Driver Notification (DriverNotification) - Contains information about notifications for the driver. */
+    }
+    item def TrajectoryPoint {
+        doc /* A point in a vehicle's trajectory, used in maneuver coordination messages. */
+        attribute timeOffset : Integer; // ms dal riferimento
+        attribute latitude : Real;
+        attribute longitude : Real;
+        attribute speed : Real;
+        attribute heading : Real;
+    }
+    item def MovementState {
+        doc /* Represents the state of a movement phase at an intersection, used in SPaT messages. */
+        attribute signalGroup : Integer;
+        attribute eventState : MovementPhaseStateKind; // stop, go, caution
+        attribute minEndTime : Integer; // decimi di secondo
+        attribute maxEndTime : Integer; // opzionale
+        attribute likelyTime : Integer; // opzionale
+    }
+    item def Lane {
+        doc /* Represents a lane in the road network, used in MAP messages. */
+        attribute laneID : Integer;
+        attribute maneuvers : PermittedManeuvers[*]; // left, right, straight
+        attribute width : Integer; // cm
+    }
+    item def PerceivedObject {
+        doc /* Represents an object perceived by the vehicle's sensors, used in CPM messages. */
+        attribute objectID : Integer;
+        attribute latitude : Real;
+        attribute longitude : Real;
+        attribute speed : Real;
+        attribute heading : Real;
+        attribute classification : ObjectTypeKind; // vehicle, pedestrian, cyclist...
+        attribute confidence : Real; // 0-1
+    }
+    item def SensorCapability {
+        doc /* Represents the capabilities of a sensor, used in CPM messages. */
+        attribute sensorType : SensorTypeKind; // lidar, radar, camera
+        attribute detectionRange : Real; // m
+        attribute fieldOfView : Real; // gradi
+    }
+
+    // ========== Tipi di dato di supporto ==========
+
+    item def GeoReference {
+        doc /* A geographic reference point, used in various messages for location data. */
+        attribute latitude : Real;
+        attribute longitude : Real;
+        attribute altitude : Real;
+    }
+
+    item def GeoPath {
+        doc /* A geographic path, used in EVA messages for route information. */
+        attribute points : GeoReference[*];
+    }
+
+    item def ConfidenceLevel {
+        doc /* A confidence level for a perceived object, used in CPM messages. */
+        attribute level : Integer; // 0-100
+        attribute semiMajor : Real;
+        attribute semiMinor : Real;
+    }
+
+    item def ValidatedDataItem {
+        doc /* A validated data item that has been processed by the system, used for internal data representation. */
+        attribute v2vVehicles : VehicleState[*];
+        attribute v2iInfrastructure : InfrastructureState[*];
+        attribute securityAlerts : SecurityAlert[*]; // alert di cybersecurity da trasmettere
+    }
+
+    item def VehicleState {
+        doc /* Represents the state of a vehicle, then thansmit to other vehicle like CAM message. */
+        attribute stationID : Integer;
+        attribute latitude : Real;
+        attribute longitude : Real;
+        attribute speed : Real;
+        attribute heading : Real;
+        attribute acceleration : Real;
+        attribute confidence : Real; // 0-100
+    }
+
+    item def InfrastructureState {
+        doc /* Represents the state of infrastructure elements, used in V2I communication. */
+        attribute type : InfrastructureMessageKind;
+        attribute payload : String; // semplificato; in pratica è l’oggetto specifico (SPaT, DENM, …)
+        attribute confidence : Real;
+    }
+
+    item def EgoVehicleState {
+        doc /* Own data to compose CAM message, that will be transmitted to other vehicles. */
+        attribute latitude : Real;
+        attribute longitude : Real;
+        attribute altitude : Real;
+        attribute speed : Real;
+        attribute heading : Real;
+        attribute acceleration : Real;
+        attribute timestamp : Integer; // ms
+    }
+
+    // Comandi di controllo da Elaboration a OutputGateway
+    item def ControlParameters {
+        doc /* Control parameters generated by the elaboration unit, sent to the output gateway for transmission to the vehicle's control system. */
+        //attribute longitudinalCommand : Real; // m/s² o % freno
+        //attribute lateralCommand : Real;      // angolo sterzo o curvatura
+        //attribute caccModeActive : Boolean;
+        //attribute hmiNotification : String;   // notifica HMI
+    }
+
+
+    // ========== Enumerazioni pertinenti ==========
+
+    enum def DriveDirectionKind {
+        doc /* Enumeration for drive direction, used in CAM messages. */
+        forward; 
+        backward; 
+        stationary; 
+    }
+
+    enum def VehicleRoleKind {
+        doc /* Enumeration for vehicle roles, used in various messages. */
+        privateR; 
+        publicTransport; 
+        emergency; 
+        roadWorks; 
+    }
+
+    enum def ManeuverTypeKind {
+        doc /* Enumeration for maneuver types, used in various messages. */
+        cutIn; 
+        mergeT; 
+        laneChange; 
+        emergencyManeuver; 
+    }
+
+    enum def MovementPhaseStateKind {
+        doc /* Enumeration for movement phase states, used in SPaT messages. */
+        stop; 
+        go; 
+        caution; 
+        preCaution; 
+    }
+
+    enum def CauseCodeKind {
+        doc /* Enumeration for cause codes, used in various messages. */
+        accident; 
+        roadworks; 
+        hazardousLocation; 
+        adverseWeather; 
+    }
+
+    enum def SignTypeKind {
+        doc /* Enumeration for sign types, used in various messages. */
+        speedLimit; 
+        roadSign; 
+        advisory; 
+    }
+
+    enum def EmergencyVehicleTypeKind {
+        doc /* Enumeration for emergency vehicle types, used in various messages. */
+        police; 
+        ambulance;
+        fire; 
+    }
+
+    enum def VRUTypeKind {
+        doc /* Enumeration for vulnerable road user types, used in various messages. */
+        pedestrian; 
+        cyclist; 
+        motorcyclist; 
+        animal; 
+    }
+
+    enum def SensorTypeKind {
+        doc /* Enumeration for sensor types, used in various messages. */
+        lidar; 
+        radar; 
+        camera; 
+        ultrasonic; 
+    }
+
+    enum def ObjectTypeKind {
+        doc /* Enumeration for object types, used in various messages. */
+        vehicle; 
+        pedestrian; 
+        cyclist; 
+        obstacle; 
+    }
+
+    enum def PermittedManeuvers {
+        doc /* Enumeration for permitted maneuvers, used in various messages. */
+        left; 
+        right; 
+        straight; 
+        uturn; 
+    }
+
+    enum def ResponseKind {
+        doc /* Enumeration for response kinds, used in various messages. */
+        acceptR; 
+        reject; 
+    }
+
+    enum def CarFollowingModelKind {
+        doc /* Enumeration for car-following models, used in car-following attributes. */
+        Newell;
+        IDM;
+        OVM;
+        Gipps;
+    }
+    enum def CarFollowingModeKind {
+        doc /* Enumeration for car-following modes, used in car-following attributes. */
+        CACC;
+        FallbackSensorsOnly;
+        Disabled;
+    }
+    enum def CommStatusKind {
+        doc /* Enumeration for communication status, used in various messages. */
+        OK;
+        Degraded;
+        Lost;
+    }
+    enum def ThreatLevelKind {
+        doc /* Enumeration for threat levels, used in various messages. */
+        Normal;
+        Suspicious;
+        Attack;
+        Compromised;
+    }
+
+    enum def InfrastructureMessageKind {
+        doc /* Enumeration for infrastructure message types, used in V2I communication. */
+        SPaT; 
+        MAP; 
+        DENM; 
+        IVS; 
+        EVA; 
+        VRU; 
+        CPM; 
+        SVW; 
+    }
+
+
 }
+
+
+library package PortandInterfaceDefinitions{
+    private import Attribute_Definitions::*;
+    /* ===================================================================
+		 * PORT DEFINITIONS — Energy and Signal Flows
+	 * =================================================================== */
+	port def V2VCommPort {
+        doc /* A port for Vehicle-to-Vehicle (V2V) communication. */
+        in camIn: CAM;
+        out camOut: CAM;
+        // MCM per coordinamento manovre
+    }
+
+    port def V2ICommPort {
+        doc /* A port for Vehicle-to-Infrastructure (V2I) communication. */
+        in spat: SPaT;
+        in map: MAP;
+        in denm: DENM;
+        in ivs: IVS;
+        in eva: EVA;
+        in vru: VRU;
+        in cpm: CPM;
+    }
+
+    port def VehicleBusPort {
+        doc /* A port for internal vehicle communication, such as CAN bus or Ethernet. */
+        in gnss: GNSSData;
+        in imu: IMUData;
+        in odometry: OdometryData;  // WIP (because is an internal sensor data, and maybe it should be used only by the 'fast' model)
+        out controlCommand: VehicleControlCommand;
+    }
+
+    port def HMIPort {
+        doc /* A port for human-machine interface communications. */
+        out notification: DriverNotification;
+    }
+
+    port def SecurityMonitorPort {
+        doc /* A port for monitoring security-related data and alerts. */
+        out alert: SecurityAlert;
+    }
+    
+    port def ValidatedDataOutPort {
+        doc /* A port for outputting validated data items from the system. */
+        out validatedData : ValidatedDataItem;
+    }
+    port def ValidatedDataInPort {
+        doc /* A port for inputting validated data items into the system. */
+        in validatedData : ValidatedDataItem;
+    }
+
+    port def EgoVehicleStateOutPort {
+        doc /* A port for outputting the ego vehicle state, used for composing CAM messages. */
+        out egoState : EgoVehicleState;
+    }
+    port def EgoVehicleStateInPort {
+        doc /* A port for inputting the ego vehicle state, used for composing CAM messages. */
+        in egoState : EgoVehicleState;
+    }
+
+    port def ControlParametersOutPort {
+        doc /* A port for outputting control parameters generated by the elaboration unit, sent to the output gateway for transmission to the vehicle's control system. */
+        out control : ControlParameters;
+    }
+    port def ControlParametersInPort {
+        doc /* A port for inputting control parameters into the output gateway, received from the elaboration unit. */
+        in control : ControlParameters;
+    }
+
+    port def CAM_OutPort {
+        doc /* A port for outputting CAM messages to other vehicles. */
+        out cam : CAM;
+    }
+    port def CAM_InPort {
+        doc /* A port for inputting CAM messages received from other vehicles. */
+        in cam : CAM;
+    }
+
+    port def SecurityAlertsOutPort {
+        doc /* A port for outputting security alerts generated by the system, sent to the security monitor. */
+        out alert : SecurityAlert;
+    }
+    port def SecurityAlertsInPort {
+        doc /* A port for inputting security alerts into the system, received from the security monitor. */
+        in alert : SecurityAlert;
+    }
+
+    /* ===================================================================
+         * INTERFACE DEFINITIONS — How ports connect
+     * =================================================================== */
+    interface def V2VInterface {
+        doc /* Interface for Vehicle-to-Vehicle (V2V) communication. */
+        end sender: V2VCommPort;
+        end receiver: V2VCommPort;
+        flow sender.camOut to receiver.camIn;
+    }
+
+    interface def V2IInterface {
+        doc /* Interface for Vehicle-to-Infrastructure (V2I) communication. */
+        end infrastructure: ~V2ICommPort;
+        end vehicle: V2ICommPort;
+        flow infrastructure.spat to vehicle.spat;
+        flow infrastructure.map to vehicle.map;
+        flow infrastructure.denm to vehicle.denm;
+        flow infrastructure.ivs to vehicle.ivs;
+        flow infrastructure.eva to vehicle.eva;
+        flow infrastructure.vru to vehicle.vru;
+        flow infrastructure.cpm to vehicle.cpm;
+    }
+
+    interface def VehicleControlInterface {
+        doc /* Interface for vehicle control commands and sensor data flow. */
+        end controller: VehicleBusPort;
+        end vehicle: ~VehicleBusPort;
+        flow controller.controlCommand to vehicle.controlCommand;
+        flow vehicle.gnss to controller.gnss;
+        flow vehicle.imu to controller.imu;
+        flow vehicle.odometry to controller.odometry;
+    }
+
+    interface def SecurityInterface {
+        doc /* Interface for security-related communications. */
+        end monitor: SecurityMonitorPort;
+        end securityManager: ~SecurityMonitorPort;
+        flow monitor.alert to securityManager.alert;
+    }
+
+    interface def ValidatedData {
+        doc /* Interface for the flow of validated data items from the input gateway to the elaboration unit. */
+        end provider : ValidatedDataOutPort;
+        end consumer : ValidatedDataInPort;
+        flow provider.validatedData to consumer.validatedData;
+    }
+
+    interface def EgoVehicleData {
+        doc /* Interface for the flow of ego vehicle state data from the input gateway to the CAM composer, used for composing CAM messages. */
+        end provider : EgoVehicleStateOutPort;
+        end consumer : EgoVehicleStateInPort;
+        flow provider.egoState to consumer.egoState;
+    }
+
+    interface def SecurityAlertsFlow {
+        doc /* Interface for the flow of security alerts from the input gateway to the security monitor. */
+        end provider : SecurityAlertsOutPort;
+        end consumer : SecurityAlertsInPort;
+        flow provider.alert to consumer.alert;
+    }
+
+    interface def ControlFlow {
+        doc /* Interface for the flow of control parameters from the elaboration unit to the output gateway for transmission to the vehicle's control system. */
+        end provider : ControlParametersOutPort;
+        end consumer : ControlParametersInPort;
+        flow provider.control to consumer.control;
+    }
+
+    interface def CAM_Flow {
+        doc /* Interface for the flow of CAM messages from the CAM composer to the output gateway for transmission to other vehicles. */
+        end provider : CAM_OutPort;
+        end consumer : CAM_InPort;
+        flow provider.cam to consumer.cam;
+    }
+}
+
 
 library package Requirement_Definitions {
     private import ScalarValues::*;
@@ -284,7 +855,7 @@ library package Requirement_Definitions {
         text = "If the request is feasible, the system shall transmit acceptance via maneuver coordination protocols.";
         attribute feasibilityResult : ResponseKind;
         attribute mcmAcceptSent : Boolean;
-        require constraint { feasibilityResult == ResponseKind::accept implies mcmAcceptSent }
+        require constraint { feasibilityResult == ResponseKind::acceptR implies mcmAcceptSent}
     }
 
     // SYS-F-006c: trasmissione rifiuto se non fattibile
@@ -722,8 +1293,8 @@ library package Requirement_Definitions {
         attribute pkiCertificateValid : Boolean;
         attribute longitudinalAdaptationActive : Boolean;
         require constraint {
-            v2iMessageReceived implies (dataAgeValid and gnssConsistencyValid and pkiCertificateValid);
-            longitudinalAdaptationActive implies (dataAgeValid and gnssConsistencyValid and pkiCertificateValid)
+            (v2iMessageReceived implies (dataAgeValid and gnssConsistencyValid and pkiCertificateValid)) and
+            (longitudinalAdaptationActive implies (dataAgeValid and gnssConsistencyValid and pkiCertificateValid))
         }
     }
 
@@ -958,8 +1529,7 @@ library package Requirement_Definitions {
         attribute maxLogLatency : Real = 10.0; // ms
         attribute logTampered : Boolean;
         require constraint {
-            intrusionEventOccurred implies (detectionAndLogLatency <= maxLogLatency);
-            not logTampered
+            intrusionEventOccurred implies ((detectionAndLogLatency <= maxLogLatency) and not logTampered)
         }
     }
 
@@ -1069,8 +1639,8 @@ library package Requirement_Definitions {
         attribute persistenceLimit : Real = 3.0; // s
         attribute fallbackToOPR001Triggered : Boolean;
         require constraint {
-            fragmentationRate > fragmentationThreshold implies reconstructionActive;
-            (reconstructionActive and fragmentationPersistentDuration > persistenceLimit) implies fallbackToOPR001Triggered
+            (fragmentationRate > fragmentationThreshold implies reconstructionActive) and
+            ((reconstructionActive and fragmentationPersistentDuration > persistenceLimit) implies fallbackToOPR001Triggered)
         }
     }
 
@@ -1233,8 +1803,6 @@ library package Requirement_Definitions {
     }
 
 }
-
-
 
 
 
@@ -1781,7 +2349,7 @@ library package Use_Case_Definitions{
         }
     }
 
-
+}
 
 
 // QUI SOTTO è SBAGLIATO (CORREGGERE)
@@ -1800,15 +2368,142 @@ library package Interfaces {
 
 
 
-library package State {
-    item def V2X_Payload {
-        doc /* The payload structure for V2X communication, which includes relevant information about the leader vehicle. */
-        attribute leader_velocity : ScalarValues::Real;
-        attribute leader_position : ScalarValues::Real;
+
+
+library package Stakeholders_Definitions {
+    doc /* Stakeholder and team member definitions for StakeholderView. */
+    item def Stakeholder {
+        doc /* The Stakeholder item represents an individual or organization with an interest in the project, including their contact information and role. */
+        attribute fullName     : ScalarValues::String;
+        attribute role         : ScalarValues::String;
+        attribute email        : ScalarValues::String;
+        attribute organization : ScalarValues::String;
+        attribute phone        : ScalarValues::String;
+        attribute linkedinUrl  : ScalarValues::String;
+        attribute teamsUrl     : ScalarValues::String;
     }
+    item def TeamMember {
+        doc /* The TeamMember item represents an individual team member working on the project, including their contact information and role. */
+        attribute fullName    : ScalarValues::String;
+        attribute role        : ScalarValues::String;
+        attribute email       : ScalarValues::String;
+        attribute team        : ScalarValues::String;
+        attribute phone       : ScalarValues::String;
+        attribute linkedinUrl : ScalarValues::String;
+        attribute teamsUrl    : ScalarValues::String;
+    }
+}
+
+library package Tool_Definitions {
+    doc /* SoftwareTool definition for ToolView. */
+    item def SoftwareTool {
+        doc /* The SoftwareTool item represents a software tool used in the project, including its name, version, and vendor information. */
+        attribute toolName    : ScalarValues::String;
+        attribute version     : ScalarValues::String;
+        attribute vendor      : ScalarValues::String;
+        attribute toolType    : ScalarValues::String;
+        attribute scope       : ScalarValues::String;
+        attribute license     : ScalarValues::String;
+        attribute description : ScalarValues::String;
+    }
+}
+
+
+package ViewDefinitions {
+
+    private import ScalarValues::*;
+
     
-    port def V2X_ReceiverPort {
-        doc /* A port for receiving V2X data from the leader vehicle, which will be used for decision-making in the system. */
-        in item payload : V2X_Payload;
+
+    // ══════════════════════════════════════════════════════════════════════
+    //  VIEWPOINT DEFINITIONS
+    // ══════════════════════════════════════════════════════════════════════
+
+    viewpoint def HardwareViewpoint {
+        doc /* Viewpoint for hardware architecture visualization.
+             * Filters: Emphasize hardware components and their usage.
+             * Suitable for understanding:
+             * - The overall hardware architecture weight of the system
+             * - The main hardware components and their own resource needs
+             * - Performance and reliability characteristics */
     }
+
+    viewpoint def SignalFlowViewpoint {
+        doc /* Viewpoint for signal and data flow visualization.
+             * Filters: Emphasize ports, interfaces, and data movement.
+             * Suitable for understanding:
+             * - How signals flow through the system
+             * - Port-to-port connections
+             * - External interfaces
+             * - Latency and throughput characteristics */
+    }
+
+    viewpoint def EngineerViewpoint {
+        doc /* Viewpoint for system engineering visualization.
+             * Shows actors, subject system, use cases and behavioural diagrams
+             * with semantic links. */
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    //  VIEW DEFINITIONS
+    // ══════════════════════════════════════════════════════════════════════
+
+    view def ResourceUsageView {
+        doc /* View for visualizing the resource usage of hardware,
+             * showing how components and subsystems utilise available resources. */
+    }
+
+    view def UseCaseView {
+        doc /* View for actor / use-case visualization.
+             * Shows actors, subject system, and use cases with semantic links. */
+    }
+
+    view def SequenceView {
+        doc /* View for sequence diagram visualization.
+             * Renders interaction flows between lifelines. */
+    }
+
+    view def RequirementView {
+        doc /* View for requirement satisfaction visualization.
+             * Shows satisfy-requirement blocks with nested requirements
+             * and actual vs required values. */
+    }
+
+    view def StakeholderView {
+        doc /* Grid view of project stakeholders with contact info and roles. */
+    }
+
+    view def NeedView {
+        doc /* Bipartite graph: stakeholder needs on the left,
+             * satisfying requirements on the right. */
+    }
+
+    view def ToolView {
+        doc /* Grid view of software tools used in the project. */
+    }
+
+    view def VariantView {
+        doc /* Tree view of variation definitions and their variant alternatives. */
+    }
+
+    view def SequenceGroupView {
+        doc /* Aggregator view: gallery of all SequenceView diagrams in a file. */
+    }
+
+    view def PackageView {
+        doc /* Nested-box treemap of package hierarchy with element counts by type. */
+    }
+
+    view def AnalysisView {
+        doc /* Aggregator view: groups views by analysis domain for structured review. */
+    }
+
+    view def TeamView {
+        doc /* Org-chart view of project teams and their members. */
+    }
+
+    view def LifecycleView {
+        doc /* Timeline view of project lifecycle phases and transitions. */
+    }
+
 }

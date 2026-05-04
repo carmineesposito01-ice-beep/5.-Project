@@ -11,27 +11,13 @@ package FPGA_Hardware{
     private import Requirement_Definitions::*;
     private import Attribute_Definitions::*;
     private import Use_Case_Definitions::*;
+    private import Metadata_Definitions::*;
+    private import ViewDefinitions::*;
 
 
     private import system_test::*;
     
-    /* ===================================================================
-        * PART DEFINITIONS
-     * =================================================================== */
-
-    interface def SupplyEnergy {
-        doc /* Interface for energy supply connections. */
-        end supplier : SupplyPort;
-        end consumer : ~SupplyPort;
-        flow from supplier.supplyOut to consumer.supplyIn;
-    }
-
-    interface def DataFlow {
-        doc /* Interface for data flow connections. */
-        end source : DataPort;
-        end sink : ~DataPort;
-        flow from source.dataOut to sink.dataIn;
-    }
+    
 
     /* ===================================================================
         * PART DEFINITIONS
@@ -101,19 +87,13 @@ package FPGA_Hardware{
         part system : topLevelSystem {
             doc /* The top-level system allocated on the PYNQ-Z1 FPGA board, which integrates the various subsystems. */
             
-            /* ===================================================================
-		     * PART ALLOCATION (Che non servirebbe, perchè sarà tutto allocato all'interno del blocco)
-	         * =================================================================== */        
-            part :>> conditioner {
-                doc /* Configuration for the Condition Unit */
-            }
-            part :>> elaborator {
-                doc /* Configuration for the Elaboration Unit */
-            }
-            part :>> balancer {
-                doc /* Configuration for the Balancing Unit */
-            }
-    
+                   
+            // Connessioni con la sintassi corretta
+            connection validated_data_flow : ValidatedData connect inputGateway.validatedOut to elaboration.validatedIn;
+            connection ego_vehicle_data_flow : EgoVehicleData connect inputGateway.egoOut to camComposer.egoIn;
+            connection security_alerts_flow : SecurityAlertsFlow connect inputGateway.secMonOut to outputGateway.secMonIn;
+            connection control_flow : ControlFlow connect elaboration.controlOut to outputGateway.controlIn;
+            connection cam_flow : CAM_Flow connect camComposer.camOut to outputGateway.camIn;
 
             /* ===================================================================
                  * USE CASE USAGE
@@ -1406,9 +1386,6 @@ package FPGA_Hardware{
 
 package Views{
 
-
-
-
     viewpoint def HardwareViewpoint {
         doc /* Viewpoint for hardware architecture visualization.
              * Filters: Emphasize hardware components and their usage.
@@ -1419,225 +1396,254 @@ package Views{
     
     }
 
-    viewpoint fpgaEngineerViewpoint : HardwareViewpoint;
-
-
-    viewpoint def SignalFlowViewpoint {
-		doc /* Viewpoint for signal and data flow visualization.
-			 * Filters: Emphasize ports, interfaces, and data movement.
-			 * Suitable for understanding:
-			 * - How signals flow through the system
-			 * - Port-to-port connections
-			 * - External interfaces
-			 * - Latency and throughput characteristics */
-	}
-
-     /* ===================================================================
-        * PARTE USAGE
-      * =================================================================== */
-    view def ResourceUsageView{
-        doc /* View for visualizing the resource usage of the FPGA hardware, showing how the various components and subsystems utilize the available resources. */
-        satisfy fpgaEngineerViewpoint;
+    viewpoint def SystemViewpoint{
+        doc /* Viewpoint for system architecture visualization.
+             * Filters: Emphasize system components, their interactions, and use case realization.
+             * Suitable for understanding:
+             * - The overall system architecture and its main components
+             * - The interactions between components and how they realize the use cases
+             * - The allocation of requirements to system components */
     }
-
-
-
-    view resourceUsageView : ResourceUsageView{
-        // EXPOSE ELEMENTS
-        expose FPGA_Hardware::PYNQZ1;
-        
-        // FILTERS
-        filter @SysML::AttributeUsage;
-
-        // VISUALIZATION
-        render viewRendering;
-    }
-
 
     viewpoint def EngineerViewpoint {
         doc /* Viewpoint for use case visualization.
             * Shows actors, subject system, and use cases with semantic links. */
     }
+
+    viewpoint fpgaEngineerViewpoint : HardwareViewpoint;
+    viewpoint systemEngineerViewpoint : SystemViewpoint;
     viewpoint systemEngineerViewpoint : EngineerViewpoint;
     
-    view def UseCaseView {
-        doc /* View definition for actor/use-case visualization. */
-        satisfy systemEngineerViewpoint;
-    }
 
-    view def SequenceView {
-        doc /* View definition for sequence diagram visualization. */
-        satisfy systemEngineerViewpoint;
-    }
 
+
+    
+    /* ===================================================================
+        * VIEWS USAGE
+     * =================================================================== */    
+    
+    view resourceUsageView : ResourceUsageView{
+        expose FPGA_Hardware::PYNQZ1;
+        @ViewRendering { fileName = "ResourceUsage-View"; }
+        @AnalysisInfo {
+            label       = "Resource Usage";
+            groupName   = "L3 — DSP Subsystem";
+            domain      = "Resources";
+            icon        = "📊";
+            level       = "L3";
+            kind        = "BlackBox";
+            component   = "PYNQZ1_DSP";
+            parentGroup = "B_W";
+        }
+    }
 
     view useCaseView : UseCaseView {
+        satisfy systemEngineerViewpoint;
         expose FPGA_Hardware::PYNQZ1::system::systemUseCase;
-        
-        attribute depth = 1;
-        attribute fileName = "UseCaseView";
-        attribute fileType = "png";
-        render viewRendering;
+        @ViewRendering { fileName = "UseCase-View"; }
+        @AnalysisInfo {
+            label       = "Use Case View";
+            groupName   = "L1 — System Black-Box";
+            domain      = "Functional";
+            icon        = "👤";
+            level       = "L1";
+            kind        = "BlackBox";
+            component   = "";
+            parentGroup = "B_W";
+        }
     }
 
-    view useCaseView_V2 : StandardViewDefinitions::GeneralView {
-        attribute depth = 1;
-        attribute fileName = "UseCaseView";
-        attribute fileType = "png";
-        
-		expose PYNQZ1::system::systemUseCase::follower_vehicle;
-		expose PYNQZ1::system::systemUseCase::leader_vehicle;
-		expose PYNQZ1::system::systemUseCase::cloud_service;
-		expose PYNQZ1::system::systemUseCase::person_actor;
-		expose PYNQZ1::system::systemUseCase::general_interactor_actor;
-		expose PYNQZ1::system::systemUseCase::cacc_synchronization;
-		expose PYNQZ1::system::systemUseCase::abruptCutIn;
-		expose PYNQZ1::system::systemUseCase::calledCutIn;
-		expose PYNQZ1::system::systemUseCase::shockwavesMitigation;
-		expose PYNQZ1::system::systemUseCase::crossRoadAdaptation;
-		expose PYNQZ1::system::systemUseCase::fragmentedSignalManagement;
-		expose PYNQZ1::system::systemUseCase::degradedSignalManagement;
-		expose PYNQZ1::system::systemUseCase::pedestrianProtection;
-		expose PYNQZ1::system::systemUseCase::specialVehicle;
-		expose PYNQZ1::system::systemUseCase::wrongWayDriverProtection;
-		expose PYNQZ1::system::systemUseCase::signalViolationProtection;
-		expose PYNQZ1::system::systemUseCase::roadConditionWarning;
-		expose PYNQZ1::system::systemUseCase::roadHazardWarning;
-		expose PYNQZ1::system::systemUseCase::speedLimitsAdaptation;
-		expose PYNQZ1::system::systemUseCase::adaptingFollowing;
-		expose PYNQZ1::system::systemUseCase::cacc_synchronization::car_following_model;
-		expose PYNQZ1::system::systemUseCase::infrastructure;
-	}
-
     view actionflow : StandardViewDefinitions::ActionFlowView{
-        attribute depth = 4;
-        attribute fileName = "ActionFlowView";
-        attribute fileType = "png";
         expose FPGA_Hardware::PYNQZ1::system::systemUseCase::V2X_CarFollowing_System::**;
-
+        @ViewRendering { fileName = "ActionFlow-View"; }
         filter @SysML::PartUsage;
+        @AnalysisInfo {
+            label       = "Action Flow";
+            groupName   = "L3 — System Behavioral";
+            domain      = "Behavioral";
+            icon        = "⚡";
+            level       = "L3";
+            kind        = "BlackBox";
+            component   = "PYNQZ1_System";
+            parentGroup = "B_W";
+        }
     }
 
     view stateTransitionFlow : StandardViewDefinitions::StateTransitionView {
-        attribute depth = 4;
-        attribute fileName = "StateTransitionFlow";
-        attribute fileType = "png";
         expose FPGA_Hardware::PYNQZ1::system::systemUseCase::V2XCarFollowingSystem;
+        @ViewRendering { fileName = "StateTransition-View"; }
+        @AnalysisInfo {
+            label       = "State Transitions";
+            groupName   = "L3 — System Behavioral";
+            domain      = "Behavioral";
+            icon        = "🔄";
+            level       = "L3";
+            kind        = "BlackBox";
+            component   = "PYNQZ1_System";
+            parentGroup = "B_W";
+        }
     }
 
     view generalView : StandardViewDefinitions::GeneralView{
-        attribute depth = 4;
-        attribute fileName = "GeneralView";
-        attribute fileType = "png";
         expose FPGA_Hardware::PYNQZ1::system;
         filter @SysML::PortUsage;
+        @ViewRendering { fileName = "General-View"; }
+        @AnalysisInfo {
+            label = "General Structure";
+            icon  = "🔍";
+        }
+    }
 
+    view interconnectionView : StandardViewDefinitions::InterconnectionView {
+        doc /* View definition for interconnection visualization. */
+        expose FPGA_Hardware::PYNQZ1::system;
+        @ViewRendering { fileName = "Interconnection-View"; }
+        @AnalysisInfo {
+            label       = "Interconnection View";
+            groupName   = "L2 — System White-Box";
+            domain      = "Physical";
+            icon        = "🔗";
+            level       = "L2";
+            kind        = "WhiteBox";
+            component   = "";
+            parentGroup = "B_W";
+        }
     }
 
     view uc1_SequenceView : StandardViewDefinitions::SequenceView {
         expose FPGA_Hardware::PYNQZ1::system::systemUseCase::cacc_synchronization::sequence;
+        @AnalysisInfo { label = "CACC Sync — Sequence"; icon = "🎬"; }
     }
 
     view uc2_SequenceView : SequenceView {
         expose FPGA_Hardware::PYNQZ1::system::systemUseCase::abruptCutIn::sequence;
-        
-        render viewRendering;
+        @AnalysisInfo { label = "Abrupt Cut-In — Sequence"; icon = "🎬"; }
     }
 
     view uc3_SequenceView : SequenceView {
         expose FPGA_Hardware::PYNQZ1::system::systemUseCase::calledCutIn::sequence;
-        
-        render viewRendering;
+        @AnalysisInfo { label = "Called Cut-In — Sequence"; icon = "🎬"; }
     }
 
     view uc4_SequenceView : SequenceView {
         expose FPGA_Hardware::PYNQZ1::system::systemUseCase::shockwavesMitigation::sequence;
-        
-        render viewRendering;
+        @AnalysisInfo { label = "Shockwaves Mitigation — Sequence"; icon = "🎬"; }
     }
 
     view uc5_SequenceView : SequenceView {
         expose FPGA_Hardware::PYNQZ1::system::systemUseCase::adaptingFollowing::sequence;
-        
-        render viewRendering;
+        @AnalysisInfo { label = "Adapting Following — Sequence"; icon = "🎬"; }
     }
 
     view uc6_SequenceView : SequenceView {
         expose FPGA_Hardware::PYNQZ1::system::systemUseCase::crossRoadAdaptation::sequence;
-        
-        render viewRendering;
+        @AnalysisInfo { label = "Cross-Road Adaptation — Sequence"; icon = "🎬"; }
     }
 
     view uc7_SequenceView : SequenceView {
         expose FPGA_Hardware::PYNQZ1::system::systemUseCase::speedLimitsAdaptation::sequence;
-        
-        render viewRendering;
+        @AnalysisInfo { label = "Speed Limits Adaptation — Sequence"; icon = "🎬"; }
     }
 
     view uc8_SequenceView : SequenceView {
         expose FPGA_Hardware::PYNQZ1::system::systemUseCase::roadHazardWarning::sequence;
-        
-        render viewRendering;
+        @AnalysisInfo { label = "Road Hazard Warning — Sequence"; icon = "🎬"; }
     }
 
     view uc9_SequenceView : SequenceView {
         expose FPGA_Hardware::PYNQZ1::system::systemUseCase::roadConditionWarning::sequence;
-        
-        render viewRendering;
+        @AnalysisInfo { label = "Road Condition Warning — Sequence"; icon = "🎬"; }
     }
 
     view uc10_SequenceView : SequenceView {
         expose FPGA_Hardware::PYNQZ1::system::systemUseCase::signalViolationProtection::sequence;
-        
-        render viewRendering;
+        @AnalysisInfo { label = "Signal Violation Protection — Sequence"; icon = "🎬"; }
     }
 
     view uc11_SequenceView : SequenceView {
         expose FPGA_Hardware::PYNQZ1::system::systemUseCase::wrongWayDriverProtection::sequence;
-        
-        render viewRendering;
+        @AnalysisInfo { label = "Wrong-Way Driver Protection — Sequence"; icon = "🎬"; }
     }
 
     view uc12_SequenceView : SequenceView {
         expose FPGA_Hardware::PYNQZ1::system::systemUseCase::specialVehicle::sequence;
-        
-        render viewRendering;
+        @AnalysisInfo { label = "Special Vehicle — Sequence"; icon = "🎬"; }
     }
 
     view uc13_SequenceView : SequenceView {
         expose FPGA_Hardware::PYNQZ1::system::systemUseCase::pedestrianProtection::sequence;
-        
-        render viewRendering;
+        @AnalysisInfo { label = "Pedestrian Protection — Sequence"; icon = "🎬"; }
     }
 
     view uc14_SequenceView : SequenceView {
         expose FPGA_Hardware::PYNQZ1::system::systemUseCase::degradedSignalManagement::sequence;
-        
-        render viewRendering;
+        @AnalysisInfo { label = "Degraded Signal Management — Sequence"; icon = "🎬"; }
     }
 
     view uc15_SequenceView : SequenceView {
         expose FPGA_Hardware::PYNQZ1::system::systemUseCase::fragmentedSignalManagement::sequence;
-    }
-        
-    view uc13_SequenceView : SequenceView {
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::pedestrianProtection::sequence;
-        
-        render viewRendering;
+        @AnalysisInfo { label = "Fragmented Signal Management — Sequence"; icon = "🎬"; }
     }
 
-    view uc14_SequenceView : SequenceView {
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::degradedSignalManagement::sequence;
-        
-        render viewRendering;
+
+
+    view gridView : StandardViewDefinitions::GridView {
+        doc /* Grid/tabular view: mostra tutti gli attributi del blocco PYNQZ1
+             * con nome, tipo, valore e unità di misura. */
+        expose FPGA_Hardware::PYNQZ1;
+        filter @SysML::AttributeUsage;
+        @ViewRendering { fileName = "Grid-View"; }
+        @AnalysisInfo {
+            label       = "Attribute Grid";
+            groupName   = "L3 — DSP Subsystem";
+            domain      = "Attributes";
+            icon        = "▦";
+            level       = "L3";
+            kind        = "BlackBox";
+            component   = "PYNQZ1_DSP";
+            parentGroup = "B_W";
+        }
     }
 
-    view uc15_SequenceView : SequenceView {
-        expose FPGA_Hardware::PYNQZ1::system::systemUseCase::fragmentedSignalManagement::sequence;
-        
-        render viewRendering;
+    view browserView : StandardViewDefinitions::BrowserView {
+        doc /* Browser view: presenta la struttura gerarchica del package
+             * FPGA_Hardware come albero espandibile. */
+        expose FPGA_Hardware;
+        @ViewRendering { fileName = "Browser-View"; }
+        @AnalysisInfo {
+            label       = "Model Browser";
+            groupName   = "Tools & Infrastructure";
+            domain      = "Navigation";
+            icon        = "🌳";
+            level       = "L1";
+            kind        = "";
+            component   = "";
+            parentGroup = "";
+        }
     }
 
+    view requirementView : RequirementView {
+        doc /* Requirement view: mostra i blocchi satisfy-requirement dell'istanza pynqZ1
+             * con i requisiti annidati e i valori actual vs required. */
+        expose FPGA_Hardware::Usage::pynqZ1;
+        @ViewRendering { fileName = "Requirement-View"; }
+        @AnalysisInfo {
+            label       = "Requirement View";
+            groupName   = "L1 — System Black-Box";
+            domain      = "Requirements";
+            icon        = "📋";
+            level       = "L1";
+            kind        = "BlackBox";
+            component   = "";
+            parentGroup = "B_W";
+        }
+    }
+
+    view analysisView : AnalysisView {
+        doc /* Analysis dashboard — discovers views via attribute level/kind/parentGroup. */
+        expose Views;
+        @AnalysisInfo { label = "Analysis Dashboard"; icon = "📊"; }
+    }
 
     
 }
