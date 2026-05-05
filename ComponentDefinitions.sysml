@@ -11,8 +11,75 @@ package ComponentDefinition{
 	private import ISQ::*;
 	private import SI::*;
 
-    public import Attribute_Definitions::*;
-    public import PortandInterfaceDefinitions::*;
+    private import StandardLibrary::**;
+
+
+    part def topLevelSystem {
+        doc /* The top-level system representing the entire system architecture. */
+
+        // Car-Following Attributes
+        attribute carFollowingModel : CarFollowingModelKind;  //TODO: Creare un'allocazione dinamica dei parametri, dove questi possono essere mutati semplicemente modificando il modello imposto su questa riga (o meglio, nella usage corrispondente)
+        attribute followingParameters : CarFollowingParams;
+        attribute headwayIncrementPercentage : Real; // 10.0 %
+
+        // ---------- Soglie di sicurezza ----------
+        attribute emergencyBrakingMaxReactionTime : Real; // 200.0 ms
+        attribute signalViolationEmergencyDistance : Real; // m
+        attribute signalViolationAttentionDistance : Real; // m
+        attribute pedestrianTTAAttentionThreshold : Real; // s
+        attribute pedestrianTTADangerThreshold : Real; // s
+        attribute pedestrianLateralSafetyBuffer : Real; // 1.0 m
+        attribute maxOvershootSpeed : Real; // km/h
+        attribute jamRateInstabilityThreshold : Real; // 1/s
+        attribute stabilityValidationVehicleCount : Integer; // 10
+
+        // ---------- Soglie SOTIF ----------
+        attribute leaderProfileConfidenceThresholdLow : Real; // 60.0 %
+        attribute glosaUnreachableDecelerationProfile : Real;
+        attribute denmConfidenceValidationRequired : Boolean; // true;
+        attribute pedestrianSensorValidationTimeout : Real; //3.0 s
+
+        // ---------- Performance ----------
+        attribute maxV2VEndToEndLatency : Real; // 100.0 ms
+        attribute maxV2IEndToEndLatency : Real; // 200.0 ms
+        attribute camUpdateRateMin : Real; // 10.0 Hz
+        attribute safetyDistanceAccuracyLowSpeed : Real; // 3.0 m
+        attribute safetyDistanceAccuracyHighSpeedPercent : Real; // 2.0 %
+        attribute glosaComputationTimeMax : Real; // 50.0 ms
+
+        // ---------- Degradazione e fault tolerance ----------
+        attribute v2vSignalLossTimeout : Real; // 500.0 ms
+        attribute transitionSmoothTime : Real; // 2.0 s
+        attribute messageFragmentationThresholdPercent : Real; // 15.0 %
+        attribute fragmentationPersistenceTime : Real; // 3.0 s
+        attribute internalHeartbeatTimeout : Real; // 200.0 ms
+        attribute failOperationalArchitecture : Boolean; // false
+
+        // ---------- Variabili di stato runtime ----------
+        attribute carFollowingMode : CarFollowingModeKind; // CarFollowingModeKind::Disabled
+        attribute v2vCommunicationStatus : CommStatusKind; // CommStatusKind::Lost
+        attribute v2iCommunicationStatus : CommStatusKind; // CommStatusKind::Lost
+        attribute leaderProfileConfidence : Real; // %
+        attribute currentJamRate : Real;
+        attribute glosaActive : Boolean; // false;
+        attribute emergencyManeuverInProgress : Boolean; // false
+
+        // ---------- Porte (riferimento alla definizione precedente) ----------
+        port v2x : V2XCommPort;
+        port egoVehicleInfo : VehicleBusPort;
+        port cam : CAM;
+        port parameters : ControlParametersOutPort;
+        port platooningInfo : PlatooningInfoOutPort;
+        port hmi : HMIPort;
+
+        /* ===================================================================
+		     * PART USAGE
+	     * =================================================================== */
+        part inputGateway : InputGateway_Unit;
+        part elaboration : Elaboration_Unit;
+        part camComposer : CAMComposer_Unit;
+        part outputGateway : OutputGateway_Unit;
+    }
 
 
     part def InputGateway_Unit{
@@ -21,10 +88,10 @@ package ComponentDefinition{
             
         port v2v : V2VCommPort;          // riceve CAM, MCM
         port v2i : V2ICommPort;          // riceve SPaT, MAP, DENM, IVS, EVA, VRU, CPM
-        port vehicleBus : VehicleBusPort; // riceve GNSS, IMU, odometry
-        port secMonOut : SecurityAlertsOutPort;  // alert di sicurezza verso OutputGateway
-        port validatedOut : ValidatedDataOutPort; // dati validati verso Elaboration
-        port egoOut : EgoVehicleStateOutPort;     // stato ego veicolo verso CAM composer
+        port vehicleInfo : VehicleBusPort; // riceve GNSS, IMU
+        port validatedSignal : ValidatedDataOutPort; // dati validati verso Elaboration
+        port egoSignals : EgoVehicleStateOutPort;     // segnali mandati al CAM Composer (per essere fusi nel segnale CAM per gli altri veicoli)
+        port state_flag : PlatooningInfoOutPort;
 
         part conditioner : Conditioning_Unit;
         part signalValidation : SignalValidation_Unit;
@@ -35,8 +102,8 @@ package ComponentDefinition{
         doc /* Part representing the elaboration unit of the system, responsible for processing 
             /* the received data and generate the model's parameters. */
         
-        port validatedIn : ValidatedDataInPort;       // da InputGateway
-        port controlOut : ControlParametersOutPort;   // verso OutputGateway
+        port validatedSignal : ValidatedDataInPort;       // da InputGateway
+        port modelParameters : ControlParametersOutPort;   // verso OutputGateway
         
         part analyzer : Analyzer_Unit;
         part v2v_own_message : V2V_OwnMessage_Unit;
@@ -47,14 +114,14 @@ package ComponentDefinition{
     part def OutputGateway_Unit{
         doc /* Part representing the output gateway of the system, responsible for sending the generated data (parameters, CAM message). */
     
-        port controlIn : ControlParametersInPort; // da Elaboration
+        port modelParameters : ControlParametersInPort; // da Elaboration
         port camIn : CAM_InPort;                  // da CAM composer
-        port secMonIn : SecurityAlertsInPort;     // alert di sicurezza da InputGateway
+        port state_flag : PlatooningInfoOutPort;
 
         // Porte esterne (verso i canali reali)
-        port v2v : V2VCommPort;          // invia CAM
-        port vehicleBus : VehicleBusPort; // invia comandi attuatori
-        port hmi : HMIPort;              // notifiche HMI
+        port v2vOut : V2VCommPort;          // invia CAM
+        port parmetersOut : VehicleBusPort; // invia comandi attuatori
+        port hmiOut : HMIPort;              // notifiche HMI
 
         part send_v2v_message : Send_V2VMessage_Unit;
         part send_parameters : Send_Parameters_Unit;

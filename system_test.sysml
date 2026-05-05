@@ -120,9 +120,6 @@ package system_test{
         part camComposer : CAMComposer_Unit;
         part outputGateway : OutputGateway_Unit;
 
-        connection conditioned_signals : DataFlow connect conditioner to elaborator;
-        connection generated_parameters : DataFlow connect elaborator to balancer;
-
         
 
 
