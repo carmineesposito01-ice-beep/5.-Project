@@ -21,9 +21,66 @@ package V2X_CACC_Model{
             
             part top_system : topLevelSystem {
                 doc /* The top-level system (allocated on the PYNQ-Z1 FPGA board), which integrates the various subsystems. */
+                // Attributes
+                // Car-Following Attributes
+                attribute :>carFollowingModel = CarFollowingModelKind::IDM_2D;
+                attribute :> followingParameters;
+                attribute :> headwayIncrementPercentage =10.0;
+
+                // ---------- Soglie di sicurezza ----------
+                attribute :> emergencyBrakingMaxReactionTime = 200.0 [milli*s]
+                attribute :> signalViolationEmergencyDistance;
+                attribute :> signalViolationAttentionDistance;
+                attribute :> pedestrianTTAAttentionThreshold;
+                attribute :> pedestrianTTADangerThreshold;
+                attribute :> pedestrianLateralSafetyBuffer = 1.0 [m]
+                attribute :> maxOvershootSpeed;
+                attribute :> jamRateInstabilityThreshold;
+                attribute :> stabilityValidationVehicleCount = 10;
+
+                // ---------- Soglie SOTIF ----------
+                attribute :> leaderProfileConfidenceThresholdLow = 60.0;
+                attribute :> glosaUnreachableDecelerationProfile;
+                attribute :> denmConfidenceValidationRequired = true;
+                attribute :> pedestrianSensorValidationTimeout = 3.0 [s];
+
+                // ---------- Performance ----------
+                attribute :> maxV2VEndToEndLatency = 100.0 [milli*s];
+                attribute :> maxV2IEndToEndLatency = 200.0 [milli*s];
+                attribute :> camUpdateRateMin = 10.0 [Hz];
+                attribute :> safetyDistanceAccuracyLowSpeed = 3.0 [m];
+                attribute :> safetyDistanceAccuracyHighSpeedPercent = 2.0;
+                attribute :> glosaComputationTimeMax = 50.0 [milli*s];
+
+                // ---------- Degradazione e fault tolerance ----------
+                attribute :> v2vSignalLossTimeout = 500.0 [milli*s];
+                attribute :> transitionSmoothTime = 2.0 [s];
+                attribute :> messageFragmentationThresholdPercent = 15.0;
+                attribute :> fragmentationPersistenceTime = 3.0 [s];
+                attribute :> internalHeartbeatTimeout = 200.0 [milli*s];
+                attribute :> failOperationalArchitecture = false;
+
+                // ---------- Variabili di stato runtime ----------
+                attribute :> carFollowingMode = CarFollowingModeKind::Disabled;
+                attribute :> v2vCommunicationStatus = CommStatusKind::Lost;
+                attribute :> v2iCommunicationStatus = CommStatusKind::Lost;
+                attribute :> leaderProfileConfidence;
+                attribute :> currentJamRate;
+                attribute :> glosaActive = false;
+                attribute :> emergencyManeuverInProgress  = false;
                 
+                
+                // Connessioni esterne
+                connection v2v_in : V2XCommPort connect top_system.v2xIn.v2v to inputGateway.v2v;
+                connection v2i_in : V2XCommPort connect top_system.v2xIn.v2i to inputGateway.v2i;
+                connection vehicle_bus_in : VehicleBusPort connect top_system.egoVehicleInfoIn to inputGateway.egovehicleInfoIn;
+                connection hmi_out : HMIPort connect  outputGateway.hmiOut to top_system.hmiOut;
+                connection parameter_out : ControlFlow connect outputGateway.parametersOut to top_system.parametersOut;
+                connection platooning_info_out : PlatooningInfoOutPort connect outputGateway.platooningInfoOut to top_system.platooningInfoOut;
+                connection cam_out : CAM_Flow connect outputGateway.camOut to top_system.camOut;
+
                     
-                // Connessioni con la sintassi corretta
+                // Connessioni interne
                 connection validated_data_flow : ValidatedData connect inputGateway.validatedSignal to elaboration.validatedSignal;
                 connection ego_vehicle_data_flow : EgoVehicleData connect inputGateway.egoSignals to camComposer.egoIn;
                 connection state_flag : PlatooningInfoOutPort connect inputGateway.state_flag to outputGateway.state_flag;

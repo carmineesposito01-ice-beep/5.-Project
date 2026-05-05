@@ -65,12 +65,12 @@ package ComponentDefinition{
         attribute emergencyManeuverInProgress : Boolean; // false
 
         // ---------- Porte (riferimento alla definizione precedente) ----------
-        port v2x : V2XCommPort;
-        port egoVehicleInfo : VehicleBusPort;
-        port cam : CAM;
-        port parameters : ControlParametersOutPort;
-        port platooningInfo : PlatooningInfoOutPort;
-        port hmi : HMIPort;
+        port v2xIn : V2XCommPort;
+        port egoVehicleInfoIn : VehicleBusPort;
+        port camOut : CAM;
+        port parametersOut : ControlParametersOutPort;
+        port platooningInfoOut : PlatooningInfoOutPort;
+        port hmiOut : HMIPort;
 
         /* ===================================================================
 		     * PART USAGE
@@ -88,7 +88,7 @@ package ComponentDefinition{
             
         port v2v : V2VCommPort;          // riceve CAM, MCM
         port v2i : V2ICommPort;          // riceve SPaT, MAP, DENM, IVS, EVA, VRU, CPM
-        port vehicleInfo : VehicleBusPort; // riceve GNSS, IMU
+        port egovehicleInfoIn : VehicleBusPort; // riceve GNSS, IMU
         port validatedSignal : ValidatedDataOutPort; // dati validati verso Elaboration
         port egoSignals : EgoVehicleStateOutPort;     // segnali mandati al CAM Composer (per essere fusi nel segnale CAM per gli altri veicoli)
         port state_flag : PlatooningInfoOutPort;
@@ -119,9 +119,10 @@ package ComponentDefinition{
         port state_flag : PlatooningInfoOutPort;
 
         // Porte esterne (verso i canali reali)
-        port v2vOut : V2VCommPort;          // invia CAM
-        port parmetersOut : VehicleBusPort; // invia comandi attuatori
-        port hmiOut : HMIPort;              // notifiche HMI
+        port camOut : V2VCommPort;          // invia CAM
+        port parametersOut : ControlParametersOutPort; // invia comandi attuatori
+        port hmiOut : HMIPort;   
+        port platooningInfoOut : PlatooningInfoOutPort;           // notifiche HMI
 
         part send_v2v_message : Send_V2VMessage_Unit;
         part send_parameters : Send_Parameters_Unit;

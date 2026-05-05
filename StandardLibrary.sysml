@@ -531,16 +531,18 @@ library package StandardLibrary {
         * =================================================================== */
         port def V2XCommPort{
             doc /* A generic port for Vehicle-to-Everything (V2X) communication, which can be specialized for V2V and V2I communication. */
+            in port v2v : V2VCommPort;
+            in port v2i : V2ICommPort;
         }
 
-        port def V2VCommPort :> V2XCommPort{
+        port def V2VCommPort{
             doc /* A port for Vehicle-to-Vehicle (V2V) communication. */
             in camIn: CAM;
             out camOut: CAM;
             // MCM per coordinamento manovre
         }
 
-        port def V2ICommPort :> V2XCommPort{
+        port def V2ICommPort{
             doc /* A port for Vehicle-to-Infrastructure (V2I) communication. */
             in spat: SPaT;
             in map: MAP;
@@ -639,12 +641,7 @@ library package StandardLibrary {
             flow vehicle.odometry to controller.odometry;
         }
 
-        interface def SecurityInterface {
-            doc /* Interface for security-related communications. */
-            end monitor: SecurityMonitorPort;
-            end securityManager: ~SecurityMonitorPort;
-            flow monitor.alert to securityManager.alert;
-        }
+        
 
         interface def ValidatedData {
             doc /* Interface for the flow of validated data items from the input gateway to the elaboration unit. */
@@ -660,12 +657,6 @@ library package StandardLibrary {
             flow provider.egoState to consumer.egoState;
         }
 
-        interface def SecurityAlertsFlow {
-            doc /* Interface for the flow of security alerts from the input gateway to the security monitor. */
-            end provider : SecurityAlertsOutPort;
-            end consumer : SecurityAlertsInPort;
-            flow provider.alert to consumer.alert;
-        }
 
         interface def ControlFlow {
             doc /* Interface for the flow of control parameters from the elaboration unit to the output gateway for transmission to the vehicle's control system. */
