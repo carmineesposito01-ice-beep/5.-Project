@@ -93,8 +93,8 @@ package ComponentDefinition{
         port egoSignals : EgoVehicleStateOutPort;     // segnali mandati al CAM Composer (per essere fusi nel segnale CAM per gli altri veicoli)
         port state_flag : PlatooningInfoOutPort;
 
-        part conditioner : Conditioning_Unit;
-        part signalValidation : SignalValidation_Unit;
+        part conditioning : Conditioning_Unit;
+        part validation : SignalValidation_Unit;
         
     }
 
@@ -140,6 +140,7 @@ package ComponentDefinition{
     part def Conditioning_Unit{
         doc /* Part representing the conditioning unit of the system, responsible for filtering operations,
             /* and refining operations for the input signals. */
+        
         
     }
 

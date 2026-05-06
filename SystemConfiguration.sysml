@@ -87,6 +87,7 @@ package V2X_CACC_Model{
                 connection control_flow : ControlFlow connect elaboration.modelParameters to outputGateway.modelParameters;
                 connection cam_flow : CAM_Flow connect camComposer.camOut to outputGateway.camIn;
 
+                
             }
         }
     }
@@ -578,7 +579,139 @@ package V2X_CACC_Model{
                         accept when (cyberAttackConfirmed)
                         do action { send new StatusUpdate(messageS = "Cyber attack – fallback") via hmi; }
                         then passive;
-                }          
+                }
+                
+                action def InputGateway_ActionFlow {
+                    doc /* Riceve messaggi V2V/V2I e dati bordo, li valida, gestisce frammentazione e ricostruzione, produce flusso dati validati e stato ego‑veicolo. */
+                    merge acquisitionLoop;
+
+                    action receiveV2V {
+                        doc /* Acquisisce in parallelo CAM e MCM. */
+                        action getCAM;
+                        action getMCM;
+                        fork rcvV2VFork;
+                        join rcvV2VJoin;
+                        first start then rcvV2VFork;
+                        first rcvV2VFork then getCAM;
+                        first rcvV2VFork then getMCM;
+                        first getCAM then rcvV2VJoin;
+                        first getMCM then rcvV2VJoin;
+                        first rcvV2VJoin then done;
+                    }
+
+                    action receiveV2I {
+                        doc /* Acquisisce in parallelo SPaT, MAP, DENM, IVS, EVA, VRU, CPM. */
+                        action getSPaT;
+                        action getMAP;
+                        action getDENM;
+                        action getIVS;
+                        action getEVA;
+                        action getVRU;
+                        action getCPM;
+                        fork rcvV2IFork;
+                        join rcvV2IJoin;
+                        first start then rcvV2IFork;
+                        first rcvV2IFork then getSPaT;
+                        first rcvV2IFork then getMAP;
+                        first rcvV2IFork then getDENM;
+                        first rcvV2IFork then getIVS;
+                        first rcvV2IFork then getEVA;
+                        first rcvV2IFork then getVRU;
+                        first rcvV2IFork then getCPM;
+                        first getSPaT then rcvV2IJoin;
+                        first getMAP then rcvV2IJoin;
+                        first getDENM then rcvV2IJoin;
+                        first getIVS then rcvV2IJoin;
+                        first getEVA then rcvV2IJoin;
+                        first getVRU then rcvV2IJoin;
+                        first getCPM then rcvV2IJoin;
+                        first rcvV2IJoin then done;
+                    }
+
+                    action readOnboardSensors {
+                        doc /* Legge GNSS, IMU e odometria dal bus veicolo. */
+                        action getGNSS;
+                        action getIMU;
+                        fork onbFork;
+                        join onbJoin;
+                        first start then onbFork;
+                        first onbFork then getGNSS;
+                        first onbFork then getIMU;
+                        first getGNSS then onbJoin;
+                        first getIMU then onbJoin;
+                        first onbJoin then done;
+                    }
+
+                    action validateMessages {
+                        doc /* Applica controlli di freschezza, coerenza spaziale e confidence level. Scarta messaggi non validi. */
+                        action checkDataAge;
+                        action checkSpatialCoherenceWithGNSS;
+                        action checkConfidenceIfDENM;
+                        merge validatedSet;
+                        merge discardedSet;
+                        decide globalPass;
+                        first start then checkDataAge;
+                        first checkDataAge then checkSpatialCoherenceWithGNSS;
+                        first checkSpatialCoherenceWithGNSS then globalPass;
+                        first globalPass then validatedSet;    // valido
+                        first globalPass then discardedSet;    // scartato (log opzionale)
+                        first validatedSet then done;
+                        first discardedSet then done;
+                    }
+
+                    action monitorChannelHealth {
+                        doc /* Valuta perdita segnale e frammentazione; attiva ricostruzione se necessario; richiede fallback se persistente. */
+                        action computeFragmentationRate;
+                        action evaluateLossTimer;
+                        decide channelOk;
+                        decide needReconstruction;
+                        decide needFallback;
+                        first start then computeFragmentationRate;
+                        first computeFragmentationRate then evaluateLossTimer;
+                        first evaluateLossTimer then channelOk;
+                        first channelOk then done;               // tutto nella norma
+                        first channelOk then needReconstruction; // frammentazione elevata
+                        first needReconstruction then done;      // avvia ricostruzione
+                        first needReconstruction then needFallback; // persistenza eccessiva
+                        first needFallback then done;            // segnala fallback al sistema
+                    }
+
+                    action buildEgoState {
+                        doc /* Assembla lo stato dell'ego‑veicolo dai sensori di bordo. */
+                        action combineGNSS_IMU_Odometry;
+                        first start then combineGNSS_IMU_Odometry;
+                        first combineGNSS_IMU_Odometry then done;
+                    }
+
+                    action outputValidatedData {
+                        doc /* Prepara e invia il flusso di dati validati e lo stato ego verso le porte di uscita. */
+                        action packValidatedData;
+                        action sendToElaboration;
+                        action sendEgoToCamComposer;
+                        fork outFork;
+                        join outJoin;
+                        first start then outFork;
+                        first outFork then packValidatedData;
+                        first packValidatedData then sendToElaboration;
+                        first outFork then sendEgoToCamComposer;
+                        first sendToElaboration then outJoin;
+                        first sendEgoToCamComposer then outJoin;
+                        first outJoin then done;
+                    }
+
+                    // Flusso principale ciclico
+                    first start then acquisitionLoop;
+                    first acquisitionLoop then receiveV2V;
+                    first acquisitionLoop then receiveV2I;
+                    first acquisitionLoop then readOnboardSensors;
+                    first receiveV2V then validateMessages;
+                    first receiveV2I then validateMessages;
+                    first readOnboardSensors then buildEgoState;
+                    first validateMessages then monitorChannelHealth;
+                    first monitorChannelHealth then outputValidatedData;
+                    first buildEgoState then outputValidatedData;
+                    first outputValidatedData then acquisitionLoop;
+                }
     
 
    
@@ -2206,6 +2339,25 @@ package V2X_CACC_Model{
             expose Behaviour::systemUseCase::V2X_CarFollowing_System::**;
         }
 
+        view actionflow_IGW : StandardViewDefinitions::ActionFlowView{
+            doc /* View representing the action flow of the Input Gateway component, showing the sequence of actions and interactions that occur within the Input Gateway in response to events or use case scenarios. */
+            satisfy systemEngineerViewpoint;
+            satisfy softwareEngineerViewpoint;
+            filter @SysML::PartUsage;
+            @ViewRendering { fileName = "ActionFlow-View (IGW)"; }
+            @AnalysisInfo {
+                label       = "Action Flow";
+                groupName   = "L3 — Component Black-Box";
+                domain      = "Behavioral";
+                icon        = "⚡";
+                level       = "L3";
+                kind        = "BlackBox";
+                component   = "InputGateway";
+                parentGroup = "B_W";
+            }
+            expose Behaviour::systemUseCase::InputGateway_ActionFlow::**;
+        }
+
         view stateTransitionFlow : StandardViewDefinitions::StateTransitionView {
             doc /* View representing the state transition flow of the system, showing the different states of the system and how it transitions between them in response to events or conditions. */
             satisfy systemEngineerViewpoint;
@@ -2240,6 +2392,24 @@ package V2X_CACC_Model{
                 parentGroup = "B_W";
             }
             expose Structure::V2X_CACC_System::top_system;
+        }
+
+        view requirementView_IGW : RequirementView {
+            doc /* View representing the requirements of the Input Gateway component, showing how the requirements are structured, categorized, and satisfied by the Input Gateway. */
+            satisfy systemEngineerViewpoint;
+            satisfy stakeholderViewpoint;
+            @ViewRendering { fileName = "Requirement-View (IGN)"; }
+            @AnalysisInfo {
+                label       = "Requirement View";
+                groupName   = "L3 — Component Black-Box";
+                domain      = "Requirements";
+                icon        = "📋";
+                level       = "L3";
+                kind        = "BlackBox";
+                component   = "InputGateway";
+                parentGroup = "B_W";
+            }
+            expose Structure::V2X_CACC_System::top_system::inputGateway;
         }
 
         view uc1_SequenceView : StandardViewDefinitions::SequenceView {
@@ -2349,6 +2519,24 @@ package V2X_CACC_Model{
                 parentGroup = "B_W";
             }
             expose Structure::V2X_CACC_System::top_system;
+        }
+
+        view interconnection_IGW : StandardViewDefinitions::InterconnectionView {
+            doc /* View definition for interconnection visualization. */
+            satisfy systemEngineerViewpoint;
+            satisfy softwareEngineerViewpoint;
+            @ViewRendering { fileName = "Interconnection-View (IGW)"; }
+            @AnalysisInfo {
+                label       = "Interconnection View";
+                groupName   = "L4 — Component White-Box";
+                domain      = "Physical";
+                icon        = "🔗";
+                level       = "L4";
+                kind        = "WhiteBox";
+                component   = "InputGateway";
+                parentGroup = "B_W";
+            }
+            expose Structure::V2X_CACC_System::top_system::inputGateway;
         }
 
         view stakeholderView : StakeholderView {
@@ -2634,8 +2822,8 @@ package V2X_CACC_Model{
         package ProjectStakeHolders {
         item supervisor_1 : Stakeholders_Definitions::Stakeholder {
             attribute :>> fullName     = "Emanuele Carella";
-            attribute :>> role         = "Academic Supervisor";
-            attribute :>> email        = "mario.rossi@unina.it";
+            attribute :>> role         = "Company Supervisor";
+            attribute :>> email        = "emanuele.carella@kineton.it";
             attribute :>> organization = "Kineton";
             attribute :>> phone        = "+39 xxx xxx xxxx";
             doc /* Oversees project methodology, validates MBSE approach,
