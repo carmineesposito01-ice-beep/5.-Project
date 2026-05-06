@@ -23,17 +23,17 @@ package V2X_CACC_Model{
                 doc /* The top-level system (allocated on the PYNQ-Z1 FPGA board), which integrates the various subsystems. */
                 // Attributes
                 // Car-Following Attributes
-                attribute :>carFollowingModel = CarFollowingModelKind::IDM_2D;
+                attribute :> carFollowingModel = CarFollowingModelKind::IDM_2D;
                 attribute :> followingParameters;
                 attribute :> headwayIncrementPercentage =10.0;
 
                 // ---------- Soglie di sicurezza ----------
-                attribute :> emergencyBrakingMaxReactionTime = 200.0 [milli*s]
+                attribute :> emergencyBrakingMaxReactionTime = 200.0 [milli*s];
                 attribute :> signalViolationEmergencyDistance;
                 attribute :> signalViolationAttentionDistance;
                 attribute :> pedestrianTTAAttentionThreshold;
                 attribute :> pedestrianTTADangerThreshold;
-                attribute :> pedestrianLateralSafetyBuffer = 1.0 [m]
+                attribute :> pedestrianLateralSafetyBuffer = 1.0 [m];
                 attribute :> maxOvershootSpeed;
                 attribute :> jamRateInstabilityThreshold;
                 attribute :> stabilityValidationVehicleCount = 10;
@@ -2009,7 +2009,73 @@ package V2X_CACC_Model{
         }
         satisfy scenarioCatalogogDefinition by Structure::V2X_CACC_System::top_system;    
 
-    
+
+
+        // L2 REQUIREMENTS
+        package InputGatewayRequirementUsage {
+            requirement msgReceptionReq : MessageReception {
+                @RequirementStatus { 
+                    status = "Draft"; 
+                    approver = ""; 
+                    date = "";
+                    group = "IGW-REQ";
+                }
+            }
+            satisfy msgReceptionReq by Structure::V2X_CACC_System::top_system::inputGateway;
+
+            // Istanziamo un vincolo per ogni tipologia di messaggio, ma per snellire mostriamo solo un esempio di collegamento.
+            // Nella pratica si può avere un requisito parametrico che il blocco soddisfa per ogni messaggio.
+            requirement camValidationReq : TemporalSpatialValidation {
+                @RequirementStatus { 
+                    status = "Draft"; 
+                    approver = ""; 
+                    date = "";
+                    group = "IGW-REQ";
+                }
+            }
+            satisfy camValidationReq by Structure::V2X_CACC_System::top_system::inputGateway;
+
+            requirement denmConfReq : ConfidenceLevelFilter {
+                @RequirementStatus { 
+                    status = "Draft"; 
+                    approver = ""; 
+                    date = "";
+                    group = "IGW-REQ";
+                }
+            }
+            satisfy denmConfReq by Structure::V2X_CACC_System::top_system::inputGateway;
+
+            requirement signalLossReq : SignalLossDetection {
+                @RequirementStatus { 
+                    status = "Draft"; 
+                    approver = ""; 
+                    date = "";
+                    group = "IGW-REQ";
+                }
+            }
+            satisfy signalLossReq by Structure::V2X_CACC_System::top_system::inputGateway;
+
+            requirement fragmentationReq : FragmentationMonitoring {
+                @RequirementStatus { 
+                    status = "Draft"; 
+                    approver = ""; 
+                    date = "";
+                    group = "IGW-REQ";
+                }
+            }
+            satisfy fragmentationReq by Structure::V2X_CACC_System::top_system::inputGateway;
+                
+
+            requirement validationLatencyReq : ValidationLatency {
+                @RequirementStatus { 
+                    status = "Draft"; 
+                    approver = ""; 
+                    date = "";
+                    group = "IGW-REQ";
+                }                    
+            }
+            satisfy validationLatencyReq by Structure::V2X_CACC_System::top_system::inputGateway;
+        }
     }
 
     package Analysis{

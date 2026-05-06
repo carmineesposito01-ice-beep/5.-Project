@@ -1830,6 +1830,93 @@ library package StandardLibrary {
             require constraint { scenarioCatalogValidated and oddCoverageDocumented }
         }
 
+    package InputGatewayRequirements {
+        // ---- Requisiti di ricezione e validazione ----
+        requirement def MessageReception {
+            doc /* The gateway must receive all V2V messages (CAM, MCM) and V2I messages (SPaT, MAP, IVS, DENM, EVA, VRU, CPM) on the designated ports. */
+            id = "IGW-REQ-001";
+            text = "All V2V and V2I messages shall be received on the corresponding ports.";
+            attribute camReceived : Boolean;
+            attribute mcmReceived : Boolean;
+            attribute spatReceived : Boolean;
+            attribute mapReceived : Boolean;
+            attribute ivsReceived : Boolean;
+            attribute denmReceived : Boolean;
+            attribute evaReceived : Boolean;
+            attribute vruReceived : Boolean;
+            attribute cpmReceived : Boolean;
+        }
+
+        requirement def TemporalSpatialValidation {
+            doc /* Each message must pass freshness check (data age ≤ limit) and spatial consistency (distance from GNSS position ≤ tolerance). */
+            id = "IGW-REQ-002";
+            text = "Each message shall pass temporal and spatial validation.";
+            attribute messageType : String;      // tipo messaggio
+            attribute dataAge : Real;            // ms
+            attribute maxAllowedDataAge : Real;  // ms
+            attribute spatialCoherenceOk : Boolean;
+            require constraint {
+                dataAge <= maxAllowedDataAge and spatialCoherenceOk
+            }
+        }
+
+        requirement def ConfidenceLevelFilter {
+            doc /* DENM messages must also be validated based on the Confidence Level fields (Position/Speed). If the confidence is below the threshold, the message is discarded. */
+            id = "IGW-REQ-003";
+            text = "DENM messages with confidence below threshold shall be discarded.";
+            attribute denmPositionConfidence : Real; // 0-100
+            attribute denmSpeedConfidence : Real;
+            attribute minConfidenceThreshold : Real; // 50.0
+            attribute denmAccepted : Boolean;
+            require constraint {
+                denmPositionConfidence >= minConfidenceThreshold and
+                denmSpeedConfidence >= minConfidenceThreshold implies denmAccepted
+            }
+        }
+
+        // ---- Requisiti di integrità del segnale ----
+        requirement def SignalLossDetection {
+            doc /* The InputGateway must detect the loss of the V2V signal when no valid CAM arrives for more than lossTimeout (500 ms). */
+            id = "IGW-REQ-004";
+            text = "V2V signal loss shall be detected when no valid CAM is received for > 500 ms.";
+            attribute lastValidCamTimestamp : Real; // ms
+            attribute now : Real;
+            attribute lossTimeout : Real; // 500.0
+            attribute v2vLost : Boolean;
+            require constraint { (now - lastValidCamTimestamp) > lossTimeout implies v2vLost }
+        }
+
+        requirement def FragmentationMonitoring {
+            doc /* It must monitor the fragmentation rate in a 1-second window. If it exceeds the threshold (15%), it triggers reconstruction. If it persists for more than 3 seconds, it signals fallback. */
+            id = "IGW-REQ-005";
+            text = "Monitor fragmentation rate; if > 15% activate reconstruction, if persistent > 3 s escalate.";
+            attribute fragmentationRate : Real; // %
+            attribute fragmentationThreshold : Real; // 15.0
+            attribute reconstructionActive : Boolean;
+            attribute persistenceDuration : Real; // s
+            attribute persistenceLimit : Real = 3.0;
+            attribute fallbackRequested : Boolean;
+            require constraint {
+                fragmentationRate > fragmentationThreshold implies reconstructionActive;
+                (reconstructionActive and persistenceDuration > persistenceLimit) implies fallbackRequested
+            }
+        }
+
+        // ---- Requisito di performance ----
+        requirement def ValidationLatency {
+            doc /* The entire validation process (reception → validated data available) must be completed within 20 ms for V2V messages and 50 ms for V2I messages. */
+            id = "IGW-REQ-006";
+            text = "Validation latency shall not exceed 20 ms for V2V and 50 ms for V2I.";
+            attribute actualV2VLatency : Real;
+            attribute actualV2ILatency : Real;
+            attribute maxV2VLatency : Real = 20.0;
+            attribute maxV2ILatency : Real = 50.0;
+            require constraint {
+                actualV2VLatency <= maxV2VLatency and actualV2ILatency <= maxV2ILatency
+            }
+        }
+    }
+
     }
 
 

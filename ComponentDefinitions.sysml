@@ -13,7 +13,7 @@ package ComponentDefinition{
 
     private import StandardLibrary::**;
 
-
+    // LEVEL - 0: Top-Level System Definition
     part def topLevelSystem {
         doc /* The top-level system representing the entire system architecture. */
 
@@ -81,7 +81,7 @@ package ComponentDefinition{
         part outputGateway : OutputGateway_Unit;
     }
 
-
+    // LEVEL 1: Subsystem Definitions
     part def InputGateway_Unit{
         doc /* Part representing the input gateway of the system, responsible for receiving data 
             /* from external sources (V2X signals). */
@@ -136,7 +136,7 @@ package ComponentDefinition{
         port camOut : CAM_OutPort;            // CAM da inviare
     }
 
-
+    // LEVEL 2: Component Definitions
     part def Conditioning_Unit{
         doc /* Part representing the conditioning unit of the system, responsible for filtering operations,
             /* and refining operations for the input signals. */
