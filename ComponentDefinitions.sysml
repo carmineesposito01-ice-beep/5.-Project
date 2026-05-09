@@ -76,10 +76,16 @@ package ComponentDefinition{
         /* ===================================================================
 		     * PART USAGE
 	     * =================================================================== */
-        //part inputGateway : InputGateway_Unit;
-        //part elaboration : Elaboration_Unit;
-        //part camComposer : CAMComposer_Unit;
-        //part outputGateway : OutputGateway_Unit;
+        part inputGateway : InputGateway_Unit;
+        part elaboration : Elaboration_Unit;
+        part camComposer : CAMComposer_Unit;
+        part outputGateway : OutputGateway_Unit;
+
+        // Connections between parts
+        
+ 
+        // Connessioni interne
+        
     }
 
     // LEVEL 1: Subsystem Definitions
@@ -106,9 +112,7 @@ package ComponentDefinition{
         in port v2iIn : V2ICommPort;          
 
         out port modelParametersOut : ControlParametersPort;
-        out port camOut : CAM;
         out port monitoringOut : MonitoringPort;
-        out port platooningInfoOut : PlatooningInfoPort;
         
         //part analyzer : Analyzer_Unit;
         //part v2v_own_message : V2V_OwnMessage_Unit;
@@ -196,7 +200,7 @@ package ComponentDefinition{
         in port egoSignalsIn : VehicleBusPort;
 
         out port validatedDataOut : ValidatedDataOutPort;
-        out port platooningInfoOut : PlatooningInfoOutPort;
+        out port platooningInfoOut : PlatooningInfoPort;
         out port egoSignalsOut : VehicleBusPort;
                     
 
@@ -226,6 +230,26 @@ package ComponentDefinition{
         in port modelParametersIn : ControlParametersPort;
         out port monitoringOut : MonitoringPort;
     }
+
+    part def ModelParametersOuting_Unit{
+        doc /* Part representing the model parameters outing unit of the system, responsible for sending the generated model parameters to the vehicle's control system. */
+        in port modelParametersIn : ControlParametersPort;
+        in port platooningInfoIn : PlatooningInfoPort;
+        out port modelParametersOut : ControlParametersPort;
+    }
+    part def CAMMessageOuting_Unit{
+        doc /* Part representing the CAM message outing unit of the system, responsible for sending the composed CAM messages to other vehicles. */
+        in port camIn : CAM_Port;
+        in port platooningInfoIn : PlatooningInfoPort;
+        out port camOut : V2VCommPort;
+    }
+    part def MonitoringOuting_Unit{
+        doc /* Part representing the monitoring outing unit of the system, responsible for sending the composed monitoring data to the vehicle's HMI or other monitoring systems. */
+        in port monitoringIn : MonitoringPort;
+        in port platooningInfoIn : PlatooningInfoPort;
+        out port monitoringOut : MonitoringPort;
+    }
+
 
     part def CheckDegradation_Unit{
         doc /* Part representing the check degradation unit of the system, responsible for checking the degradation of the received signals and ensuring their reliability. */

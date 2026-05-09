@@ -128,27 +128,44 @@ package V2X_CACC_Model{
                     connection eval_to_hmi : ConditioningVariables connect evaluation.conditioningVariablesOut to monitoringComposer.conditioningVariablesIn;
                     connection gen_to_hmi : ConditioningVariables connect parameterGenerator.modelParametersOut to monitoringComposer.modelParametersIn;
                 }
-                part outputGateway : OutputGateway_Unit; //TODO
+                part outputGateway : OutputGateway_Unit{
+                    doc /* The OutputGateway unit, responsible for sending generated control parameters to the vehicle and outputting monitoring information. */
+
+                    part modelParametersOuting : ModelParametersOuting_Unit;
+                    part camMessageOuting : CAMMessageOuting_Unit;
+                    part monitoringOuting : MonitoringOuting_Unit;
+
+                    connection modelParameters_IN : ControlFlow connect outputGateway.modelParametersIn to modelParametersOuting.modelParametersIn;
+                    connection cam_IN : CAM_Flow connect outputGateway.camIn to camMessageOuting.camIn;
+                    connection platooningInfo_IN : PlatooningInfo_Flow connect outputGateway.platooningInfoIn to modelParametersOuting.platooningInfoIn;
+                    connection platooningInfo_IN2 : PlatooningInfo_Flow connect outputGateway.platooningInfoIn to camMessageOuting.platooningInfoIn;
+                    connection platooningInfo_IN3 : PlatooningInfo_Flow connect outputGateway.platooningInfoIn to monitoringOuting.platooningInfoIn;
+                    connection monitoring_IN : Monitoring_Flow connect outputGateway.monitoringIn to monitoringOuting.monitoringIn;
+                    connection modelParameters_OUT : ControlFlow connect modelParametersOuting.modelParametersOut to outputGateway.modelParametersOut;
+                    connection cam_OUT : CAM_Flow connect camMessageOuting.camOut to outputGateway.camOut;
+                    connection monitoring_OUT : MonitoringPort connect monitoringOuting.monitoringOut to outputGateway.monitoringOut;
+                    connection platooningInfo_OUT : PlatooningInfo_Flow connect outputGateway.platooningInfoIn to outputGateway.platooningInfoOut;
                 
-                // Connessioni Top_Level
+                }
+            
+                // Connessioni Top_Level                
                 connection v2v_IN : V2VCommPort connect top_system.v2vIn to inputGateway.v2vIn;
                 connection v2i_IN : V2ICommPort connect top_system.v2iIn to inputGateway.v2iIn;
                 connection vehicle_bus_IN : VehicleBusPort connect top_system.egoVehicleInfoIn to inputGateway.egoSignalsIn;
-                
+                        
                 connection monitoring_OUT : MonitoringPort connect  outputGateway.monitoringOut to top_system.monitoringOut;
                 connection parameter_OUT : ControlFlow connect outputGateway.modelParametersOut to top_system.modelParametersOut;
                 connection platooning_info_OUT : PlatooningInfo_Flow connect outputGateway.platooningInfoOut to top_system.platooningInfoOut;
                 connection cam_OUT : CAM_Flow connect outputGateway.camOut to top_system.camOut;
- 
-                // Connessioni interne
+
+
                 connection v2v_to_elaboration : V2VCommPort connect inputGateway.v2vOut to elaboration.v2vIn;
                 connection v2i_to_elaboration : V2ICommPort connect inputGateway.v2iOut to elaboration.v2iIn;
                 connection ego_to_camComp : EgoVehicleData_Flow connect inputGateway.egoSignalsOut to camComposer.egoIn;
-                connection cacc_state_info : PlatooningInfo_Flow connect inputGateway.state_flag to outputGateway.platooningInfoOut;
-                connection parameter_flow : ControlFlow connect elaboration.modelParameters to outputGateway.modelParametersOut;                
+                connection cacc_state_info : PlatooningInfo_Flow connect inputGateway.platooningInfoOut to outputGateway.platooningInfoIn;
+                connection parameter_flow : ControlFlow connect elaboration.modelParametersOut to outputGateway.modelParametersIn;                
                 connection monitoring_flow : MonitoringPort connect elaboration.monitoringOut to outputGateway.monitoringIn;
                 connection cam_flow : CAM_Flow connect camComposer.camOut to outputGateway.camIn;
-
             }
         }
     }
@@ -773,6 +790,144 @@ package V2X_CACC_Model{
                     first buildEgoState then outputValidatedData;
                     first outputValidatedData then acquisitionLoop;
                 }
+
+                action def CAMComposer_ActionFlow {
+                    doc /* Receives ego vehicle state, generates a trigger on significant changes, composes the CAM and holds it on the output via sample‑and‑hold. */
+                    merge mainLoop;
+
+                    action receiveEgoState {
+                        doc /* Acquires ego vehicle data from the egoIn port. */
+                        action getPosition;
+                        action getSpeed;
+                        action getHeading;
+                        action getAcceleration;
+                        action getTimestamp;
+                        fork egoFork;
+                        join egoJoin;
+                        first start then egoFork;
+                        first egoFork then getPosition;
+                        first egoFork then getSpeed;
+                        first egoFork then getHeading;
+                        first egoFork then getAcceleration;
+                        first egoFork then getTimestamp;
+                        first getPosition then egoJoin;
+                        first getSpeed then egoJoin;
+                        first getHeading then egoJoin;
+                        first getAcceleration then egoJoin;
+                        first getTimestamp then egoJoin;
+                        first egoJoin then done;
+                    }
+
+                    action evaluateTrigger {
+                        doc /* Compares current state with previous state and decides whether to generate a trigger. */
+                        action computeDeltaSpeed;
+                        action computeDeltaHeading;
+                        decide significantChange;
+                        first start then computeDeltaSpeed;
+                        first computeDeltaSpeed then computeDeltaHeading;
+                        first computeDeltaHeading then significantChange;
+                        first significantChange then done;   // trigger generated
+                        first significantChange then done;   // no trigger (minimal variations)
+                    }
+
+                    action composeCAM {
+                        doc /* Assembles the CAM message with all mandatory fields. */
+                        action fillMandatoryFields;
+                        action computeTimestamp;
+                        action signMessage;
+                        first start then fillMandatoryFields;
+                        first fillMandatoryFields then computeTimestamp;
+                        first computeTimestamp then signMessage;
+                        first signMessage then done;
+                    }
+
+                    action sampleAndHold {
+                        doc /* Updates the output with the new CAM if available, otherwise keeps the previous value. */
+                        decide newCamAvailable;
+                        action presentNewCam;
+                        action keepPreviousCam;
+                        first start then newCamAvailable;
+                        first newCamAvailable then presentNewCam;
+                        first newCamAvailable then keepPreviousCam;
+                        first presentNewCam then done;
+                        first keepPreviousCam then done;
+                    }
+
+                    // Main cyclic flow
+                    first start then mainLoop;
+                    first mainLoop then receiveEgoState;
+                    first receiveEgoState then evaluateTrigger;
+                    first evaluateTrigger then composeCAM;
+                    first composeCAM then sampleAndHold;
+                    first sampleAndHold then mainLoop;
+                }
+
+                action def OutputGateway_ActionFlow {
+                    doc /* Receives control parameters, CAM, monitoring and platooning data, and forwards them to the appropriate external ports. */
+                    merge mainLoop;
+
+                    action receiveControlParameters {
+                        doc /* Acquires control parameters from the modelParametersIn port. */
+                        action getControlData;
+                        first start then getControlData;
+                        first getControlData then done;
+                    }
+
+                    action receiveCAM {
+                        doc /* Acquires the composed CAM from the camIn port. */
+                        action getCAM;
+                        first start then getCAM;
+                        first getCAM then done;
+                    }
+
+                    action receiveMonitoring {
+                        doc /* Acquires monitoring data from the monitoringIn port. */
+                        action getMonitoringData;
+                        first start then getMonitoringData;
+                        first getMonitoringData then done;
+                    }
+
+                    action receivePlatooningInfo {
+                        doc /* Acquires platooning info from the platooningInfoIn port. */
+                        action getPlatooningData;
+                        first start then getPlatooningData;
+                        first getPlatooningData then done;
+                    }
+
+                    action forwardToOutputs {
+                        doc /* Forwards all received data to the corresponding output ports. */
+                        action forwardControlToBus;
+                        action forwardCAM_ToV2V;
+                        action forwardMonitoringToHMI;
+                        action forwardPlatooningInfo;
+                        fork fwdFork;
+                        join fwdJoin;
+                        first start then fwdFork;
+                        first fwdFork then forwardControlToBus;
+                        first fwdFork then forwardCAM_ToV2V;
+                        first fwdFork then forwardMonitoringToHMI;
+                        first fwdFork then forwardPlatooningInfo;
+                        first forwardControlToBus then fwdJoin;
+                        first forwardCAM_ToV2V then fwdJoin;
+                        first forwardMonitoringToHMI then fwdJoin;
+                        first forwardPlatooningInfo then fwdJoin;
+                        first fwdJoin then done;
+                    }
+
+                    // Flusso principale ciclico
+                    first start then mainLoop;
+                    first mainLoop then receiveControlParameters;
+                    first mainLoop then receiveCAM;
+                    first mainLoop then receiveMonitoring;
+                    first mainLoop then receivePlatooningInfo;
+                    first receiveControlParameters then forwardToOutputs;
+                    first receiveCAM then forwardToOutputs;
+                    first receiveMonitoring then forwardToOutputs;
+                    first receivePlatooningInfo then forwardToOutputs;
+                    first forwardToOutputs then mainLoop;
+                }
+
+
     
 
    
@@ -1355,91 +1510,107 @@ package V2X_CACC_Model{
     }
 
     package Requirements{
-        /* ===================================================================
-		     * SYSTEM REQUIREMENTS (WIP)
-	     * =================================================================== */
-    
-        requirement cam_receptionRate : CAM_ReceptionRate {
-            @RequirementStatus { 
-                status = "Draft"; 
-                approver = ""; 
-                date = "";
-                group = "FUNCTIONALE REQ"; 
+        package System_Requirements{
+            /* ===================================================================
+		         * SYSTEM REQUIREMENTS (WIP)
+            * =================================================================== */
+        
+            requirement cam_receptionRate : CAM_ReceptionRate {
+                @RequirementStatus { 
+                    status = "Draft"; 
+                    approver = ""; 
+                    date = "";
+                    group = "FUNCTIONALE REQ"; 
+                }
+                        
+                attribute :>> requiredRate = 10 [Hz];
             }
-                    
-            attribute :>> requiredRate = 10 [Hz];
-        }
-        satisfy cam_receptionRate by Structure::V2X_CACC_System::top_system;
+            satisfy cam_receptionRate by Structure::V2X_CACC_System::top_system;
 
-        requirement cam_basedFollowingComputation : CAM_BasedFollowingComputation {
-            @RequirementStatus { 
-                status = "Draft"; 
-                approver = ""; 
-                date = ""; 
-                group = "FUNCTIONALE REQ"; 
+            requirement cam_basedFollowingComputation : CAM_BasedFollowingComputation {
+                @RequirementStatus { 
+                    status = "Draft"; 
+                    approver = ""; 
+                    date = ""; 
+                    group = "FUNCTIONALE REQ"; 
+                }
+                        
+                
             }
-                    
+            satisfy cam_basedFollowingComputation by Structure::V2X_CACC_System::top_system;
+
+            requirement cam_transmission : CAM_Transmission{
+                @RequirementStatus { 
+                    status = "Draft"; 
+                    approver = ""; 
+                    date = ""; 
+                    group = "FUNCTIONALE REQ";
+                }
+            }
+            satisfy cam_transmission by Structure::V2X_CACC_System::top_system;
+
+            requirement cutInDetection : CutInDetection{
+                @RequirementStatus { 
+                    status = "Draft"; 
+                    approver = ""; 
+                    date = "";
+                    group = "FUNCTIONALE REQ";  
+                }
+            }
+            satisfy cutInDetection by Structure::V2X_CACC_System::top_system;
+
+            requirement cutInEmergencyBraking : CutInEmergencyBraking{
+                @RequirementStatus { 
+                    status = "Draft"; 
+                    approver = ""; 
+                    date = ""; 
+                    group = "FUNCTIONALE REQ";
+                }
+            }
+            satisfy cutInEmergencyBraking by Structure::V2X_CACC_System::top_system;
+
+            requirement cutInRequest{
+                @RequirementStatus { 
+                    status = "Draft"; 
+                    approver = ""; 
+                    date = ""; 
+                    group = "FUNCTIONALE REQ";
+                }
+                requirement cutInRequestFeasibilityCheck : CutInRequestFeasibilityCheck{
+                    @RequirementStatus { 
+                        status = "Draft"; 
+                        approver = ""; 
+                        date = ""; 
+                        group = "FUNCTIONALE REQ"; 
+                    }
+
+                }
+
+                requirement cutInAccept : CutInAccept{
+                    @RequirementStatus { 
+                        status = "Draft"; 
+                        approver = ""; 
+                        date = ""; 
+                        group = "FUNCTIONALE REQ"; 
+                    }
+                } 
+
+                requirement cutInReject : CutInReject{
+                    @RequirementStatus { 
+                        status = "Draft"; 
+                        approver = ""; 
+                        date = ""; 
+                        group = "FUNCTIONALE REQ"; 
+                    }
+                }
+
+
+
+            }
+            satisfy cutInRequest by Structure::V2X_CACC_System::top_system;
+
             
-        }
-        satisfy cam_basedFollowingComputation by Structure::V2X_CACC_System::top_system;
-
-        requirement cam_transmission : CAM_Transmission{
-            @RequirementStatus { 
-                status = "Draft"; 
-                approver = ""; 
-                date = ""; 
-                group = "FUNCTIONALE REQ";
-            }
-        }
-        satisfy cam_transmission by Structure::V2X_CACC_System::top_system;
-
-        requirement cutInDetection : CutInDetection{
-            @RequirementStatus { 
-                status = "Draft"; 
-                approver = ""; 
-                date = "";
-                group = "FUNCTIONALE REQ";  
-            }
-        }
-        satisfy cutInDetection by Structure::V2X_CACC_System::top_system;
-
-        requirement cutInEmergencyBraking : CutInEmergencyBraking{
-            @RequirementStatus { 
-                status = "Draft"; 
-                approver = ""; 
-                date = ""; 
-                group = "FUNCTIONALE REQ";
-            }
-        }
-        satisfy cutInEmergencyBraking by Structure::V2X_CACC_System::top_system;
-
-        requirement cutInRequest{
-            @RequirementStatus { 
-                status = "Draft"; 
-                approver = ""; 
-                date = ""; 
-                group = "FUNCTIONALE REQ";
-            }
-            requirement cutInRequestFeasibilityCheck : CutInRequestFeasibilityCheck{
-                @RequirementStatus { 
-                    status = "Draft"; 
-                    approver = ""; 
-                    date = ""; 
-                    group = "FUNCTIONALE REQ"; 
-                }
-
-            }
-
-            requirement cutInAccept : CutInAccept{
-                @RequirementStatus { 
-                    status = "Draft"; 
-                    approver = ""; 
-                    date = ""; 
-                    group = "FUNCTIONALE REQ"; 
-                }
-            } 
-
-            requirement cutInReject : CutInReject{
+            requirement cutInCompletionRevert : CutInCompletionRevert{
                 @RequirementStatus { 
                     status = "Draft"; 
                     approver = ""; 
@@ -1447,160 +1618,109 @@ package V2X_CACC_Model{
                     group = "FUNCTIONALE REQ"; 
                 }
             }
+            satisfy cutInCompletionRevert by Structure::V2X_CACC_System::top_system;
 
-
-
-        }
-        satisfy cutInRequest by Structure::V2X_CACC_System::top_system;
-
-        
-        requirement cutInCompletionRevert : CutInCompletionRevert{
-            @RequirementStatus { 
-                status = "Draft"; 
-                approver = ""; 
-                date = ""; 
-                group = "FUNCTIONALE REQ"; 
-            }
-        }
-        satisfy cutInCompletionRevert by Structure::V2X_CACC_System::top_system;
-
-        requirement shockwaveMitigazion{
-            @RequirementStatus { 
-                status = "Draft"; 
-                approver = ""; 
-                date = ""; 
-                group = "FUNCTIONALE REQ";
-            }
-            requirement jamRateCalculation : JamRateCalculation{
+            requirement shockwaveMitigazion{
                 @RequirementStatus { 
                     status = "Draft"; 
                     approver = ""; 
                     date = ""; 
-                    group = "FUNCTIONALE REQ"; 
+                    group = "FUNCTIONALE REQ";
+                }
+                requirement jamRateCalculation : JamRateCalculation{
+                    @RequirementStatus { 
+                        status = "Draft"; 
+                        approver = ""; 
+                        date = ""; 
+                        group = "FUNCTIONALE REQ"; 
+                    }
+                }
+
+                requirement jamMitigationHeadwayIncrease : JamMitigationHeadwayIncrease{
+                    @RequirementStatus { 
+                        status = "Draft"; 
+                        approver = ""; 
+                        date = "";
+                        group = "FUNCTIONALE REQ"; 
+                    }
                 }
             }
+            satisfy shockwaveMitigazion by Structure::V2X_CACC_System::top_system;
 
-            requirement jamMitigationHeadwayIncrease : JamMitigationHeadwayIncrease{
+
+            requirement leaderClassification{
                 @RequirementStatus { 
                     status = "Draft"; 
                     approver = ""; 
-                    date = "";
-                    group = "FUNCTIONALE REQ"; 
+                    date = ""; 
+                    group = "FUNCTIONALE REQ";
                 }
-            }
-        }
-        satisfy shockwaveMitigazion by Structure::V2X_CACC_System::top_system;
+                requirement leaderProfileClassification : LeaderProfileClassification{
+                    @RequirementStatus { 
+                        status = "Draft"; 
+                        approver = ""; 
+                        date = "";
+                        group = "FUNCTIONALE REQ"; 
+                    }
+                }
 
-
-        requirement leaderClassification{
-            @RequirementStatus { 
-                status = "Draft"; 
-                approver = ""; 
-                date = ""; 
-                group = "FUNCTIONALE REQ";
+                requirement profileBasedParameterModifiers : ProfileBasedParameterModifiers{
+                    @RequirementStatus { 
+                        status = "Draft"; 
+                        approver = ""; 
+                        date = "";
+                        group = "FUNCTIONALE REQ"; 
+                    }
+                } 
             }
-            requirement leaderProfileClassification : LeaderProfileClassification{
+            satisfy leaderClassification by Structure::V2X_CACC_System::top_system;
+
+            requirement crossroadAdaptation{
                 @RequirementStatus { 
                     status = "Draft"; 
                     approver = ""; 
-                    date = "";
-                    group = "FUNCTIONALE REQ"; 
+                    date = ""; 
+                    group = "FUNCTIONALE REQ";
+                }
+                requirement spat_map_Reception: SPAT_MAP_Reception{
+                    @RequirementStatus { 
+                        status = "Draft"; 
+                        approver = ""; 
+                        date = "";
+                        group = "FUNCTIONALE REQ"; 
+                    }
+                }
+
+                requirement glosaFeasibilityCalculation : GLOSAFeasibilityCalculation{
+                    @RequirementStatus { 
+                        status = "Draft"; 
+                        approver = ""; 
+                        date = "";
+                        group = "FUNCTIONALE REQ"; 
+                    }
+                }
+
+                requirement glosaSpeedAdaptation : GLOSASpeedAdaptation{
+                    @RequirementStatus { 
+                        status = "Draft"; 
+                        approver = ""; 
+                        date = "";
+                        group = "FUNCTIONALE REQ"; 
+                    }
+                }
+
+                requirement GLOSANonGreenDeceleration : GLOSANonGreenDeceleration{
+                    @RequirementStatus { 
+                        status = "Draft"; 
+                        approver = ""; 
+                        date = "";
+                        group = "FUNCTIONALE REQ"; 
+                    }
                 }
             }
+            satisfy crossroadAdaptation by Structure::V2X_CACC_System::top_system;
 
-            requirement profileBasedParameterModifiers : ProfileBasedParameterModifiers{
-                @RequirementStatus { 
-                    status = "Draft"; 
-                    approver = ""; 
-                    date = "";
-                    group = "FUNCTIONALE REQ"; 
-                }
-            } 
-        }
-        satisfy leaderClassification by Structure::V2X_CACC_System::top_system;
-
-        requirement crossroadAdaptation{
-            @RequirementStatus { 
-                status = "Draft"; 
-                approver = ""; 
-                date = ""; 
-                group = "FUNCTIONALE REQ";
-            }
-            requirement spat_map_Reception: SPAT_MAP_Reception{
-                @RequirementStatus { 
-                    status = "Draft"; 
-                    approver = ""; 
-                    date = "";
-                    group = "FUNCTIONALE REQ"; 
-                }
-            }
-
-            requirement glosaFeasibilityCalculation : GLOSAFeasibilityCalculation{
-                @RequirementStatus { 
-                    status = "Draft"; 
-                    approver = ""; 
-                    date = "";
-                    group = "FUNCTIONALE REQ"; 
-                }
-            }
-
-            requirement glosaSpeedAdaptation : GLOSASpeedAdaptation{
-                @RequirementStatus { 
-                    status = "Draft"; 
-                    approver = ""; 
-                    date = "";
-                    group = "FUNCTIONALE REQ"; 
-                }
-            }
-
-            requirement GLOSANonGreenDeceleration : GLOSANonGreenDeceleration{
-                @RequirementStatus { 
-                    status = "Draft"; 
-                    approver = ""; 
-                    date = "";
-                    group = "FUNCTIONALE REQ"; 
-                }
-            }
-        }
-        satisfy crossroadAdaptation by Structure::V2X_CACC_System::top_system;
-
-        requirement speedLimitEnforcement : SpeedLimitEnforcement{
-            @RequirementStatus { 
-                status = "Draft"; 
-                approver = ""; 
-                date = "";
-                group = "FUNCTIONALE REQ"; 
-            }
-        }
-
-        requirement roadHazardWarningResponse : RoadHazardWarningResponse{
-            @RequirementStatus { 
-                status = "Draft"; 
-                approver = ""; 
-                date = "";
-                group = "FUNCTIONALE REQ"; 
-            }
-        }
-        satisfy roadHazardWarningResponse by Structure::V2X_CACC_System::top_system;
-
-        requirement signalViolationWarningReception : SignalViolationWarningReception{
-            @RequirementStatus { 
-                status = "Draft"; 
-                approver = ""; 
-                date = "";
-                group = "FUNCTIONALE REQ"; 
-            }
-        }
-        satisfy signalViolationWarningReception by Structure::V2X_CACC_System::top_system;
-
-        requirement swm{
-            @RequirementStatus { 
-                status = "Draft"; 
-                approver = ""; 
-                date = "";
-                group = "FUNCTIONALE REQ"; 
-            }
-            requirement swm_ReceptionForAction : SVW_ReceptionForAction{
+            requirement speedLimitEnforcement : SpeedLimitEnforcement{
                 @RequirementStatus { 
                     status = "Draft"; 
                     approver = ""; 
@@ -1609,7 +1729,7 @@ package V2X_CACC_Model{
                 }
             }
 
-            requirement swm_EmergencyBrake : SVW_EmergencyBrake{
+            requirement roadHazardWarningResponse : RoadHazardWarningResponse{
                 @RequirementStatus { 
                     status = "Draft"; 
                     approver = ""; 
@@ -1617,8 +1737,9 @@ package V2X_CACC_Model{
                     group = "FUNCTIONALE REQ"; 
                 }
             }
+            satisfy roadHazardWarningResponse by Structure::V2X_CACC_System::top_system;
 
-            requirement swm_ModerateDeceleration : SVW_ModerateDeceleration{
+            requirement signalViolationWarningReception : SignalViolationWarningReception{
                 @RequirementStatus { 
                     status = "Draft"; 
                     approver = ""; 
@@ -1626,17 +1747,161 @@ package V2X_CACC_Model{
                     group = "FUNCTIONALE REQ"; 
                 }
             }
-        }
-        satisfy swm by Structure::V2X_CACC_System::top_system;
+            satisfy signalViolationWarningReception by Structure::V2X_CACC_System::top_system;
 
-        requirement wrongWay_Adaptation{
-            @RequirementStatus { 
-                status = "Draft"; 
-                approver = ""; 
-                date = ""; 
-                group = "FUNCTIONALE REQ";
+            requirement swm{
+                @RequirementStatus { 
+                    status = "Draft"; 
+                    approver = ""; 
+                    date = "";
+                    group = "FUNCTIONALE REQ"; 
+                }
+                requirement swm_ReceptionForAction : SVW_ReceptionForAction{
+                    @RequirementStatus { 
+                        status = "Draft"; 
+                        approver = ""; 
+                        date = "";
+                        group = "FUNCTIONALE REQ"; 
+                    }
+                }
+
+                requirement swm_EmergencyBrake : SVW_EmergencyBrake{
+                    @RequirementStatus { 
+                        status = "Draft"; 
+                        approver = ""; 
+                        date = "";
+                        group = "FUNCTIONALE REQ"; 
+                    }
+                }
+
+                requirement swm_ModerateDeceleration : SVW_ModerateDeceleration{
+                    @RequirementStatus { 
+                        status = "Draft"; 
+                        approver = ""; 
+                        date = "";
+                        group = "FUNCTIONALE REQ"; 
+                    }
+                }
             }
-            requirement WrongWayVehicle_LateralHeadwayIncrease : WrongWayVehicle_LateralHeadwayIncrease{
+            satisfy swm by Structure::V2X_CACC_System::top_system;
+
+            requirement wrongWay_Adaptation{
+                @RequirementStatus { 
+                    status = "Draft"; 
+                    approver = ""; 
+                    date = ""; 
+                    group = "FUNCTIONALE REQ";
+                }
+                requirement WrongWayVehicle_LateralHeadwayIncrease : WrongWayVehicle_LateralHeadwayIncrease{
+                    @RequirementStatus { 
+                        status = "Draft"; 
+                        approver = ""; 
+                        date = "";
+                        group = "FUNCTIONALE REQ"; 
+                    }
+                }
+
+                requirement wrongWayVehicle_EvasionManeuver : WrongWayVehicle_EvasionManeuver{
+                    @RequirementStatus { 
+                        status = "Draft"; 
+                        approver = ""; 
+                        date = "";
+                    }
+                }
+
+                requirement wrongWayVehicle_RestoreLateralHeadway : WrongWayVehicle_RestoreLateralHeadway{
+                    @RequirementStatus { 
+                        status = "Draft"; 
+                        approver = ""; 
+                        date = "";
+                        group = "FUNCTIONALE REQ"; 
+                    }
+                }
+            }
+            satisfy wrongWay_Adaptation by Structure::V2X_CACC_System::top_system;
+
+            requirement emergencyVehicle{
+                @RequirementStatus { 
+                    status = "Draft"; 
+                    approver = ""; 
+                    date = ""; 
+                    group = "FUNCTIONALE REQ";
+                }
+                requirement emergencyVehicle_LateralHeadwayIncrease : EmergencyVehicle_LateralHeadwayIncrease{
+                    @RequirementStatus { 
+                        status = "Draft"; 
+                        approver = ""; 
+                        date = "";
+                        group = "FUNCTIONALE REQ"; 
+                    }
+                }
+
+                requirement emergencyVehicle_RestoreLateralHeadway : EmergencyVehicle_RestoreLateralHeadway{
+                    @RequirementStatus { 
+                        status = "Draft"; 
+                        approver = ""; 
+                        date = "";
+                        group = "FUNCTIONALE REQ"; 
+                    }
+                }
+            }
+            satisfy emergencyVehicle by Structure::V2X_CACC_System::top_system;
+
+            requirement pedestrian{
+                @RequirementStatus { 
+                    status = "Draft"; 
+                    approver = ""; 
+                    date = ""; 
+                    group = "FUNCTIONALE REQ";
+                }
+                requirement pedestrian_TTACalculation : Pedestrian_TTACalculation{
+                    @RequirementStatus { 
+                        status = "Draft"; 
+                        approver = ""; 
+                        date = "";
+                        group = "FUNCTIONALE REQ"; 
+                    }
+                }
+
+                requirement pedestrian_ProceedIfTTAHigh : Pedestrian_ProceedIfTTAHigh{
+                    @RequirementStatus { 
+                        status = "Draft"; 
+                        approver = ""; 
+                        date = "";
+                        group = "FUNCTIONALE REQ"; 
+                    }
+                }
+
+                requirement pedestrian_SlowDownForTTA : Pedestrian_SlowDownForTTA{
+                    @RequirementStatus { 
+                        status = "Draft"; 
+                        approver = ""; 
+                        date = "";
+                        group = "FUNCTIONALE REQ"; 
+                    }
+                }
+
+                requirement pedestrian_EmergencyBrakeForTTA : Pedestrian_EmergencyBrakeForTTA{
+                    @RequirementStatus { 
+                        status = "Draft"; 
+                        approver = ""; 
+                        date = "";
+                        group = "FUNCTIONALE REQ"; 
+                    }
+                }
+
+                requirement pedestrian_ResumeAfterAlarm : Pedestrian_ResumeAfterAlarm{
+                    @RequirementStatus { 
+                        status = "Draft"; 
+                        approver = ""; 
+                        date = "";
+                        group = "FUNCTIONALE REQ"; 
+                    }
+                }
+            }
+            satisfy pedestrian by Structure::V2X_CACC_System::top_system;
+
+            requirement state_Comunication : State_Comunications{
                 @RequirementStatus { 
                     status = "Draft"; 
                     approver = ""; 
@@ -1644,566 +1909,459 @@ package V2X_CACC_Model{
                     group = "FUNCTIONALE REQ"; 
                 }
             }
-
-            requirement wrongWayVehicle_EvasionManeuver : WrongWayVehicle_EvasionManeuver{
+            satisfy state_Comunication by Structure::V2X_CACC_System::top_system;
+            
+            
+            /* ===================================================================
+                * SAFETY REQUIREMENTS
+            * =================================================================== */
+            
+            requirement noRearEndCollision_V2VError : NoRearEndCollision_V2VError {
                 @RequirementStatus { 
                     status = "Draft"; 
                     approver = ""; 
                     date = "";
+                    group = "SAFETY REQ"; 
                 }
             }
+            satisfy noRearEndCollision_V2VError by FPGA_Hardware::PYNQZ1::system;
 
-            requirement wrongWayVehicle_RestoreLateralHeadway : WrongWayVehicle_RestoreLateralHeadway{
+            requirement noCollisionDuringAssistedCutIn : NoCollisionDuringAssistedCutIn {
                 @RequirementStatus { 
                     status = "Draft"; 
                     approver = ""; 
                     date = "";
-                    group = "FUNCTIONALE REQ"; 
+                    group = "SAFETY REQ"; 
                 }
             }
-        }
-        satisfy wrongWay_Adaptation by Structure::V2X_CACC_System::top_system;
+            satisfy noCollisionDuringAssistedCutIn by FPGA_Hardware::PYNQZ1::system;
 
-        requirement emergencyVehicle{
-            @RequirementStatus { 
-                status = "Draft"; 
-                approver = ""; 
-                date = ""; 
-                group = "FUNCTIONALE REQ";
-            }
-            requirement emergencyVehicle_LateralHeadwayIncrease : EmergencyVehicle_LateralHeadwayIncrease{
+            requirement noIntersectionCollision_V2IError : NoIntersectionCollision_V2IError {
                 @RequirementStatus { 
                     status = "Draft"; 
                     approver = ""; 
                     date = "";
-                    group = "FUNCTIONALE REQ"; 
+                    group = "SAFETY REQ"; 
                 }
             }
-
-            requirement emergencyVehicle_RestoreLateralHeadway : EmergencyVehicle_RestoreLateralHeadway{
+            satisfy noIntersectionCollision_V2IError by FPGA_Hardware::PYNQZ1::system;
+            
+            requirement noPedestrianIncident : NoPedestrianIncident {
                 @RequirementStatus { 
                     status = "Draft"; 
                     approver = ""; 
                     date = "";
-                    group = "FUNCTIONALE REQ"; 
+                    group = "SAFETY REQ"; 
                 }
             }
-        }
-        satisfy emergencyVehicle by Structure::V2X_CACC_System::top_system;
-
-        requirement pedestrian{
-            @RequirementStatus { 
-                status = "Draft"; 
-                approver = ""; 
-                date = ""; 
-                group = "FUNCTIONALE REQ";
-            }
-            requirement pedestrian_TTACalculation : Pedestrian_TTACalculation{
+            satisfy noPedestrianIncident by Structure::V2X_CACC_System::top_system;
+            
+            requirement noEmergencyVehicleCollision : NoEmergencyVehicleCollision {
                 @RequirementStatus { 
                     status = "Draft"; 
                     approver = ""; 
                     date = "";
-                    group = "FUNCTIONALE REQ"; 
+                    group = "SAFETY REQ"; 
                 }
             }
-
-            requirement pedestrian_ProceedIfTTAHigh : Pedestrian_ProceedIfTTAHigh{
+            satisfy noEmergencyVehicleCollision by Structure::V2X_CACC_System::top_system;
+            
+            requirement noWrongWayVehicleCollision : NoWrongWayVehicleCollision {
                 @RequirementStatus { 
                     status = "Draft"; 
                     approver = ""; 
                     date = "";
-                    group = "FUNCTIONALE REQ"; 
+                    group = "SAFETY REQ"; 
                 }
             }
-
-            requirement pedestrian_SlowDownForTTA : Pedestrian_SlowDownForTTA{
+            satisfy noWrongWayVehicleCollision by Structure::V2X_CACC_System::top_system;
+            
+            requirement noStringInstabilityAmplification : NoStringInstabilityAmplification {
                 @RequirementStatus { 
                     status = "Draft"; 
                     approver = ""; 
                     date = "";
-                    group = "FUNCTIONALE REQ"; 
+                    group = "SAFETY REQ"; 
                 }
             }
-
-            requirement pedestrian_EmergencyBrakeForTTA : Pedestrian_EmergencyBrakeForTTA{
+            satisfy noStringInstabilityAmplification by Structure::V2X_CACC_System::top_system;
+            
+            requirement legalSpeedLimitCompliance : LegalSpeedLimitCompliance {
                 @RequirementStatus { 
                     status = "Draft"; 
                     approver = ""; 
                     date = "";
-                    group = "FUNCTIONALE REQ"; 
+                    group = "SAFETY REQ"; 
                 }
             }
-
-            requirement pedestrian_ResumeAfterAlarm : Pedestrian_ResumeAfterAlarm{
+            satisfy legalSpeedLimitCompliance by Structure::V2X_CACC_System::top_system;
+            
+            requirement noUnnecessaryOrExcessiveEmergencyBrake : NoUnnecessaryOrExcessiveEmergencyBrake {
                 @RequirementStatus { 
                     status = "Draft"; 
                     approver = ""; 
                     date = "";
-                    group = "FUNCTIONALE REQ"; 
+                    group = "SAFETY REQ"; 
                 }
             }
-        }
-        satisfy pedestrian by Structure::V2X_CACC_System::top_system;
-
-        requirement state_Comunication : State_Comunications{
-            @RequirementStatus { 
-                status = "Draft"; 
-                approver = ""; 
-                date = "";
-                group = "FUNCTIONALE REQ"; 
+            satisfy noUnnecessaryOrExcessiveEmergencyBrake by Structure::V2X_CACC_System::top_system;
+            
+            requirement noUnstableOrExcessiveEvasionManeuver : NoUnstableOrExcessiveEvasionManeuver {
+                @RequirementStatus { 
+                    status = "Draft"; 
+                    approver = ""; 
+                    date = "";
+                    group = "SAFETY REQ"; 
+                }
             }
-        }
-        satisfy state_Comunication by Structure::V2X_CACC_System::top_system;
+            satisfy noUnstableOrExcessiveEvasionManeuver by Structure::V2X_CACC_System::top_system;
+
+
+
+
+            /* ===================================================================
+                * SOTIF REQUIREMENTS
+            * =================================================================== */
+
+            requirement leaderProfile_ConservativeFallback : LeaderProfile_ConservativeFallback {
+                @RequirementStatus { 
+                    status = "Draft"; 
+                    approver = ""; 
+                    date = "";
+                    group = "SOTIF REQ";
+                }
+            }
+            satisfy leaderProfile_ConservativeFallback by Structure::V2X_CACC_System::top_system;
+
+            requirement jamRate_FalsePositiveHandling : JamRate_FalsePositiveHandling {
+                @RequirementStatus { 
+                    status = "Draft"; 
+                    approver = ""; 
+                    date = "";
+                    group = "SOTIF REQ";
+                }
+            }
+            satisfy jamRate_FalsePositiveHandling by Structure::V2X_CACC_System::top_system;
+
+            requirement jamRate_FalsePositiveHandling : JamRate_FalsePositiveHandling {
+                @RequirementStatus { 
+                    status = "Draft"; 
+                    approver = ""; 
+                    date = "";
+                    group = "SOTIF REQ";
+                }
+            }
+
+            requirement glosa_UnreachableGreenWaveHandling : GLOSA_UnreachableGreenWaveHandling {
+                @RequirementStatus { 
+                    status = "Draft"; 
+                    approver = ""; 
+                    date = "";
+                    group = "SOTIF REQ";
+                }
+            }
+            satisfy glosa_UnreachableGreenWaveHandling by Structure::V2X_CACC_System::top_system;
+
+            requirement denm_ConfidenceLevelValidation : DENM_ConfidenceLevelValidation {
+                @RequirementStatus { 
+                    status = "Draft"; 
+                    approver = ""; 
+                    date = "";
+                    group = "SOTIF REQ";
+                }
+            }
+            satisfy denm_ConfidenceLevelValidation by Structure::V2X_CACC_System::top_system;
+
+            requirement denm_ConfidenceLevelValidation : DENM_ConfidenceLevelValidation{
+                @RequirementStatus { 
+                    status = "Draft"; 
+                    approver = ""; 
+                    date = "";
+                    group = "SOTIF REQ";
+                }
+            }
+            satisfy denm_ConfidenceLevelValidation by Structure::V2X_CACC_System::top_system;
+
+            requirement pedestrian_OnboardVerification : Pedestrian_OnboardVerification {
+                @RequirementStatus { 
+                    status = "Draft"; 
+                    approver = ""; 
+                    date = "";
+                    group = "SOTIF REQ";
+                }
+            }
+            satisfy pedestrian_OnboardVerification by Structure::V2X_CACC_System::top_system;
+            
+
+            requirement emergencyManeuver_ODDRestrictions : EmergencyManeuver_ODDRestrictions {
+                @RequirementStatus { 
+                    status = "Draft"; 
+                    approver = ""; 
+                    date = "";
+                    group = "SOTIF REQ";
+                }
+            }
+            satisfy emergencyManeuver_ODDRestrictions by Structure::V2X_CACC_System::top_system;
+
+            /* ===================================================================
+                * SAFETY-SCENARIO REQUIREMENTS
+            * =================================================================== */
+
+            requirement scenarioCatalogGeneration : ScenarioCatalogGeneration{
+                @RequirementStatus { 
+                    status = "Draft"; 
+                    approver = ""; 
+                    date = "";
+                    group = "SCENARIO REQ";
+                }
+            }
+            satisfy scenarioCatalogGeneration by Structure::V2X_CACC_System::top_system;
+
+            requirement scenarioBasedSafetyIntegration : ScenarioBasedSafetyIntegration {
+                @RequirementStatus { 
+                    status = "Draft"; 
+                    approver = ""; 
+                    date = "";
+                    group = "SCENARIO REQ";
+                }
+            }
+            satisfy scenarioBasedSafetyIntegration by Structure::V2X_CACC_System::top_system;
+
+            requirement scenarioResultsAgainstAcceptanceCriteria : ScenarioResultsAgainstAcceptanceCriteria {
+                @RequirementStatus { 
+                    status = "Draft"; 
+                    approver = ""; 
+                    date = "";
+                    group = "SCENARIO REQ";
+                }
+            }
+            satisfy scenarioResultsAgainstAcceptanceCriteria by Structure::V2X_CACC_System::top_system;
+            
+
+            requirement odd_ScenarioCoverageDocumentation : ODD_ScenarioCoverageDocumentation {
+                @RequirementStatus { 
+                    status = "Draft"; 
+                    approver = ""; 
+                    date = "";
+                    group = "SCENARIO REQ";
+                }
+            }
+            satisfy odd_ScenarioCoverageDocumentation by Structure::V2X_CACC_System::top_system;
+
+            requirement v2x_DegradedChannelScenarios : V2X_DegradedChannelScenarios {
+                @RequirementStatus { 
+                    status = "Draft"; 
+                    approver = ""; 
+                    date = "";
+                    group = "SCENARIO REQ";
+                }
+            }
+            satisfy v2x_DegradedChannelScenarios by Structure::V2X_CACC_System::top_system;
+
+            requirement v2x_CybersecurityTestScenarios : V2X_CybersecurityTestScenarios {
+                @RequirementStatus { 
+                    status = "Rejected"; 
+                    approver = ""; 
+                    date = "";
+                    group = "SCENARIO REQ";
+                }
+            }
+            satisfy v2x_CybersecurityTestScenarios by Structure::V2X_CACC_System::top_system;
         
+            /* ===================================================================
+                * OPERATIONAL REQUIREMENTS
+            * =================================================================== */
+
+            requirement v2vSignalLossFallback : V2vSignalLossFallback {
+                @RequirementStatus { 
+                    status = "Draft"; 
+                    approver = ""; 
+                    date = "";
+                    group = "OPERATIONAL REQ";
+                }
+            }
+            satisfy v2vSignalLossFallback by Structure::V2X_CACC_System::top_system;
+
+            requirement v2vSignalRestoreAndReactivation : V2vSignalRestoreAndReactivation {
+                @RequirementStatus { 
+                    status = "Draft"; 
+                    approver = ""; 
+                    date = "";
+                    group = "OPERATIONAL REQ";
+                }
+            }
+            satisfy v2vSignalRestoreAndReactivation by Structure::V2X_CACC_System::top_system;
+
+            requirement messageFragmentationHandling : MessageFragmentationHandling {
+                @RequirementStatus { 
+                    status = "Draft"; 
+                    approver = ""; 
+                    date = "";
+                    group = "OPERATIONAL REQ";
+                }
+            }
+            satisfy messageFragmentationHandling by Structure::V2X_CACC_System::top_system;
+
+            requirement v2iFailureFallback : V2iFailureFallback {
+                @RequirementStatus { 
+                    status = "Draft"; 
+                    approver = ""; 
+                    date = "";
+                    group = "OPERATIONAL REQ";
+                }
+            }
+            satisfy v2iFailureFallback by Structure::V2X_CACC_System::top_system;
+
+            requirement glosaFailureRecovery : GLOSAFailureRecovery {
+                @RequirementStatus { 
+                    status = "Draft"; 
+                    approver = ""; 
+                    date = "";
+                    group = "OPERATIONAL REQ";
+                }
+            }
+            satisfy glosaFailureRecovery by Structure::V2X_CACC_System::top_system;
+
+            requirement heartbeatMonitoring : HeartbeatMonitoring {
+                @RequirementStatus { 
+                    status = "Draft"; 
+                    approver = ""; 
+                    date = "";
+                    group = "OPERATIONAL REQ";
+                }
+            }
+            satisfy heartbeatMonitoring by Structure::V2X_CACC_System::top_system;
+
+            requirement failSafeArchitecture : FailSafeArchitecture {
+                @RequirementStatus { 
+                    status = "Draft"; 
+                    approver = ""; 
+                    date = "";
+                    group = "OPERATIONAL REQ";
+                }
+            }
+            satisfy failSafeArchitecture by Structure::V2X_CACC_System::top_system;
+
+            /* ===================================================================
+                * PERFORMANCE REQUIREMENTS
+            * =================================================================== */
+            requirement v2v_SafetyEndToEndLatency : V2V_SafetyEndToEndLatency {
+                @RequirementStatus { 
+                    status = "Draft"; 
+                    approver = ""; 
+                    date = "";
+                    group = "PERFORMANCE REQ";
+                }
+            }
+            satisfy v2v_SafetyEndToEndLatency by Structure::V2X_CACC_System::top_system;
+
+            requirement v2i_SafetyEndToEndLatency : V2I_SafetyEndToEndLatency {
+                @RequirementStatus { 
+                    status = "Draft"; 
+                    approver = ""; 
+                    date = "";
+                    group = "PERFORMANCE REQ";
+                }
+            }
+            satisfy v2i_SafetyEndToEndLatency by Structure::V2X_CACC_System::top_system;
+
+            requirement cam_MinimumUpdateRate : CAM_MinimumUpdateRate {
+                @RequirementStatus { 
+                    status = "Draft"; 
+                    approver = ""; 
+                    date = "";
+                    group = "PERFORMANCE REQ";
+                }
+            }
+            satisfy cam_MinimumUpdateRate by Structure::V2X_CACC_System::top_system;
+            
+            requirement safetyDistance_EstimationAccuracy : SafetyDistanceEstimationAccuracy {
+                @RequirementStatus { 
+                    status = "Draft"; 
+                    approver = ""; 
+                    date = "";
+                    group = "PERFORMANCE REQ";
+                }
+            }
+            satisfy safetyDistance_EstimationAccuracy by Structure::V2X_CACC_System::top_system;
+
+            requirement glosa_ComputationTime : GLOSA_ComputationTime {
+                @RequirementStatus { 
+                    status = "Draft"; 
+                    approver = ""; 
+                    date = "";
+                    group = "PERFORMANCE REQ";
+                }
+            }
+            satisfy glosa_ComputationTime by Structure::V2X_CACC_System::top_system;
+
+
+            /* ===================================================================
+                * PROCESS REQUIREMENTS
+            * =================================================================== */
+            requirement requirementsTraceability : RequirementsTraceability {
+                @RequirementStatus { 
+                    status = "Draft"; 
+                    approver = ""; 
+                    date = "";
+                    group = "PROCESS REQ";
+                }
+            }
+            satisfy requirementsTraceability by Structure::V2X_CACC_System::top_system;
+
+            requirement requirementsReview : RequirementsReview{
+                @RequirementStatus { 
+                    status = "Draft"; 
+                    approver = ""; 
+                    date = "";
+                    group = "PROCESS REQ";
+                }
+            }
+            satisfy requirementsReview by Structure::V2X_CACC_System::top_system;
+
+            requirement externalInterfaceSpecification : ExternalInterfaceSpecification{
+                @RequirementStatus { 
+                    status = "Draft"; 
+                    approver = ""; 
+                    date = "";
+                    group = "PROCESS REQ";
+                }
+            }
+            satisfy externalInterfaceSpecification by Structure::V2X_CACC_System::top_system;
+
+            requirement safetyCaseDevelopment : SafetyCaseDevelopment{
+                @RequirementStatus { 
+                    status = "Draft"; 
+                    approver = ""; 
+                    date = "";
+                    group = "PROCESS REQ";
+                }
+            }
+            satisfy safetyCaseDevelopment by Structure::V2X_CACC_System::top_system;
+
+            requirement tara_Conduction : TARA_Conduction{
+                @RequirementStatus { 
+                    status = "Draft"; 
+                    approver = ""; 
+                    date = "";
+                    group = "PROCESS REQ";
+                }
+            }
+            satisfy tara_Conduction by Structure::V2X_CACC_System::top_system;
+
+            requirement scenarioCatalogogDefinition : ScenarioCatalogDefinition{
+                @RequirementStatus { 
+                    status = "Draft"; 
+                    approver = ""; 
+                    date = "";
+                    group = "PROCESS REQ";
+                }
+            }
+            satisfy scenarioCatalogogDefinition by Structure::V2X_CACC_System::top_system;
+
+
+        }
         
-        /* ===================================================================
-            * SAFETY REQUIREMENTS
-        * =================================================================== */
-        
-        requirement noRearEndCollision_V2VError : NoRearEndCollision_V2VError {
-            @RequirementStatus { 
-                status = "Draft"; 
-                approver = ""; 
-                date = "";
-                group = "SAFETY REQ"; 
-            }
-        }
-        satisfy noRearEndCollision_V2VError by FPGA_Hardware::PYNQZ1::system;
-
-        requirement noCollisionDuringAssistedCutIn : NoCollisionDuringAssistedCutIn {
-            @RequirementStatus { 
-                status = "Draft"; 
-                approver = ""; 
-                date = "";
-                group = "SAFETY REQ"; 
-            }
-        }
-        satisfy noCollisionDuringAssistedCutIn by FPGA_Hardware::PYNQZ1::system;
-
-        requirement noIntersectionCollision_V2IError : NoIntersectionCollision_V2IError {
-            @RequirementStatus { 
-                status = "Draft"; 
-                approver = ""; 
-                date = "";
-                group = "SAFETY REQ"; 
-            }
-        }
-        satisfy noIntersectionCollision_V2IError by FPGA_Hardware::PYNQZ1::system;
-        
-        requirement noPedestrianIncident : NoPedestrianIncident {
-            @RequirementStatus { 
-                status = "Draft"; 
-                approver = ""; 
-                date = "";
-                group = "SAFETY REQ"; 
-            }
-        }
-        satisfy noPedestrianIncident by Structure::V2X_CACC_System::top_system;
-        
-        requirement noEmergencyVehicleCollision : NoEmergencyVehicleCollision {
-            @RequirementStatus { 
-                status = "Draft"; 
-                approver = ""; 
-                date = "";
-                group = "SAFETY REQ"; 
-            }
-        }
-        satisfy noEmergencyVehicleCollision by Structure::V2X_CACC_System::top_system;
-        
-        requirement noWrongWayVehicleCollision : NoWrongWayVehicleCollision {
-            @RequirementStatus { 
-                status = "Draft"; 
-                approver = ""; 
-                date = "";
-                group = "SAFETY REQ"; 
-            }
-        }
-        satisfy noWrongWayVehicleCollision by Structure::V2X_CACC_System::top_system;
-        
-        requirement noStringInstabilityAmplification : NoStringInstabilityAmplification {
-            @RequirementStatus { 
-                status = "Draft"; 
-                approver = ""; 
-                date = "";
-                group = "SAFETY REQ"; 
-            }
-        }
-        satisfy noStringInstabilityAmplification by Structure::V2X_CACC_System::top_system;
-        
-        requirement legalSpeedLimitCompliance : LegalSpeedLimitCompliance {
-            @RequirementStatus { 
-                status = "Draft"; 
-                approver = ""; 
-                date = "";
-                group = "SAFETY REQ"; 
-            }
-        }
-        satisfy legalSpeedLimitCompliance by Structure::V2X_CACC_System::top_system;
-        
-        requirement noUnnecessaryOrExcessiveEmergencyBrake : NoUnnecessaryOrExcessiveEmergencyBrake {
-            @RequirementStatus { 
-                status = "Draft"; 
-                approver = ""; 
-                date = "";
-                group = "SAFETY REQ"; 
-            }
-        }
-        satisfy noUnnecessaryOrExcessiveEmergencyBrake by Structure::V2X_CACC_System::top_system;
-        
-        requirement noUnstableOrExcessiveEvasionManeuver : NoUnstableOrExcessiveEvasionManeuver {
-            @RequirementStatus { 
-                status = "Draft"; 
-                approver = ""; 
-                date = "";
-                group = "SAFETY REQ"; 
-            }
-        }
-        satisfy noUnstableOrExcessiveEvasionManeuver by Structure::V2X_CACC_System::top_system;
-
-
-
-
-        /* ===================================================================
-            * SOTIF REQUIREMENTS
-        * =================================================================== */
-
-        requirement leaderProfile_ConservativeFallback : LeaderProfile_ConservativeFallback {
-            @RequirementStatus { 
-                status = "Draft"; 
-                approver = ""; 
-                date = "";
-                group = "SOTIF REQ";
-            }
-        }
-        satisfy leaderProfile_ConservativeFallback by Structure::V2X_CACC_System::top_system;
-
-        requirement jamRate_FalsePositiveHandling : JamRate_FalsePositiveHandling {
-            @RequirementStatus { 
-                status = "Draft"; 
-                approver = ""; 
-                date = "";
-                group = "SOTIF REQ";
-            }
-        }
-        satisfy jamRate_FalsePositiveHandling by Structure::V2X_CACC_System::top_system;
-
-        requirement jamRate_FalsePositiveHandling : JamRate_FalsePositiveHandling {
-            @RequirementStatus { 
-                status = "Draft"; 
-                approver = ""; 
-                date = "";
-                group = "SOTIF REQ";
-            }
-        }
-
-        requirement glosa_UnreachableGreenWaveHandling : GLOSA_UnreachableGreenWaveHandling {
-            @RequirementStatus { 
-                status = "Draft"; 
-                approver = ""; 
-                date = "";
-                group = "SOTIF REQ";
-            }
-        }
-        satisfy glosa_UnreachableGreenWaveHandling by Structure::V2X_CACC_System::top_system;
-
-        requirement denm_ConfidenceLevelValidation : DENM_ConfidenceLevelValidation {
-            @RequirementStatus { 
-                status = "Draft"; 
-                approver = ""; 
-                date = "";
-                group = "SOTIF REQ";
-            }
-        }
-        satisfy denm_ConfidenceLevelValidation by Structure::V2X_CACC_System::top_system;
-
-        requirement denm_ConfidenceLevelValidation : DENM_ConfidenceLevelValidation{
-            @RequirementStatus { 
-                status = "Draft"; 
-                approver = ""; 
-                date = "";
-                group = "SOTIF REQ";
-            }
-        }
-        satisfy denm_ConfidenceLevelValidation by Structure::V2X_CACC_System::top_system;
-
-        requirement pedestrian_OnboardVerification : Pedestrian_OnboardVerification {
-            @RequirementStatus { 
-                status = "Draft"; 
-                approver = ""; 
-                date = "";
-                group = "SOTIF REQ";
-            }
-        }
-        satisfy pedestrian_OnboardVerification by Structure::V2X_CACC_System::top_system;
-        
-
-        requirement emergencyManeuver_ODDRestrictions : EmergencyManeuver_ODDRestrictions {
-            @RequirementStatus { 
-                status = "Draft"; 
-                approver = ""; 
-                date = "";
-                group = "SOTIF REQ";
-            }
-        }
-        satisfy emergencyManeuver_ODDRestrictions by Structure::V2X_CACC_System::top_system;
-
-        /* ===================================================================
-            * SAFETY-SCENARIO REQUIREMENTS
-        * =================================================================== */
-
-        requirement scenarioCatalogGeneration : ScenarioCatalogGeneration{
-            @RequirementStatus { 
-                status = "Draft"; 
-                approver = ""; 
-                date = "";
-                group = "SCENARIO REQ";
-            }
-        }
-        satisfy scenarioCatalogGeneration by Structure::V2X_CACC_System::top_system;
-
-        requirement scenarioBasedSafetyIntegration : ScenarioBasedSafetyIntegration {
-            @RequirementStatus { 
-                status = "Draft"; 
-                approver = ""; 
-                date = "";
-                group = "SCENARIO REQ";
-            }
-        }
-        satisfy scenarioBasedSafetyIntegration by Structure::V2X_CACC_System::top_system;
-
-        requirement scenarioResultsAgainstAcceptanceCriteria : ScenarioResultsAgainstAcceptanceCriteria {
-            @RequirementStatus { 
-                status = "Draft"; 
-                approver = ""; 
-                date = "";
-                group = "SCENARIO REQ";
-            }
-        }
-        satisfy scenarioResultsAgainstAcceptanceCriteria by Structure::V2X_CACC_System::top_system;
-        
-
-        requirement odd_ScenarioCoverageDocumentation : ODD_ScenarioCoverageDocumentation {
-            @RequirementStatus { 
-                status = "Draft"; 
-                approver = ""; 
-                date = "";
-                group = "SCENARIO REQ";
-            }
-        }
-        satisfy odd_ScenarioCoverageDocumentation by Structure::V2X_CACC_System::top_system;
-
-        requirement v2x_DegradedChannelScenarios : V2X_DegradedChannelScenarios {
-            @RequirementStatus { 
-                status = "Draft"; 
-                approver = ""; 
-                date = "";
-                group = "SCENARIO REQ";
-            }
-        }
-        satisfy v2x_DegradedChannelScenarios by Structure::V2X_CACC_System::top_system;
-
-        requirement v2x_CybersecurityTestScenarios : V2X_CybersecurityTestScenarios {
-            @RequirementStatus { 
-                status = "Rejected"; 
-                approver = ""; 
-                date = "";
-                group = "SCENARIO REQ";
-            }
-        }
-        satisfy v2x_CybersecurityTestScenarios by Structure::V2X_CACC_System::top_system;
-    
-        /* ===================================================================
-            * OPERATIONAL REQUIREMENTS
-        * =================================================================== */
-
-        requirement v2vSignalLossFallback : V2vSignalLossFallback {
-            @RequirementStatus { 
-                status = "Draft"; 
-                approver = ""; 
-                date = "";
-                group = "OPERATIONAL REQ";
-            }
-        }
-        satisfy v2vSignalLossFallback by Structure::V2X_CACC_System::top_system;
-
-        requirement v2vSignalRestoreAndReactivation : V2vSignalRestoreAndReactivation {
-            @RequirementStatus { 
-                status = "Draft"; 
-                approver = ""; 
-                date = "";
-                group = "OPERATIONAL REQ";
-            }
-        }
-        satisfy v2vSignalRestoreAndReactivation by Structure::V2X_CACC_System::top_system;
-
-        requirement messageFragmentationHandling : MessageFragmentationHandling {
-            @RequirementStatus { 
-                status = "Draft"; 
-                approver = ""; 
-                date = "";
-                group = "OPERATIONAL REQ";
-            }
-        }
-        satisfy messageFragmentationHandling by Structure::V2X_CACC_System::top_system;
-
-        requirement v2iFailureFallback : V2iFailureFallback {
-            @RequirementStatus { 
-                status = "Draft"; 
-                approver = ""; 
-                date = "";
-                group = "OPERATIONAL REQ";
-            }
-        }
-        satisfy v2iFailureFallback by Structure::V2X_CACC_System::top_system;
-
-        requirement glosaFailureRecovery : GLOSAFailureRecovery {
-            @RequirementStatus { 
-                status = "Draft"; 
-                approver = ""; 
-                date = "";
-                group = "OPERATIONAL REQ";
-            }
-        }
-        satisfy glosaFailureRecovery by Structure::V2X_CACC_System::top_system;
-
-        requirement heartbeatMonitoring : HeartbeatMonitoring {
-            @RequirementStatus { 
-                status = "Draft"; 
-                approver = ""; 
-                date = "";
-                group = "OPERATIONAL REQ";
-            }
-        }
-        satisfy heartbeatMonitoring by Structure::V2X_CACC_System::top_system;
-
-        requirement failSafeArchitecture : FailSafeArchitecture {
-            @RequirementStatus { 
-                status = "Draft"; 
-                approver = ""; 
-                date = "";
-                group = "OPERATIONAL REQ";
-            }
-        }
-        satisfy failSafeArchitecture by Structure::V2X_CACC_System::top_system;
-
-        /* ===================================================================
-            * PERFORMANCE REQUIREMENTS
-        * =================================================================== */
-        requirement v2v_SafetyEndToEndLatency : V2V_SafetyEndToEndLatency {
-            @RequirementStatus { 
-                status = "Draft"; 
-                approver = ""; 
-                date = "";
-                group = "PERFORMANCE REQ";
-            }
-        }
-        satisfy v2v_SafetyEndToEndLatency by Structure::V2X_CACC_System::top_system;
-
-        requirement v2i_SafetyEndToEndLatency : V2I_SafetyEndToEndLatency {
-            @RequirementStatus { 
-                status = "Draft"; 
-                approver = ""; 
-                date = "";
-                group = "PERFORMANCE REQ";
-            }
-        }
-        satisfy v2i_SafetyEndToEndLatency by Structure::V2X_CACC_System::top_system;
-
-        requirement cam_MinimumUpdateRate : CAM_MinimumUpdateRate {
-            @RequirementStatus { 
-                status = "Draft"; 
-                approver = ""; 
-                date = "";
-                group = "PERFORMANCE REQ";
-            }
-        }
-        satisfy cam_MinimumUpdateRate by Structure::V2X_CACC_System::top_system;
-        
-        requirement safetyDistance_EstimationAccuracy : SafetyDistanceEstimationAccuracy {
-            @RequirementStatus { 
-                status = "Draft"; 
-                approver = ""; 
-                date = "";
-                group = "PERFORMANCE REQ";
-            }
-        }
-        satisfy safetyDistance_EstimationAccuracy by Structure::V2X_CACC_System::top_system;
-
-        requirement glosa_ComputationTime : GLOSA_ComputationTime {
-            @RequirementStatus { 
-                status = "Draft"; 
-                approver = ""; 
-                date = "";
-                group = "PERFORMANCE REQ";
-            }
-        }
-        satisfy glosa_ComputationTime by Structure::V2X_CACC_System::top_system;
-
-
-        /* ===================================================================
-            * PROCESS REQUIREMENTS
-        * =================================================================== */
-        requirement requirementsTraceability : RequirementsTraceability {
-            @RequirementStatus { 
-                status = "Draft"; 
-                approver = ""; 
-                date = "";
-                group = "PROCESS REQ";
-            }
-        }
-        satisfy requirementsTraceability by Structure::V2X_CACC_System::top_system;
-
-        requirement requirementsReview : RequirementsReview{
-            @RequirementStatus { 
-                status = "Draft"; 
-                approver = ""; 
-                date = "";
-                group = "PROCESS REQ";
-            }
-        }
-        satisfy requirementsReview by Structure::V2X_CACC_System::top_system;
-
-        requirement externalInterfaceSpecification : ExternalInterfaceSpecification{
-            @RequirementStatus { 
-                status = "Draft"; 
-                approver = ""; 
-                date = "";
-                group = "PROCESS REQ";
-            }
-        }
-        satisfy externalInterfaceSpecification by Structure::V2X_CACC_System::top_system;
-
-        requirement safetyCaseDevelopment : SafetyCaseDevelopment{
-            @RequirementStatus { 
-                status = "Draft"; 
-                approver = ""; 
-                date = "";
-                group = "PROCESS REQ";
-            }
-        }
-        satisfy safetyCaseDevelopment by Structure::V2X_CACC_System::top_system;
-
-        requirement tara_Conduction : TARA_Conduction{
-            @RequirementStatus { 
-                status = "Draft"; 
-                approver = ""; 
-                date = "";
-                group = "PROCESS REQ";
-            }
-        }
-        satisfy tara_Conduction by Structure::V2X_CACC_System::top_system;
-
-        requirement scenarioCatalogogDefinition : ScenarioCatalogDefinition{
-            @RequirementStatus { 
-                status = "Draft"; 
-                approver = ""; 
-                date = "";
-                group = "PROCESS REQ";
-            }
-        }
-        satisfy scenarioCatalogogDefinition by Structure::V2X_CACC_System::top_system;    
-
-
 
         // L2 REQUIREMENTS
         package InputGatewayRequirementUsage {
@@ -2270,6 +2428,204 @@ package V2X_CACC_Model{
             }
             satisfy validationLatencyReq by Structure::V2X_CACC_System::top_system::inputGateway;
         }
+        package CAMComposerRequirementUsage{
+            requirement egoStateReceptionReq : EgoStateReception {
+            @RequirementStatus { 
+                status = "Draft"; 
+                approver = ""; 
+                date = "";
+                group = "FUNCTIONAL REQ"; 
+            }
+            
+        }
+        satisfy egoStateReceptionReq by Structure::V2X_CACC_System::top_system::camComposer;
+
+        requirement triggerReq : TriggerOnStateChange {
+            @RequirementStatus { 
+                status = "Draft"; 
+                approver = ""; 
+                date = "";
+                group = "FUNCTIONAL REQ"; 
+            }
+            
+        }
+        satisfy triggerReq by Structure::V2X_CACC_System::top_system::camComposer;
+
+        requirement camCompositionReq : CAM_Composition {
+            @RequirementStatus { 
+                status = "Draft"; 
+                approver = ""; 
+                date = "";
+                group = "FUNCTIONAL REQ"; 
+            }
+            
+        }
+        satisfy camCompositionReq by Structure::V2X_CACC_System::top_system::camComposer;
+
+        requirement camTransmissionRateReq : CAM_TransmissionRate {
+            @RequirementStatus { 
+                status = "Draft"; 
+                approver = ""; 
+                date = "";
+                group = "FUNCTIONAL REQ"; 
+            }
+            
+        }
+        satisfy camTransmissionRateReq by Structure::V2X_CACC_System::top_system::camComposer;
+
+        requirement sampleHoldReq : SampleHoldBehavior {
+            @RequirementStatus { 
+                status = "Draft"; 
+                approver = ""; 
+                date = "";
+                group = "FUNCTIONAL REQ"; 
+            }
+            
+        }
+        satisfy sampleHoldReq by Structure::V2X_CACC_System::top_system::camComposer;
+        }
+        package ElaborationRequirementUsage {
+            requirement validatedDataReceptionReq : ValidatedDataReception {
+                @RequirementStatus { 
+                    status = "Draft"; 
+                    approver = ""; 
+                    date = "";
+                    group = "FUNCTIONAL REQ"; 
+                }
+                attribute :>> v2vDataPresent = elab.v2vInputValid;
+                attribute :>> v2iDataPresent = elab.v2iInputValid;
+            }
+            satisfy validatedDataReceptionReq by Structure::V2X_CACC_System::top_system::elaboration;
+
+            requirement followingParamsReq : FollowingParametersComputation {
+                @RequirementStatus { 
+                    status = "Draft"; 
+                    approver = ""; 
+                    date = "";
+                    group = "FUNCTIONAL REQ"; 
+                }
+                attribute :>> followingParamsReady = elab.followingParamsReady;
+                attribute :>> leaderProfileUsed = elab.leaderProfileUsed;
+                attribute :>> stringStabilityConsidered = elab.stringStabilityConsidered;
+            }
+            satisfy followingParamsReq by Structure::V2X_CACC_System::top_system::elaboration;
+
+            requirement infrastructureAdaptReq : InfrastructureBasedAdaptation {
+                @RequirementStatus { 
+                    status = "Draft"; 
+                    approver = ""; 
+                    date = "";
+                    group = "FUNCTIONAL REQ"; 
+                }
+                attribute :>> v2iAvailable = elab.v2iInputValid;
+                attribute :>> glosaApplied = elab.glosaActive;
+                attribute :>> speedLimitEnforced = elab.speedLimitEnforced;
+            }
+            satisfy infrastructureAdaptReq by Structure::V2X_CACC_System::top_system::elaboration;
+
+            requirement maneuverPriorityReq : ManeuverPrioritization {
+                @RequirementStatus { 
+                    status = "Draft"; 
+                    approver = ""; 
+                    date = "";
+                    group = "SAFETY REQ"; 
+                }
+                attribute :>> conflictingEvents = elab.conflictingEventsDetected;
+                attribute :>> selectedManeuver = elab.selectedManeuver;
+                attribute :>> controlParametersGenerated = elab.controlParametersReady;
+            }
+            satisfy maneuverPriorityReq by Structure::V2X_CACC_System::top_system::elaboration;
+
+            requirement monitoringOutputReq : MonitoringOutput {
+                @RequirementStatus { 
+                    status = "Draft"; 
+                    approver = ""; 
+                    date = "";
+                    group = "FUNCTIONAL REQ"; 
+                }
+                attribute :>> monitoringStreamActive = elab.monitoringStreamActive;
+            }
+            satisfy monitoringOutputReq by Structure::V2X_CACC_System::top_system::elaboration;
+
+            requirement computationLatencyReq : ComputationLatency {
+                @RequirementStatus { 
+                    status = "Draft"; 
+                    approver = ""; 
+                    date = "";
+                    group = "PERFORMANCE REQ"; 
+                }
+                attribute :>> cycleTime = elab.currentCycleTime;
+                attribute :>> maxCycleTime = 20.0;
+            }
+            satisfy computationLatencyReq by Structure::V2X_CACC_System::top_system::elaboration;
+        }
+        package OutputGatewayRequirementUsage {
+            requirement controlForwardingReq : ControlParametersForwarding {
+                @RequirementStatus { 
+                    status = "Draft"; 
+                    approver = ""; 
+                    date = "";
+                    group = "FUNCTIONAL REQ"; 
+                }
+                attribute :>> controlReceived = ogw.controlInputValid;
+                attribute :>> controlForwarded = ogw.controlOutputValid;
+            }
+            satisfy controlForwardingReq by Structure::V2X_CACC_System::top_system::outputGateway;
+
+            requirement camForwardingReq : CAM_Forwarding {
+                @RequirementStatus { 
+                    status = "Draft"; 
+                    approver = ""; 
+                    date = "";
+                    group = "FUNCTIONAL REQ"; 
+                }
+                attribute :>> camReceived = ogw.camInputValid;
+                attribute :>> camForwarded = ogw.camOutputValid;
+            }
+            satisfy camForwardingReq by Structure::V2X_CACC_System::top_system::outputGateway;
+
+            requirement monitoringForwardingReq : MonitoringForwarding {
+                @RequirementStatus { 
+                    status = "Draft"; 
+                    approver = ""; 
+                    date = "";
+                    group = "FUNCTIONAL REQ"; 
+                }
+                attribute :>> monitoringReceived = ogw.monitoringInputValid;
+                attribute :>> monitoringForwarded = ogw.monitoringOutputValid;
+            }
+            satisfy monitoringForwardingReq by Structure::V2X_CACC_System::top_system::outputGateway;
+
+            requirement platooningForwardingReq : PlatooningInfoForwarding {
+                @RequirementStatus { 
+                    status = "Draft"; 
+                    approver = ""; 
+                    date = "";
+                    group = "FUNCTIONAL REQ"; 
+                }
+                attribute :>> platooningReceived = ogw.platooningInputValid;
+                attribute :>> platooningForwarded = ogw.platooningOutputValid;
+            }
+            satisfy platooningForwardingReq by Structure::V2X_CACC_System::top_system::outputGateway;
+
+            requirement forwardingLatencyReq : ForwardingLatency {
+                @RequirementStatus { 
+                    status = "Draft"; 
+                    approver = ""; 
+                    date = "";
+                    group = "PERFORMANCE REQ"; 
+                }
+                attribute :>> actualControlLatency = ogw.controlLatency;
+                attribute :>> actualCAM_Latency = ogw.camLatency;
+                attribute :>> actualMonitoringLatency = ogw.monitoringLatency;
+                attribute :>> maxLatency = 5.0;
+            }
+            satisfy forwardingLatencyReq by Structure::V2X_CACC_System::top_system::outputGateway;
+        }
+
+
+        
+        
     }
 
     package Analysis{
@@ -2459,9 +2815,9 @@ package V2X_CACC_Model{
             doc /* View representing the requirements of the Input Gateway component, showing how the requirements are structured, categorized, and satisfied by the Input Gateway. */
             satisfy systemEngineerViewpoint;
             satisfy stakeholderViewpoint;
-            @ViewRendering { fileName = "Requirement-View (IGN)"; }
+            @ViewRendering { fileName = "Requirement-View (IGW)"; }
             @AnalysisInfo {
-                label       = "Requirement View";
+                label       = "Requirement View (IGW)";
                 groupName   = "L3 — Component Black-Box";
                 domain      = "Requirements";
                 icon        = "📋";
@@ -2471,6 +2827,60 @@ package V2X_CACC_Model{
                 parentGroup = "B_W";
             }
             expose Structure::V2X_CACC_System::top_system::inputGateway;
+        }
+
+        view requirementView_CC : RequirementView {
+            doc /* View representing the requirements of the Input Gateway component, showing how the requirements are structured, categorized, and satisfied by the Input Gateway. */
+            satisfy systemEngineerViewpoint;
+            satisfy stakeholderViewpoint;
+            @ViewRendering { fileName = "Requirement-View (CC)"; }
+            @AnalysisInfo {
+                label       = "Requirement View (CC)";
+                groupName   = "L3 — Component Black-Box";
+                domain      = "Requirements";
+                icon        = "📋";
+                level       = "L3";
+                kind        = "BlackBox";
+                component   = "CAMComposer";
+                parentGroup = "B_W";
+            }
+            expose Structure::V2X_CACC_System::top_system::camComposer;
+        }
+
+        view requirementView_E : RequirementView {
+            doc /* View representing the requirements of the Input Gateway component, showing how the requirements are structured, categorized, and satisfied by the Input Gateway. */
+            satisfy systemEngineerViewpoint;
+            satisfy stakeholderViewpoint;
+            @ViewRendering { fileName = "Requirement-View (E)"; }
+            @AnalysisInfo {
+                label       = "Requirement View (E)";
+                groupName   = "L3 — Component Black-Box";
+                domain      = "Requirements";
+                icon        = "📋";
+                level       = "L3";
+                kind        = "BlackBox";
+                component   = "Elaboration";
+                parentGroup = "B_W";
+            }
+            expose Structure::V2X_CACC_System::top_system::elaboration;
+        }
+
+        view requirementView_OGW : RequirementView {
+            doc /* View representing the requirements of the Input Gateway component, showing how the requirements are structured, categorized, and satisfied by the Input Gateway. */
+            satisfy systemEngineerViewpoint;
+            satisfy stakeholderViewpoint;
+            @ViewRendering { fileName = "Requirement-View (OGW)"; }
+            @AnalysisInfo {
+                label       = "Requirement View (OGW)";
+                groupName   = "L3 — Component Black-Box";
+                domain      = "Requirements";
+                icon        = "📋";
+                level       = "L3";
+                kind        = "BlackBox";
+                component   = "OutputGateway";
+                parentGroup = "B_W";
+            }
+            expose Structure::V2X_CACC_System::top_system::outputGateway;
         }
 
         view uc1_SequenceView : StandardViewDefinitions::SequenceView {

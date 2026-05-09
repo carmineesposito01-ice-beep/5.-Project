@@ -1882,6 +1882,172 @@ library package StandardLibrary {
                 actualV2VLatency <= maxV2VLatency and actualV2ILatency <= maxV2ILatency
             }
         }
+
+        package CAMComposerRequirements {
+            // ---- Requisiti del CAM Composer ----
+
+            requirement def EgoStateReception {
+                doc /* The CAM Composer shall receive the ego vehicle state (position, speed, heading, acceleration) from the egoIn port. */
+                id = "CAM-REQ-001";
+                text = "The CAM Composer shall receive the ego vehicle state.";
+                attribute egoStateReceived : Boolean;
+                require constraint { egoStateReceived == true }
+            }
+
+            requirement def TriggerOnStateChange {
+                doc /* A trigger shall be generated when the ego state changes significantly (speed variation > 2 m/s or heading > 1°). */
+                id = "CAM-REQ-002";
+                text = "A trigger shall be generated on significant ego state change.";
+                attribute speedChange : Real;       // m/s
+                attribute headingChange : Real;     // gradi
+                attribute triggerGenerated : Boolean;
+                require constraint {
+                    abs(speedChange) > 2.0 or abs(headingChange) > 1.0 implies triggerGenerated
+                }
+            }
+
+            requirement def CAM_Composition {
+                doc /* A valid CAM shall be composed upon trigger, containing all mandatory fields (stationID, lat, lon, speed, heading, acceleration, timestamp). */
+                id = "CAM-REQ-003";
+                text = "A valid CAM shall be composed upon trigger.";
+                attribute triggerReceived : Boolean;
+                attribute camComposed : Boolean;
+                attribute camFieldsValid : Boolean;
+                require constraint { triggerReceived implies (camComposed and camFieldsValid) }
+            }
+
+            requirement def CAM_TransmissionRate {
+                doc /* The CAM shall be transmitted at a minimum rate of 10 Hz. */
+                id = "CAM-REQ-004";
+                text = "CAM shall be transmitted at a minimum rate of 10 Hz.";
+                attribute actualTransmissionRate : Real; // Hz
+                attribute minRate : Real = 10.0;
+                require constraint { actualTransmissionRate >= minRate }
+            }
+
+            requirement def SampleHoldBehavior {
+                doc /* In the absence of a new CAM, the last valid value shall be held on the output (sample & hold). */
+                id = "CAM-REQ-005";
+                text = "The last valid CAM shall be held when no new trigger occurs.";
+                attribute camOutValid : Boolean;
+                require constraint { camOutValid == true }
+            }
+        }
+
+        package ElaborationRequirements {
+            // ---- Requisiti dell'Elaboration ----
+
+            requirement def ValidatedDataReception {
+                doc /* The Elaboration shall receive validated V2V and V2I data on its input ports. */
+                id = "ELB-REQ-001";
+                text = "Validated V2V and V2I data shall be accepted.";
+                attribute v2vDataPresent : Boolean;
+                attribute v2iDataPresent : Boolean;
+                require constraint { v2vDataPresent or v2iDataPresent }
+            }
+
+            requirement def FollowingParametersComputation {
+                doc /* From the validated V2V data, the car‑following parameters shall be computed using the selected model, respecting the leader vehicle profile and string‑stability constraints. */
+                id = "ELB-REQ-002";
+                text = "Car‑following parameters shall be computed from V2V data.";
+                attribute followingParamsReady : Boolean;
+                attribute leaderProfileUsed : Boolean;
+                attribute stringStabilityConsidered : Boolean;
+                require constraint { followingParamsReady and leaderProfileUsed and stringStabilityConsidered }
+            }
+
+            requirement def InfrastructureBasedAdaptation {
+                doc /* When valid V2I data is available, the system shall perform signal‑, speed‑limit‑, hazard‑, and emergency‑vehicle‑aware adaptations (GLOSA, speed limit enforcement, etc.). */
+                id = "ELB-REQ-003";
+                text = "Infrastructure‑based adaptations shall be applied.";
+                attribute v2iAvailable : Boolean;
+                attribute glosaApplied : Boolean;
+                attribute speedLimitEnforced : Boolean;
+                require constraint { v2iAvailable implies (glosaApplied and speedLimitEnforced) }
+            }
+
+            requirement def ManeuverPrioritization {
+                doc /* In the presence of multiple simultaneous events (cut‑in, wrong‑way vehicle, pedestrian alert, etc.) the highest‑priority safety‑critical action shall be selected and translated into control parameters. */
+                id = "ELB-REQ-004";
+                text = "Highest‑priority maneuver shall be selected and executed.";
+                attribute conflictingEvents : Boolean;
+                attribute selectedManeuver : String; // "emergencyBrake" | "evasion" | "caution" | "normal"
+                attribute controlParametersGenerated : Boolean;
+                require constraint { conflictingEvents implies (selectedManeuver != "normal" and controlParametersGenerated) }
+            }
+
+            requirement def MonitoringOutput {
+                doc /* Current status, selected maneuver, and critical parameters shall be exposed on the monitoring output for HMI and safety‑case logging. */
+                id = "ELB-REQ-005";
+                text = "Monitoring data shall be produced continuously.";
+                attribute monitoringStreamActive : Boolean;
+                require constraint { monitoringStreamActive == true }
+            }
+
+            requirement def ComputationLatency {
+                doc /* The whole elaboration cycle shall complete in less than 20 ms. */
+                id = "ELB-REQ-006";
+                text = "Elaboration cycle time < 20 ms.";
+                attribute cycleTime : Real; // ms
+                attribute maxCycleTime : Real = 20.0;
+                require constraint { cycleTime <= maxCycleTime }
+            }
+        }
+
+        package OutputGatewayRequirements {
+            // ---- Requisiti dell'OutputGateway ----
+
+            requirement def ControlParametersForwarding {
+                doc /* The OutputGateway shall forward the control parameters received from the Elaboration to the vehicle bus without modification. */
+                id = "OGW-REQ-001";
+                text = "Control parameters shall be forwarded to the vehicle bus.";
+                attribute controlReceived : Boolean;
+                attribute controlForwarded : Boolean;
+                require constraint { controlReceived implies controlForwarded }
+            }
+
+            requirement def CAM_Forwarding {
+                doc /* The CAM received from the CAM Composer shall be forwarded to the V2V communication port. */
+                id = "OGW-REQ-002";
+                text = "CAM shall be forwarded to the V2V port.";
+                attribute camReceived : Boolean;
+                attribute camForwarded : Boolean;
+                require constraint { camReceived implies camForwarded }
+            }
+
+            requirement def MonitoringForwarding {
+                doc /* The monitoring data received from the Elaboration shall be forwarded to the HMI and to the monitoring port. */
+                id = "OGW-REQ-003";
+                text = "Monitoring data shall be forwarded to HMI and monitoring port.";
+                attribute monitoringReceived : Boolean;
+                attribute monitoringForwarded : Boolean;
+                require constraint { monitoringReceived implies monitoringForwarded }
+            }
+
+            requirement def PlatooningInfoForwarding {
+                doc /* Platooning information received on the input port shall be forwarded unchanged to the output port. */
+                id = "OGW-REQ-004";
+                text = "Platooning info shall be forwarded unchanged.";
+                attribute platooningReceived : Boolean;
+                attribute platooningForwarded : Boolean;
+                require constraint { platooningReceived implies platooningForwarded }
+            }
+
+            requirement def ForwardingLatency {
+                doc /* The forwarding latency for each data stream shall not exceed 5 ms. */
+                id = "OGW-REQ-005";
+                text = "Forwarding latency shall be ≤ 5 ms for all streams.";
+                attribute actualControlLatency : Real;   // ms
+                attribute actualCAM_Latency : Real;
+                attribute actualMonitoringLatency : Real;
+                attribute maxLatency : Real = 5.0;
+                require constraint {
+                    actualControlLatency <= maxLatency and
+                    actualCAM_Latency <= maxLatency and
+                    actualMonitoringLatency <= maxLatency
+                }
+            }
+        }
     }
 
     
