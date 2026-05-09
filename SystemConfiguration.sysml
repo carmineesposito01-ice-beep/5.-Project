@@ -21,73 +21,134 @@ package V2X_CACC_Model{
             
             part top_system : topLevelSystem {
                 doc /* The top-level system (allocated on the PYNQ-Z1 FPGA board), which integrates the various subsystems. */
-                // Attributes
+                /* ===================================================================
+                     * ATTRIBUTES (Top-Use Case)
+                 * =================================================================== */
                 // Car-Following Attributes
-                attribute :> carFollowingModel = CarFollowingModelKind::IDM_2D;
-                attribute :> followingParameters;
-                attribute :> headwayIncrementPercentage =10.0;
+                attribute :>> carFollowingModel = CarFollowingModelKind::IDM_2D;
+                attribute :>> followingParameters;
+                attribute :>> headwayIncrementPercentage =10.0;
 
                 // ---------- Soglie di sicurezza ----------
-                attribute :> emergencyBrakingMaxReactionTime = 200.0 [milli*s];
-                attribute :> signalViolationEmergencyDistance;
-                attribute :> signalViolationAttentionDistance;
-                attribute :> pedestrianTTAAttentionThreshold;
-                attribute :> pedestrianTTADangerThreshold;
-                attribute :> pedestrianLateralSafetyBuffer = 1.0 [m];
-                attribute :> maxOvershootSpeed;
-                attribute :> jamRateInstabilityThreshold;
-                attribute :> stabilityValidationVehicleCount = 10;
+                attribute :>> emergencyBrakingMaxReactionTime = 200.0 [milli*s];
+                attribute :>> signalViolationEmergencyDistance;
+                attribute :>> signalViolationAttentionDistance;
+                attribute :>> pedestrianTTAAttentionThreshold;
+                attribute :>> pedestrianTTADangerThreshold;
+                attribute :>> pedestrianLateralSafetyBuffer = 1.0 [m];
+                attribute :>> maxOvershootSpeed;
+                attribute :>> jamRateInstabilityThreshold;
+                attribute :>> stabilityValidationVehicleCount = 10;
 
                 // ---------- Soglie SOTIF ----------
-                attribute :> leaderProfileConfidenceThresholdLow = 60.0;
-                attribute :> glosaUnreachableDecelerationProfile;
-                attribute :> denmConfidenceValidationRequired = true;
-                attribute :> pedestrianSensorValidationTimeout = 3.0 [s];
+                attribute :>> leaderProfileConfidenceThresholdLow = 60.0;
+                attribute :>> glosaUnreachableDecelerationProfile;
+                attribute :>> denmConfidenceValidationRequired = true;
+                attribute :>> pedestrianSensorValidationTimeout = 3.0 [s];
 
                 // ---------- Performance ----------
-                attribute :> maxV2VEndToEndLatency = 100.0 [milli*s];
-                attribute :> maxV2IEndToEndLatency = 200.0 [milli*s];
-                attribute :> camUpdateRateMin = 10.0 [Hz];
-                attribute :> safetyDistanceAccuracyLowSpeed = 3.0 [m];
-                attribute :> safetyDistanceAccuracyHighSpeedPercent = 2.0;
-                attribute :> glosaComputationTimeMax = 50.0 [milli*s];
+                attribute :>> maxV2VEndToEndLatency = 100.0 [milli*s];
+                attribute :>> maxV2IEndToEndLatency = 200.0 [milli*s];
+                attribute :>> camUpdateRateMin = 10.0 [Hz];
+                attribute :>> safetyDistanceAccuracyLowSpeed = 3.0 [m];
+                attribute :>> safetyDistanceAccuracyHighSpeedPercent = 2.0;
+                attribute :>> glosaComputationTimeMax = 50.0 [milli*s];
 
                 // ---------- Degradazione e fault tolerance ----------
-                attribute :> v2vSignalLossTimeout = 500.0 [milli*s];
-                attribute :> transitionSmoothTime = 2.0 [s];
-                attribute :> messageFragmentationThresholdPercent = 15.0;
-                attribute :> fragmentationPersistenceTime = 3.0 [s];
-                attribute :> internalHeartbeatTimeout = 200.0 [milli*s];
-                attribute :> failOperationalArchitecture = false;
+                attribute :>> v2vSignalLossTimeout = 500.0 [milli*s];
+                attribute :>> transitionSmoothTime = 2.0 [s];
+                attribute :>> messageFragmentationThresholdPercent = 15.0;
+                attribute :>> fragmentationPersistenceTime = 3.0 [s];
+                attribute :>> internalHeartbeatTimeout = 200.0 [milli*s];
+                attribute :>> failOperationalArchitecture = false;
 
                 // ---------- Variabili di stato runtime ----------
-                attribute :> carFollowingMode = CarFollowingModeKind::Disabled;
-                attribute :> v2vCommunicationStatus = CommStatusKind::Lost;
-                attribute :> v2iCommunicationStatus = CommStatusKind::Lost;
-                attribute :> leaderProfileConfidence;
-                attribute :> currentJamRate;
-                attribute :> glosaActive = false;
-                attribute :> emergencyManeuverInProgress  = false;
+                attribute :>> carFollowingMode = CarFollowingModeKind::Disabled;
+                attribute :>> v2vCommunicationStatus = CommStatusKind::Lost;
+                attribute :>> v2iCommunicationStatus = CommStatusKind::Lost;
+                attribute :>> leaderProfileConfidence;
+                attribute :>> currentJamRate;
+                attribute :>> glosaActive = false;
+                attribute :>> emergencyManeuverInProgress  = false;
                 
-                
-                // Connessioni esterne
-                connection v2v_in : V2XCommPort connect top_system.v2xIn.v2v to inputGateway.v2v;
-                connection v2i_in : V2XCommPort connect top_system.v2xIn.v2i to inputGateway.v2i;
-                connection vehicle_bus_in : VehicleBusPort connect top_system.egoVehicleInfoIn to inputGateway.egovehicleInfoIn;
-                connection hmi_out : HMIPort connect  outputGateway.hmiOut to top_system.hmiOut;
-                connection parameter_out : ControlFlow connect outputGateway.parametersOut to top_system.parametersOut;
-                connection platooning_info_out : PlatooningInfoOutPort connect outputGateway.platooningInfoOut to top_system.platooningInfoOut;
-                connection cam_out : CAM_Flow connect outputGateway.camOut to top_system.camOut;
-
+                part inputGateway : InputGateway_Unit{
+                    doc /* The InputGateway unit, responsible for receiving and validating all incoming data. */
                     
+                    part conditioning : Conditioning_Unit;
+                    part validation : SignalValidation_Unit;
+
+                    // Connessioni interne InputGateway
+                    connection v2v_flow_IN : V2VCommPort connect inputGateway.v2vIn to conditioning.v2vIn;
+                    connection v2i_flow_IN : V2ICommPort connect inputGateway.v2iIn to conditioning.v2iIn;
+                    connection egoVehicle_flow_IN : VehicleBusPort connect inputGateway.egoSignalsIn  to conditioning.egoSignalsIn;
+                    connection ego_val_OUT : VehicleBusPort connect validation.egoSignalsOut to inputGateway.egoSignalsOut;
+                    connection status_flag_OUT : PlatooningInfoPort connect validation.platooningInfoOut to inputGateway.platooningInfoOut;
+                    connection v2v_flow_OUT : V2VCommPort connect validation.validatedDataOut to inputGateway.v2vOut;
+                    connection v2i_flow_OUT : V2ICommPort connect validation.validatedDataOut to inputGateway.v2iOut;
+
+                    connection v2v_to_val : V2VCommPort connect conditioning.v2vOut to validation.v2vIn;
+                    connection v2i_to_val : V2ICommPort connect conditioning.v2iOut to validation.v2iIn;
+                    connection ego_to_val : VehicleBusPort connect conditioning.egoSignalsOut to validation.egoSignalsIn;
+                    
+                }
+                part camComposer : CAMComposer_Unit{
+                    doc /* The CAM Composer unit, responsible for composing CAM messages based on the ego vehicle state and other relevant data. */
+                
+                    part allineator : Allineator_Unit;
+                    part trigger_cam : TriggerCAM_Unit;
+                    part camMessageComposer : CAMMessageComposer_Unit;
+                    part sample_hold : SampleANDHold;
+
+                    connection ego_flow_IN : VehicleBusPort connect camComposer.egoIn to allineator.egoIn;
+                    connection ego_flow_IN2 : VehicleBusPort connect camComposer.egoIn to trigger_cam.egoIn;
+                    connection cam_flow_OUT : CAM_Flow connect sample_hold.camOut to camComposer.camOut;
+
+                    connection ego_aligned : VehicleBusPort connect allineator.egoOut to camMessageComposer.egoIn;
+                    connection trigger_flow : Boolean connect trigger_cam.triggerOut to camMessageComposer.triggerIn;
+                    connection cam_message : CAM_Flow connect camMessageComposer.camOut to sample_hold.camIn;
+
+                
+                
+                }
+                part elaboration : Elaboration_Unit{
+                    doc /* The Elaboration unit, responsible for processing validated data and generating control parameters. */
+
+                    part evaluation : Evaluation_Unit;
+                    part parameterGenerator : ParameterGenerator_Unit;
+                    part monitoringComposer : MonitoringComposer_Unit;
+
+                    connection v2v_IN : V2VInterface connect elaboration.v2vIn to evaluation.v2vIn;
+                    connection v2i_IN : V2IInterface connect elaboration.v2iIn to evaluation.v2iIn;
+                    connection v2v_IN2 : V2VInterface connect elaboration.v2vIn to parameterGenerator.v2vIn;
+                    connection v2i_IN2 : V2IInterface connect elaboration.v2iIn to parameterGenerator.v2iIn;
+                    connection parameter_OUT : ControlFlow connect parameterGenerator.modelParametersOut to elaboration.modelParametersOut;
+                    connection monitoring_OUT : Monitoring_Flow connect monitoringComposer.monitoringOut to elaboration.monitoringOut;
+
+                    connection eval_to_gen : ConditioningVariables connect evaluation.conditioningVariablesOut to parameterGenerator.conditioningVariablesIn;
+                    connection eval_to_hmi : ConditioningVariables connect evaluation.conditioningVariablesOut to monitoringComposer.conditioningVariablesIn;
+                    connection gen_to_hmi : ConditioningVariables connect parameterGenerator.modelParametersOut to monitoringComposer.modelParametersIn;
+                }
+                part outputGateway : OutputGateway_Unit; //TODO
+                
+                // Connessioni Top_Level
+                connection v2v_IN : V2VCommPort connect top_system.v2vIn to inputGateway.v2vIn;
+                connection v2i_IN : V2ICommPort connect top_system.v2iIn to inputGateway.v2iIn;
+                connection vehicle_bus_IN : VehicleBusPort connect top_system.egoVehicleInfoIn to inputGateway.egoSignalsIn;
+                
+                connection monitoring_OUT : MonitoringPort connect  outputGateway.monitoringOut to top_system.monitoringOut;
+                connection parameter_OUT : ControlFlow connect outputGateway.modelParametersOut to top_system.modelParametersOut;
+                connection platooning_info_OUT : PlatooningInfo_Flow connect outputGateway.platooningInfoOut to top_system.platooningInfoOut;
+                connection cam_OUT : CAM_Flow connect outputGateway.camOut to top_system.camOut;
+ 
                 // Connessioni interne
-                connection validated_data_flow : ValidatedData connect inputGateway.validatedSignal to elaboration.validatedSignal;
-                connection ego_vehicle_data_flow : EgoVehicleData connect inputGateway.egoSignals to camComposer.egoIn;
-                connection state_flag : PlatooningInfoOutPort connect inputGateway.state_flag to outputGateway.state_flag;
-                connection control_flow : ControlFlow connect elaboration.modelParameters to outputGateway.modelParameters;
+                connection v2v_to_elaboration : V2VCommPort connect inputGateway.v2vOut to elaboration.v2vIn;
+                connection v2i_to_elaboration : V2ICommPort connect inputGateway.v2iOut to elaboration.v2iIn;
+                connection ego_to_camComp : EgoVehicleData_Flow connect inputGateway.egoSignalsOut to camComposer.egoIn;
+                connection cacc_state_info : PlatooningInfo_Flow connect inputGateway.state_flag to outputGateway.platooningInfoOut;
+                connection parameter_flow : ControlFlow connect elaboration.modelParameters to outputGateway.modelParametersOut;                
+                connection monitoring_flow : MonitoringPort connect elaboration.monitoringOut to outputGateway.monitoringIn;
                 connection cam_flow : CAM_Flow connect camComposer.camOut to outputGateway.camIn;
 
-                
             }
         }
     }

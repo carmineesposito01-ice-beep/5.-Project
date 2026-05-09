@@ -65,75 +65,110 @@ package ComponentDefinition{
         attribute emergencyManeuverInProgress : Boolean; // false
 
         // ---------- Porte (riferimento alla definizione precedente) ----------
-        port v2xIn : V2XCommPort;
-        port egoVehicleInfoIn : VehicleBusPort;
-        port camOut : CAM;
-        port parametersOut : ControlParametersOutPort;
-        port platooningInfoOut : PlatooningInfoOutPort;
-        port hmiOut : HMIPort;
+        in port v2vIn : V2VCommPort;
+        in port v2iIn : V2ICommPort;
+        in port egoVehicleInfoIn : VehicleBusPort;
+        out port camOut : CAM;
+        out port modelParametersOut : ControlParametersPort;
+        out port platooningInfoOut : PlatooningInfoPort;
+        out port monitoringOut : MonitoringPort;
 
         /* ===================================================================
 		     * PART USAGE
 	     * =================================================================== */
-        part inputGateway : InputGateway_Unit;
-        part elaboration : Elaboration_Unit;
-        part camComposer : CAMComposer_Unit;
-        part outputGateway : OutputGateway_Unit;
+        //part inputGateway : InputGateway_Unit;
+        //part elaboration : Elaboration_Unit;
+        //part camComposer : CAMComposer_Unit;
+        //part outputGateway : OutputGateway_Unit;
     }
 
     // LEVEL 1: Subsystem Definitions
     part def InputGateway_Unit{
         doc /* Part representing the input gateway of the system, responsible for receiving data 
             /* from external sources (V2X signals). */
-            
-        port v2v : V2VCommPort;          // riceve CAM, MCM
-        port v2i : V2ICommPort;          // riceve SPaT, MAP, DENM, IVS, EVA, VRU, CPM
-        port egovehicleInfoIn : VehicleBusPort; // riceve GNSS, IMU
-        port validatedSignal : ValidatedDataOutPort; // dati validati verso Elaboration
-        port egoSignals : EgoVehicleStateOutPort;     // segnali mandati al CAM Composer (per essere fusi nel segnale CAM per gli altri veicoli)
-        port state_flag : PlatooningInfoOutPort;
+        
+        in port v2vIn : V2VCommPort;
+        in port v2iIn : V2ICommPort;
+        in port egoSignalsIn : VehicleBusPort;
 
-        part conditioning : Conditioning_Unit;
-        part validation : SignalValidation_Unit;
+        out port egoSignalsOut : VehicleBusPort;
+        out port v2vOut : V2VCommPort;
+        out port v2iOut : V2ICommPort;
+        out port platooningInfoOut : PlatooningInfoPort;
+        
         
     }
 
     part def Elaboration_Unit{
         doc /* Part representing the elaboration unit of the system, responsible for processing 
             /* the received data and generate the model's parameters. */
+        in port v2vIn : V2VCommPort;          
+        in port v2iIn : V2ICommPort;          
+
+        out port modelParametersOut : ControlParametersPort;
+        out port camOut : CAM;
+        out port monitoringOut : MonitoringPort;
+        out port platooningInfoOut : PlatooningInfoPort;
         
-        port validatedSignal : ValidatedDataInPort;       // da InputGateway
-        port modelParameters : ControlParametersOutPort;   // verso OutputGateway
-        
-        part analyzer : Analyzer_Unit;
-        part v2v_own_message : V2V_OwnMessage_Unit;
-        part parameter_generator : ParameterGenerator_Unit;
-        part output_gateway : OutputGateway_Unit;
+        //part analyzer : Analyzer_Unit;
+        //part v2v_own_message : V2V_OwnMessage_Unit;
+        //part parameter_generator : ParameterGenerator_Unit;
+        //part output_gateway : OutputGateway_Unit;
     }
 
     part def OutputGateway_Unit{
         doc /* Part representing the output gateway of the system, responsible for sending the generated data (parameters, CAM message). */
     
-        port modelParameters : ControlParametersInPort; // da Elaboration
-        port camIn : CAM_InPort;                  // da CAM composer
-        port state_flag : PlatooningInfoOutPort;
+        in port modelParametersIn : ControlParametersPort; // da Elaboration
+        in port camIn : CAM_Port;                  // da CAM composer
+        in port platooningInfoIn : PlatooningInfoPort; 
 
         // Porte esterne (verso i canali reali)
-        port camOut : V2VCommPort;          // invia CAM
-        port parametersOut : ControlParametersOutPort; // invia comandi attuatori
-        port hmiOut : HMIPort;   
-        port platooningInfoOut : PlatooningInfoOutPort;           // notifiche HMI
+        out port camOut : V2VCommPort;          // invia CAM
+        out port modelParametersOut : ControlParametersOutPort; // invia comandi attuatori
+        out port monitoringIn : MonitoringPort;
+        out port monitoringOut : MonitoringPort;   
+        out port platooningInfoOut : PlatooningInfoPort;           // notifiche HMI
 
-        part send_v2v_message : Send_V2VMessage_Unit;
-        part send_parameters : Send_Parameters_Unit;
-        part send_platooning_info : Send_Platooning_Info_Unit;
+        //part send_v2v_message : Send_V2VMessage_Unit;
+        //part send_parameters : Send_Parameters_Unit;
+        //part send_platooning_info : Send_Platooning_Info_Unit;
     }
 
     part def CAMComposer_Unit{
         doc /* Part representing the CAM composer unit of the system, responsible for composing the CAM messages based on the ego vehicle state and other relevant data. */
-    
-        port egoIn : EgoVehicleStateInPort;   // da InputGateway
-        port camOut : CAM_OutPort;            // CAM da inviare
+        
+        in port egoIn : EgoVehicleData_Flow;   // da InputGateway
+        out port camOut : CAM_Port;
+    }
+
+    part def Allineator_Unit{
+        doc /* Part representing the allineator unit of the system, responsible for aligning the data from different sources and ensuring their timestamp is compatible. */
+        
+        in port egoIn : EgoVehicleData_Flow;
+        out port egoOut : EgoVehicleData_Flow;
+
+    }
+
+    part def TriggerCAM_Unit{
+        doc /* Part representing the trigger CAM unit of the system, responsible for triggering the composition and sending of CAM messages based on specific events or conditions. */
+
+        in port egoIn : EgoVehicleStateInPort;
+        out port triggerOut : Boolean;
+
+    }
+
+    part def CAMMessageComposer_Unit{
+        doc /* Part representing the CAM message composer unit of the system, responsible for composing the CAM messages based on the aligned data and the trigger signal. */
+        in port egoIn : VehicleBusPort;
+        out port camOut : CAM_Port;
+        in port triggerIn : Boolean;
+    }
+
+    part def SampleANDHold{
+        doc /* Part representing the sample and hold unit of the system, responsible for sampling the last CAM Message produced by the system. */
+        in port camIn : CAM_Port;
+        out port camOut : CAM_Port;
     }
 
     // LEVEL 2: Component Definitions
@@ -141,6 +176,14 @@ package ComponentDefinition{
         doc /* Part representing the conditioning unit of the system, responsible for filtering operations,
             /* and refining operations for the input signals. */
         
+        in port v2vIn : V2VCommPort;
+        in port v2iIn : V2ICommPort;
+        in port egoSignalsIn : VehicleBusPort;
+
+        out port v2vOut : V2VCommPort;
+        out port v2iOut : V2ICommPort;
+        out port egoSignalsOut : VehicleBusPort;
+
         
     }
 
@@ -148,10 +191,40 @@ package ComponentDefinition{
         doc /* Part representing the signal validation unit of the system, responsible for validating the 
             /* received signals and ensuring their integrity and reliability. */
 
+        in port v2vIn : V2VCommPort;
+        in port v2iIn : V2ICommPort;
+        in port egoSignalsIn : VehicleBusPort;
 
+        out port validatedDataOut : ValidatedDataOutPort;
+        out port platooningInfoOut : PlatooningInfoOutPort;
+        out port egoSignalsOut : VehicleBusPort;
+                    
 
-        part check_degradation :CheckDegradation_Unit;
+        //part check_degradation :CheckDegradation_Unit;
         part signal_reconstruction : SignalRecostruction_Unit;
+    }
+
+    part def Evaluation_Unit{
+        doc /* Part representing the evaluation unit of the system, responsible for evaluating the validated signals and generating insights for the following parameter generation. */
+        in port v2vIn : V2VCommPort;
+        in port v2iIn : V2ICommPort;
+        out port conditioningVariablesOut : ConditioningVariablePort;
+    }
+
+    part def ParameterGenerator_Unit{
+        doc /* Part representing the parameter generator unit of the system, responsible for generating the parameters for the following model based on the analyzed data. */
+        in port v2vIn : V2VCommPort;
+        in port v2iIn : V2ICommPort;
+        in port conditioningVariablesIn : ConditioningVariablePort;
+        out port forHmiOut;
+        out port modelParametersOut : ControlParametersPort;
+    }
+
+    part def MonitoringComposer_Unit{
+        doc /* Part representing the monitoring composer unit of the system, responsible for composing the monitoring data based on the validated signals and the system's state. */
+        in port conditioningVariablesIn : ConditioningVariablePort;
+        in port modelParametersIn : ControlParametersPort;
+        out port monitoringOut : MonitoringPort;
     }
 
     part def CheckDegradation_Unit{
@@ -173,8 +246,8 @@ package ComponentDefinition{
         
 
 
-        part v2v_analyzer : V2V_Analyzer_Unit;
-        part v2i_analyzer : V2I_Analyzer_Unit;
+        //part v2v_analyzer : V2V_Analyzer_Unit;
+        //part v2i_analyzer : V2I_Analyzer_Unit;
     }
 
     part def V2V_Analyzer_Unit{
