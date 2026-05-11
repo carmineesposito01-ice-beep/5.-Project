@@ -2608,6 +2608,16 @@ package V2X_CACC_Model{
             }
             satisfy platooningForwardingReq by Structure::V2X_CACC_System::top_system::outputGateway;
 
+            requirement platooningInfoControl : PlatooningInfoControl {
+                @RequirementStatus { 
+                    status = "Draft"; 
+                    approver = ""; 
+                    date = "";
+                    group = "FUNCTIONAL REQ"; 
+                }
+            }
+            satisfy platooningInfoControl by Structure::V2X_CACC_System::top_system::outputGateway;
+
             requirement forwardingLatencyReq : ForwardingLatency {
                 @RequirementStatus { 
                     status = "Draft"; 
