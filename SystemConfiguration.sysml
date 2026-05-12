@@ -3432,55 +3432,10 @@ package V2X_CACC_Model{
             }
 
             
-            // ── ③ PASSAGE EVENTS ─────────────────────────────────────────
-            // fromProgress = completamento % della fromPhase al momento del passaggio.
-            // Il parser usa questo valore per impostare phase.progress quando inferisce
-            // lo status "completed" (senza attributo status esplicito nella fase).
-
-            occurrence pass_A_B : PassageEvent {
-                attribute fromPhase    = "Concept";
-                attribute toPhase      = "Requirements";
-                attribute fromProgress = 100;
-                attribute date         = "2025-03-31";
-                attribute content      = "Feasibility Review Approvata";
-            }
-
-
-            // pass_D_E non ancora emesso: la fase Implementation è attiva.
-            // Il parser calcola il suo progress automaticamente dalle date.
-
-            // ── ④ ITERATION EVENTS ────────────────────────────────────────
-            // fromProgress = % di avanzamento della fromPhase al momento del rework.
-
-            /**
-             * ITERAZIONE 1: A metà della fase System Design (≈60%), i requisiti
-             * risultavano incompleti. Il team è tornato in Requirements per
-             * aggiungere i casi d'uso SOTIF.
-             */
-            occurrence iter_back_to_req : IterationEvent {
-                attribute fromPhase    = "System Design";
-                attribute toPhase      = "Requirements";
-                attribute fromProgress = 60;
-                attribute date         = "2025-07-15";
-                attribute reason       = "Requisiti SOTIF mancanti — aggiunta UC Safety";
-                attribute content      = "Rework Requirements: SOTIF use cases";
-            }
-
-            /**
-             * ITERAZIONE 2: Durante l'implementazione (≈30%), un test HIL
-             * preliminare ha rivelato che l'architettura IDM 2D non era
-             * real-time safe su FPGA. Il team è tornato in System Design.
-             */
-            occurrence iter_back_to_design : IterationEvent {
-                attribute fromPhase    = "Implementation";
-                attribute toPhase      = "System Design";
-                attribute fromProgress = 30;
-                attribute date         = "2025-12-10";
-                attribute reason       = "Architettura IDM 2D non real-time safe — redesign";
-                attribute content      = "Redesign: Car-Following su FPGA a logica pipeline";
-            }
+            
         }
         }
+        
     
         package ProjectTeamMembers {
             doc /* Project team and stakeholders for the car-following system. */
