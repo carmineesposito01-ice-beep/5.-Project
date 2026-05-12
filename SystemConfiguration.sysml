@@ -124,9 +124,9 @@ package V2X_CACC_Model{
                     connection parameter_OUT : ControlFlow connect parameterGenerator.modelParametersOut to elaboration.modelParametersOut;
                     connection monitoring_OUT : Monitoring_Flow connect monitoringComposer.monitoringOut to elaboration.monitoringOut;
 
-                    connection eval_to_gen : ConditioningVariables connect evaluation.conditioningVariablesOut to parameterGenerator.conditioningVariablesIn;
-                    connection eval_to_hmi : ConditioningVariables connect evaluation.conditioningVariablesOut to monitoringComposer.conditioningVariablesIn;
-                    connection gen_to_hmi : ConditioningVariables connect parameterGenerator.modelParametersOut to monitoringComposer.modelParametersIn;
+                    connection eval_to_gen : ConditioningVariables_Flow connect evaluation.conditioningVariablesOut to parameterGenerator.conditioningVariablesIn;
+                    connection eval_to_hmi : ConditioningVariables_Flow connect evaluation.conditioningVariablesOut to monitoringComposer.conditioningVariablesIn;
+                    connection gen_to_hmi : ControlFlow connect parameterGenerator.modelParametersOut to monitoringComposer.modelParametersIn;
                 }
                 part outputGateway : OutputGateway_Unit{
                     doc /* The OutputGateway unit, responsible for sending generated control parameters to the vehicle and outputting monitoring information. */
@@ -498,8 +498,7 @@ package V2X_CACC_Model{
                     ref port v2v : V2VCommPort;
                     ref port v2i : V2ICommPort;
                     ref port vehicleBus : VehicleBusPort;
-                    ref port hmi : HMIPort;
-                    ref port securityMonitor : SecurityMonitorPort;
+                    
 
                     // ===== INGRESSO INIZIALE =====
                     entry;
@@ -1728,6 +1727,7 @@ package V2X_CACC_Model{
                     group = "FUNCTIONALE REQ"; 
                 }
             }
+            satisfy speedLimitEnforcement by Structure::V2X_CACC_System::top_system;
 
             requirement roadHazardWarningResponse : RoadHazardWarningResponse{
                 @RequirementStatus { 
@@ -2043,14 +2043,6 @@ package V2X_CACC_Model{
             }
             satisfy jamRate_FalsePositiveHandling by Structure::V2X_CACC_System::top_system;
 
-            requirement jamRate_FalsePositiveHandling : JamRate_FalsePositiveHandling {
-                @RequirementStatus { 
-                    status = "Draft"; 
-                    approver = ""; 
-                    date = "";
-                    group = "SOTIF REQ";
-                }
-            }
 
             requirement glosa_UnreachableGreenWaveHandling : GLOSA_UnreachableGreenWaveHandling {
                 @RequirementStatus { 
@@ -2072,15 +2064,6 @@ package V2X_CACC_Model{
             }
             satisfy denm_ConfidenceLevelValidation by Structure::V2X_CACC_System::top_system;
 
-            requirement denm_ConfidenceLevelValidation : DENM_ConfidenceLevelValidation{
-                @RequirementStatus { 
-                    status = "Draft"; 
-                    approver = ""; 
-                    date = "";
-                    group = "SOTIF REQ";
-                }
-            }
-            satisfy denm_ConfidenceLevelValidation by Structure::V2X_CACC_System::top_system;
 
             requirement pedestrian_OnboardVerification : Pedestrian_OnboardVerification {
                 @RequirementStatus { 
@@ -2158,15 +2141,6 @@ package V2X_CACC_Model{
             }
             satisfy v2x_DegradedChannelScenarios by Structure::V2X_CACC_System::top_system;
 
-            requirement v2x_CybersecurityTestScenarios : V2X_CybersecurityTestScenarios {
-                @RequirementStatus { 
-                    status = "Rejected"; 
-                    approver = ""; 
-                    date = "";
-                    group = "SCENARIO REQ";
-                }
-            }
-            satisfy v2x_CybersecurityTestScenarios by Structure::V2X_CACC_System::top_system;
         
             /* ===================================================================
                 * OPERATIONAL REQUIREMENTS
@@ -3111,6 +3085,13 @@ package V2X_CACC_Model{
             attribute date      : ScalarValues::String;
         }
 
+        occurrence def InternalOccurrence {
+            doc /* An internal event occurring within a phase, such as a review, milestone, or significant activity. */
+            attribute inPhase = ScalarValues::String;
+            attribute content = ScalarValues::String;
+            attribute date    = ScalarValues::String;
+        }
+
         item def Gate {
             doc /* A review gate (entry or exit condition) for a lifecycle phase. */
             attribute condition : ScalarValues::String;
@@ -3143,7 +3124,7 @@ package V2X_CACC_Model{
                 attribute notes     = "Feasibility study of needs and project ideas.";
 
                 item gate_conceptExit : Gate {
-                    attribute condition = "Feasibility Review Approvata";
+                    attribute condition = "Feasibility Review Approved";
                     attribute gateType  = "exit";
                 }
             }
@@ -3436,7 +3417,6 @@ package V2X_CACC_Model{
         }
         }
         
-    
         package ProjectTeamMembers {
             doc /* Project team and stakeholders for the car-following system. */
 

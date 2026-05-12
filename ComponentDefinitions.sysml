@@ -68,7 +68,7 @@ package ComponentDefinition{
         in port v2vIn : V2VCommPort;
         in port v2iIn : V2ICommPort;
         in port egoVehicleInfoIn : VehicleBusPort;
-        out port camOut : CAM;
+        out port camOut : CAM_Port;
         out port modelParametersOut : ControlParametersPort;
         out port platooningInfoOut : PlatooningInfoPort;
         out port monitoringOut : MonitoringPort;
@@ -128,8 +128,8 @@ package ComponentDefinition{
         in port platooningInfoIn : PlatooningInfoPort; 
 
         // Porte esterne (verso i canali reali)
-        out port camOut : V2VCommPort;          // invia CAM
-        out port modelParametersOut : ControlParametersOutPort; // invia comandi attuatori
+        out port camOut : CAM_Port;          // invia CAM
+        out port modelParametersOut : ControlParametersPort; // invia comandi attuatori
         out port monitoringIn : MonitoringPort;
         out port monitoringOut : MonitoringPort;   
         out port platooningInfoOut : PlatooningInfoPort;           // notifiche HMI
@@ -282,10 +282,6 @@ package ComponentDefinition{
     part def V2I_Analyzer_Unit{
         doc /* Part representing the V2I analyzer unit of the system, responsible for analyzing the validated signals data and generating data for following parameter generation insights. */
         
-    }
-
-    part def ParameterGenerator_Unit{
-        doc /* Part representing the parameter generator unit of the system, responsible for generating the parameters for the following model based on the analyzed data. */
     }
 
     part def V2V_OwnMessage_Unit{
