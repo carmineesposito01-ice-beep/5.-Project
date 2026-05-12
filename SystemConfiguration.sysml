@@ -3134,145 +3134,350 @@ package V2X_CACC_Model{
 
         // ─── Instance ────────────────────────────────────────────────────────
         item projectLifecycle : Lifecycle {
-            doc /* FPGA project lifecycle timeline. */
+            doc /* Project lifecycle timeline. */
 
-            item reqPhase : Phase {
+            item phaseA : Phase {
+                doc /* Definizione iniziale dei Bisogni degli stakeholder, idee per realizzarli e analisi di queste. */
+                attribute phaseName = "Concept";
+                attribute owner     = "Ing. Esposito";
+                attribute notes     = "Feasibility study of needs and project ideas.";
+
+                item gate_conceptExit : Gate {
+                    attribute condition = "Feasibility Review Approvata";
+                    attribute gateType  = "exit";
+                }
+            }
+
+            item phaseB : Phase {
+                doc /* Formalizza i Bisogni degli Stakeholder in Requisiti di sistema. */
                 attribute phaseName = "Requirements";
-                attribute status    = "completed";
-                attribute startDate = "2025-01-10";
-                attribute endDate   = "2025-02-28";
-                attribute owner     = "devCarmine";
-                attribute progress  = 100;
-                attribute notes     = "Stakeholder requirements elicited and approved.";
-                item entryGate : Gate {
+                attribute owner     = "Ing. Esposito";
+                attribute notes     = "Elicit, analyze and formalize stakeholder needs into system requirements.";
+
+                item gate_reqEntry : Gate {
+                    attribute condition = "Concept Review Passed";
                     attribute gateType  = "entry";
-                    attribute condition = "Project kickoff approved by steering committee.";
                 }
-                item exitGate : Gate {
+                item gate_reqExit : Gate {
+                    attribute condition = "Requirements Baseline Fixed";
                     attribute gateType  = "exit";
-                    attribute condition = "Requirements baseline signed off by all stakeholders.";
                 }
             }
 
-            item designPhase : Phase {
-                attribute phaseName = "Design";
-                attribute status    = "completed";
-                attribute startDate = "2025-03-01";
-                attribute endDate   = "2025-04-15";
-                attribute owner     = "devLuca";
-                attribute progress  = 100;
-                attribute notes     = "Architecture and interface definitions finalized.";
-                item entryGate : Gate {
+            item phaseC : Phase {
+                doc /* Tradurre i Requisiti in funzioni (action), ignorando i componenti fisici. */
+                attribute phaseName = "Functional";
+                attribute owner     = "Ing. Esposito";
+                attribute notes     = "Define system functions and their interactions, without committing to physical components.";
+
+                item gate_designEntry : Gate {
+                    attribute condition = "Requirements Review Passed";
                     attribute gateType  = "entry";
-                    attribute condition = "Requirements baseline approved.";
                 }
-                item exitGate : Gate {
+                item gate_designExit : Gate {
+                    attribute condition = "Functional Design Review Passed";
                     attribute gateType  = "exit";
-                    attribute condition = "Critical Design Review (CDR) passed.";
                 }
             }
 
-            item implementationPhase : Phase {
-                attribute phaseName = "Implementation";
-                attribute status    = "active";
-                attribute startDate = "2025-04-16";
-                attribute endDate   = "2025-07-31";
-                attribute owner     = "devSofia";
-                attribute progress  = 60;
-                attribute notes     = "FPGA firmware and signal processing modules in progress.";
-                item entryGate : Gate {
+            item phaseD : Phase {
+                doc /* Associazione delle funzioni ai blocchi dell'architettura. */
+                attribute phaseName = "Logical";
+                attribute owner     = "Ing. Esposito";
+                attribute notes     = "Associate function to architecture blocks and define ports and interfaces.";
+
+                item gate_implEntry : Gate {
+                    attribute condition = "Functional Design Completed";
                     attribute gateType  = "entry";
-                    attribute condition = "CDR passed; implementation backlog groomed.";
                 }
-                item exitGate : Gate {
+                item gate_implExit : Gate {
+                    attribute condition = "System Architecture Review Passed.";
                     attribute gateType  = "exit";
-                    attribute condition = "Feature freeze; all unit tests passing.";
                 }
             }
 
-            item testingPhase : Phase {
-                attribute phaseName = "Testing";
-                attribute status    = "planned";
-                attribute startDate = "2025-08-01";
-                attribute endDate   = "2025-09-30";
-                attribute owner     = "devCarmine";
-                attribute progress  = 0;
-                attribute notes     = "Hardware-in-the-loop and system integration tests.";
-                item entryGate : Gate {
+            item phaseE : Phase {
+                doc /* Progettazione nel dettaglio dei blocchi funzionali dell'Architettura. */
+                attribute phaseName = "Physical";
+                attribute owner     = "Ing. Esposito";
+                attribute notes     = "Detail design of functional blocks in the architecture.";
+
+                item gate_implEntry : Gate {
+                    attribute condition = "Architecture Level Completed";
                     attribute gateType  = "entry";
-                    attribute condition = "Feature freeze confirmed; test plan approved.";
                 }
-                item exitGate : Gate {
+                item gate_implExit : Gate {
+                    attribute condition = "Design Review Passed.";
                     attribute gateType  = "exit";
-                    attribute condition = "All critical defects resolved; qualification test passed.";
                 }
             }
 
-            item deploymentPhase : Phase {
+            item phaseF : Phase {
+                doc /* Test di integrazione, simulazione HIL e verifica dei requisiti. */
+                attribute phaseName = "Verification";
+                attribute owner     = "Ing. Esposito";
+                attribute notes     = "Integration, simulation and verification of Requirements.";
+
+                item gate_vvEntry : Gate {
+                    attribute condition = "Architecture Design Passed";
+                    attribute gateType  = "entry";
+                }
+                item gate_vvExit : Gate {
+                    attribute condition = "Verification Review Approved";
+                    attribute gateType  = "exit";
+                }
+            }
+
+            item phaseG : Phase {
+                doc /* Verifica che il sistema soddisfi i bisogni degli stakeholder. */
+                attribute phaseName = "Validation";
+                attribute owner     = "Ing. Esposito";
+                attribute notes     = "Validation with stakeholders to ensure needs are met.";
+
+                item gate_vvEntry : Gate {
+                    attribute condition = "Verification Review Approved";
+                    attribute gateType  = "entry";
+                }
+                item gate_vvExit : Gate {
+                    attribute condition = "Validation Review Approved";
+                    attribute gateType  = "exit";
+                }
+            }
+
+
+            item phaseH : Phase {
+                doc /* Rilascio e messa in produzione del sistema. */
                 attribute phaseName = "Deployment";
-                attribute status    = "planned";
-                attribute startDate = "2025-10-01";
-                attribute endDate   = "2025-11-15";
-                attribute owner     = "devLuca";
-                attribute progress  = 0;
-                attribute notes     = "Field deployment and customer acceptance.";
-                item entryGate : Gate {
+                attribute owner     = "Unknown";
+                attribute notes     = "Release and deployment of the system.";
+
+                item gate_deployEntry : Gate {
+                    attribute condition = "Validation Review Approved";
                     attribute gateType  = "entry";
-                    attribute condition = "Qualification test report signed off.";
                 }
-                item exitGate : Gate {
+
+                item gate_depExit : Gate {
+                    attribute condition = "System deployed and operational.";
                     attribute gateType  = "exit";
-                    attribute condition = "Customer acceptance test passed.";
                 }
             }
 
-            // Passage events (forward transitions — first run)
-            occurrence req2design : PassageEvent {
-                attribute fromPhase = "Requirements";
-                attribute toPhase   = "Design";
-                attribute content   = "Requirements baseline signed off. All 47 requirements approved.";
-                attribute date      = "2025-02-28";
-            }
-            occurrence design2impl : PassageEvent {
-                attribute fromPhase = "Design";
-                attribute toPhase   = "Implementation";
-                attribute content   = "CDR passed. Architecture approved, implementation starts.";
-                attribute date      = "2025-04-15";
-            }
-            occurrence impl2test : PassageEvent {
-                attribute fromPhase = "Implementation";
-                attribute toPhase   = "Testing";
-                attribute content   = "Feature freeze declared. Hand-off to test team.";
-                attribute date      = "2025-07-31";
+            // ────── OCCURRENCE ──────
+            occurrence occ_A1 : InternalOccurrence {
+                attribute inPhase = "Concept";
+                attribute content = "Define Objective: Design a modular cacc system that use V2X signals (V2V, V2I, ecc) to generate a batch of parameters to controll a car following model, using Deep Learning tecnique. Final implementation on FPGA hardware (PYNQ-Z1).";
+                attribute date    = "2026-03-15";
             }
 
-            // Iteration event (backward — testing reveals a critical defect)
-            occurrence test2design_iter : IterationEvent {
-                attribute fromPhase = "Testing";
-                attribute toPhase   = "Design";
-                attribute reason    = "Critical architecture defect found during HIL testing.";
-                attribute content   = "Revisit DSP-FPGA interface design. Restart from Design.";
-                attribute date      = "2025-09-05";
+            occurrence occ_A2 : InternalOccurrence {
+                attribute inPhase = "Concept";
+                attribute content = "Platooning Study";
+                attribute date    = "2026-03-16";
             }
 
-            // Passage events — second run (after iteration)
-            occurrence design2impl_r2 : PassageEvent {
-                attribute fromPhase = "Design";
-                attribute toPhase   = "Implementation";
-                attribute content   = "Revised interface design approved. Implementation restarts.";
-                attribute date      = "2025-09-20";
+            occurrence occ_A3 : InternalOccurrence {
+                attribute inPhase = "Concept";
+                attribute content = "Neural Network Study";
+                attribute date    = "2026-03-20";
             }
-            occurrence impl2test_r2 : PassageEvent {
-                attribute fromPhase = "Implementation";
-                attribute toPhase   = "Testing";
-                attribute content   = "Hotfix implemented and verified. Re-entering test phase.";
-                attribute date      = "2025-10-10";
+
+            occurrence occ_A4 : InternalOccurrence {
+                attribute inPhase = "Concept";
+                attribute content = "SysML v2 Study";
+                attribute date    = "2026-03-28";
             }
-            occurrence test2deploy : PassageEvent {
-                attribute fromPhase = "Testing";
-                attribute toPhase   = "Deployment";
-                attribute content   = "All qualification tests passed. Cleared for deployment.";
-                attribute date      = "2025-10-25";
+
+            occurrence occ_A5 : InternalOccurrence {
+                attribute inPhase = "Concept";
+                attribute content = "Car Following Model Study";
+                attribute date    = "2026-04-15";
+            }
+
+            occurrence occ_A6 : InternalOccurrence {
+                attribute inPhase = "Concept";
+                attribute content = "Define Project Needs";
+                attribute date    = "2026-04-21";
+            }
+
+            occurrence occ_A7 : InternalOccurrence {
+                attribute inPhase = "Concept";
+                attribute content = "Inizialize Sysml v2 project (.sysml)";
+                attribute date    = "2026-04-22";
+            }
+
+            occurrence occ_A8 : InternalOccurrence {
+                attribute inPhase = "Concept";
+                attribute content = "Produce Use-Case View";
+                attribute date    = "2026-04-23";
+            }
+
+            occurrence occ_A9 : InternalOccurrence {
+                attribute inPhase = "Concept";
+                attribute content = "Produce Stakeholder View";
+                attribute date    = "2026-04-23";
+            }
+
+            occurrence occ_A10 : InternalOccurrence {
+                attribute inPhase = "Concept";
+                attribute content = "Produce Member View";
+                attribute date    = "2026-04-23";
+            }
+
+            occurrence occ_A11 : InternalOccurrence {
+                attribute inPhase = "Concept";
+                attribute content = "Produce Tool View";
+                attribute date    = "2026-04-23";
+            }
+
+            occurrence pass_A_B : PassageEvent {
+                attribute fromPhase    = "Concept";
+                attribute toPhase      = "Requirements";
+                attribute fromProgress = 100;
+                attribute date         = "2026-04-25";
+                attribute content      = "Concept Approved";
+            }
+
+            occurrence occ_B0 : InternalOccurrence {
+                attribute inPhase = "Requirements";
+                attribute content = "Start 1° Black-Box Analysis";
+                attribute date    = "2026-04-26";
+            }
+
+            occurrence occ_B1 : InternalOccurrence {
+                attribute inPhase = "Requirements";
+                attribute content = "Convert Needs in Requirements (System)";
+                attribute date    = "2026-04-26";
+            }
+
+            occurrence occ_B2 : InternalOccurrence {
+                attribute inPhase = "Requirements";
+                attribute content = "Produce Requirement View";
+                attribute date    = "2026-04-26";
+            }
+
+            occurrence pass_B_C : PassageEvent {
+                attribute fromPhase    = "Requirements";
+                attribute toPhase      = "Functional";
+                attribute fromProgress = 30;
+                attribute date         = "2026-04-30";
+                attribute content      = "Requirements To Approve";
+            }
+
+            occurrence occ_C1 : InternalOccurrence {
+                attribute inPhase = "Functional";
+                attribute content = "Define Actions (functions)";
+                attribute date    = "2026-04-30";
+            }
+
+            occurrence occ_C2 : InternalOccurrence {
+                attribute inPhase = "Functional";
+                attribute content = "Produce ActionFlow View";
+                attribute date    = "2026-04-30";
+            }
+
+            occurrence occ_C3 : InternalOccurrence {
+                attribute inPhase = "Functional";
+                attribute content = "Produce StateTransition View";
+                attribute date    = "2026-04-30";
+            }
+
+            occurrence occ_C4 : InternalOccurrence {
+                attribute inPhase = "Functional";
+                attribute content = "Produce Sequence Views";
+                attribute date    = "2026-04-30";
+            }
+
+            occurrence occ_C5 : InternalOccurrence {
+                attribute inPhase = "Functional";
+                attribute content = "Produce General View";
+                attribute date    = "2026-04-30";
+            }
+
+            occurrence occ_C6 : InternalOccurrence {
+                attribute inPhase = "Functional";
+                attribute content = "Produce Grid View";
+                attribute date    = "2026-04-30";
+            }
+
+            occurrence occ_C7 : InternalOccurrence {
+                attribute inPhase = "Functional";
+                attribute content = "Produce Browser View";
+                attribute date    = "2026-04-30";
+            }
+
+            occurrence pass_C_D : PassageEvent {
+                attribute fromPhase    = "Functional";
+                attribute toPhase      = "Logical";
+                attribute fromProgress = 30;
+                attribute date         = "2026-05-04";
+                attribute content      = "Functional Design Approved";
+            }
+            
+            occurrence occ_D0 : InternalOccurrence {
+                attribute inPhase = "Logical";
+                attribute content = "Start 1° White-Box Analysis";
+                attribute date    = "2026-05-04";
+            }
+
+            occurrence occ_D1 : InternalOccurrence {
+                attribute inPhase = "Logical";
+                attribute content = "Define internal Structure";
+                attribute date    = "2026-05-04";
+            }
+
+            occurrence occ_D2 : InternalOccurrence {
+                attribute inPhase = "Logical";
+                attribute content = "Produce Internconnection View";
+                attribute date    = "2026-05-04";
+            }
+
+            
+            // ── ③ PASSAGE EVENTS ─────────────────────────────────────────
+            // fromProgress = completamento % della fromPhase al momento del passaggio.
+            // Il parser usa questo valore per impostare phase.progress quando inferisce
+            // lo status "completed" (senza attributo status esplicito nella fase).
+
+            occurrence pass_A_B : PassageEvent {
+                attribute fromPhase    = "Concept";
+                attribute toPhase      = "Requirements";
+                attribute fromProgress = 100;
+                attribute date         = "2025-03-31";
+                attribute content      = "Feasibility Review Approvata";
+            }
+
+
+            // pass_D_E non ancora emesso: la fase Implementation è attiva.
+            // Il parser calcola il suo progress automaticamente dalle date.
+
+            // ── ④ ITERATION EVENTS ────────────────────────────────────────
+            // fromProgress = % di avanzamento della fromPhase al momento del rework.
+
+            /**
+             * ITERAZIONE 1: A metà della fase System Design (≈60%), i requisiti
+             * risultavano incompleti. Il team è tornato in Requirements per
+             * aggiungere i casi d'uso SOTIF.
+             */
+            occurrence iter_back_to_req : IterationEvent {
+                attribute fromPhase    = "System Design";
+                attribute toPhase      = "Requirements";
+                attribute fromProgress = 60;
+                attribute date         = "2025-07-15";
+                attribute reason       = "Requisiti SOTIF mancanti — aggiunta UC Safety";
+                attribute content      = "Rework Requirements: SOTIF use cases";
+            }
+
+            /**
+             * ITERAZIONE 2: Durante l'implementazione (≈30%), un test HIL
+             * preliminare ha rivelato che l'architettura IDM 2D non era
+             * real-time safe su FPGA. Il team è tornato in System Design.
+             */
+            occurrence iter_back_to_design : IterationEvent {
+                attribute fromPhase    = "Implementation";
+                attribute toPhase      = "System Design";
+                attribute fromProgress = 30;
+                attribute date         = "2025-12-10";
+                attribute reason       = "Architettura IDM 2D non real-time safe — redesign";
+                attribute content      = "Redesign: Car-Following su FPGA a logica pipeline";
             }
         }
         }
@@ -3315,85 +3520,135 @@ package V2X_CACC_Model{
         package ProjectTools {
             doc /* Software tools used in the FPGA car-following MBSE project. */
 
-            item vivado : Tool_Definitions::SoftwareTool {
-                attribute :>> toolName    = "Xilinx Vivado";
-                attribute :>> version     = "2023.2";
-                attribute :>> vendor      = "AMD / Xilinx";
-                attribute :>> toolType    = "FPGA Synthesis & Implementation";
-                attribute :>> scope       = "Hardware";
-                attribute :>> license     = "WebPACK (Free)";
-                attribute :>> description = "FPGA design suite for synthesis, implementation and bitstream generation on PYNQ-Z1.";
+
+            item vivado : SoftwareTool {
+                attribute toolName    = "Xilinx Vivado";
+                attribute version     = "2025.2";
+                attribute vendor      = "AMD (ex Xilinx)";
+                attribute toolType    = "EDA / FPGA Design Suite";
+                attribute scope       = "Hardware Engineering";
+                attribute license     = "WebPACK (Free)";
+                attribute description = "FPGA design suite for synthesis, implementation and bitstream generation on PYNQ-Z1.";
+
+                attribute descPurpose = "Primary tool for FPGA firmware development (HW/SW), including RTL design, synthesis, implementation, and bitstream generation.";
+                attribute descRole    = "Hardware design, simulation, and deployment.";
+                attribute descOutput  = "Bitstream (.bit), Timing/Power Reports, hardware/software configuration files (.xsa).";
+                attribute descModules = "Vivado Simulator (XSim); IP Integrator; Logic Analyzer; High-Level Synthesis (HLS).";
+                attribute descWiki    = "https://docs.xilinx.com";
             }
 
-            item matlab : Tool_Definitions::SoftwareTool {
-                attribute :>> toolName    = "MATLAB / Simulink";
-                attribute :>> version     = "R2023b";
-                attribute :>> vendor      = "MathWorks";
-                attribute :>> toolType    = "Model-Based Design";
-                attribute :>> scope       = "System Modeling";
-                attribute :>> license     = "Academic";
-                attribute :>> description = "Used for algorithm prototyping, signal processing simulation, and HDL code generation.";
+            item matlab : SoftwareTool {
+                attribute toolName    = "MATLAB Toolchain";
+                attribute version     = "2026a";
+                attribute vendor      = "MathWorks";
+                attribute toolType    = "Model-Based Design";
+                attribute scope       = "System Modeling & Simulation";
+                attribute license     = "Academic";
+                attribute description = "Technical computing environment used for system-level modeling and simulation.";
+
+                attribute descPurpose = "Define the logical and functional architecture of the system and run dynamic simulations to validate design choices.";
+                attribute descRole    = "Implement the system architecture and execute the verification of system requirements.";
+                attribute descOutput  = "Architecture models, simulation data (.mat), requirement verification reports.";
+                attribute descModules = "System Composer; Simulink.";
+                attribute descWiki    = "https://www.mathworks.com/help/";
             }
 
-            item python : Tool_Definitions::SoftwareTool {
-                attribute :>> toolName    = "Python";
-                attribute :>> version     = "3.13";
-                attribute :>> vendor      = "Python Software Foundation";
-                attribute :>> toolType    = "Scripting / Automation";
-                attribute :>> scope       = "Software Design";
-                attribute :>> license     = "Open Source (PSF)";
-                attribute :>> description = "Used for Neural Network design, training and pruning.";
+            item python : SoftwareTool {
+                attribute toolName    = "Python";
+                attribute version     = "3.13";
+                attribute vendor      = "Python Software Foundation";
+                attribute toolType    = "Scripting / Automation";
+                attribute scope       = "Software Design";
+                attribute license     = "PSF License (Open Source)";
+                attribute description = "High-level interpreted language used as the primary ecosystem for artificial intelligence development.";
+
+                attribute descPurpose = "Provide the computational framework and libraries required for machine learning development.";
+                attribute descRole    = "Design the neural network architecture and execute its training phase.";
+                attribute descOutput  = "Trained neural network models (e.g., .onnx, .pt, .h5), training logs, evaluation metrics.";
+                attribute descModules = "Deep Learning Frameworks (e.g., TensorFlow/PyTorch, snntorch); Data Processing Libraries.";
+                attribute descWiki    = "https://docs.python.org/3.13/";
             }
 
-            item sysmlTool : Tool_Definitions::SoftwareTool {
-                attribute :>> toolName    = "SysML v2 CLI / VS Code Extension";
-                attribute :>> version     = "2024.12";
-                attribute :>> vendor      = "OMG / Community";
+            item vscode_sysml : SoftwareTool {
+                attribute toolName    = "Visual Studio Code (SysIde)";
+                attribute version     = "1.90";
+                attribute vendor      = "Sensmetry";
+                attribute toolType    = "IDE / Textual Modeling Editor";
+                attribute scope       = "Systems Engineering";
+                attribute license     = "MIT (IDE) / Academic (SysIde)";
+                attribute description = "Source code editor equipped with the SysIde extension by Sensmetry for text-based MBSE.";
+
+                attribute descPurpose = "Enable text-based authoring of system models with real-time syntax validation and rendering.";
+                attribute descRole    = "Write the SysML v2 model as code and visualize it through the extension's integrated visualizer.";
+                attribute descOutput  = "SysML v2 source files (.sysml), interactive local visualizations.";
+                attribute descModules = "SysIde Extension (0.8); Language Server Protocol (LSP).";
+                attribute descWiki    = "https://sensmetry.com/syside";
+            }
+            
+            item sysmlTool : SoftwareTool {
+                attribute :>> toolName    = "SysML v2 CLI / Eclipse SysML v2 Extension";
+                attribute :>> version     = "2025.12";
+                attribute :>> vendor      = "OMG / Eclipse Foundation";
                 attribute :>> toolType    = "MBSE Authoring";
                 attribute :>> scope       = "Systems Engineering";
                 attribute :>> license     = "Open Source";
-                attribute :>> description = "Text-based SysML v2 modelling environment used to author and validate the system model.";
+                attribute :>> description = "Text-based SysML v2 modelling environment used to author and validate the system model / PlantUML extension for Eclipse IDE.";
+            
+                attribute descPurpose = "Enable text-based authoring of system models with real-time syntax validation and rendering.";
+                attribute descRole    = "Write the SysML v2 model as code and visualize it through the extension's integrated visualizer.";
+                attribute descOutput  = "SysML v2 source files (.sysml), interactive local visualizations.";
+                attribute descModules = "SysML v2 CLI; Eclipse SysML Extension.";
+                attribute descWiki    = "https://www.omg.org/spec/SysML/2.0/";
             }
 
-            item sysmlValidator : Tool_Definitions::SoftwareTool{
-                attribute :>> toolName    = "Eclipse SysON";
-                attribute :>> version     = "2025-03";
-                attribute :>> vendor      = "Eclipse";
-                attribute :>> toolType    = "Model Validation";
-                attribute :>> scope       = "Systems Engineering";
-                attribute :>> license     = "Open Source";
-                attribute :>> description = "Automated validation tool for checking model consistency, correctness, and requirement satisfaction.";
+            item eclipse_syson : SoftwareTool {
+                attribute toolName    = "Eclipse SysON";
+                attribute version     = "2026.03";
+                attribute vendor      = "Eclipse Foundation";
+                attribute toolType    = "MBSE Model Database & Visualizer";
+                attribute scope       = "Systems Engineering";
+                attribute license     = "Open Source";
+                attribute description = "Open-source SysML v2 platform acting as the central authoritative repository for system models.";
+
+                attribute descPurpose = "Centralize the MBSE data and enable automated data exchange across the engineering toolchain.";
+                attribute descRole    = "Store the model in its database and manage REST API calls from other software to provide or receive data.";
+                attribute descOutput  = "Centralized SysML v2 database records, REST API payloads (JSON).";
+                attribute descModules = "SysON Database; REST API Gateway; Model Server.";
+                attribute descWiki    = "https://syson.org/";
             }
 
-            item visualizer : Tool_Definitions::SoftwareTool{
-                attribute :>> toolName    = "SysML v2 Model-Visualizer";
-                attribute :>> version     = "0.5";
-                attribute :>> vendor      = "In-house";
-                attribute :>> toolType    = "Custom Views Visualization";
-                attribute :>> scope       = "Systems Engineering";
-                attribute :>> license     = "Open Source";
-                attribute :>> description = "Custom-built visualization tool for visualize SysML model views&viewpoint.";
+            item custom_visualizer : SoftwareTool {
+                attribute toolName    = "SysML v2 Visualizer";
+                attribute version     = "0.5";
+                attribute vendor      = "In-house Tool";
+                attribute toolType    = "Visualization Utility";
+                attribute scope       = "Systems Engineering";
+                attribute license     = "Proprietary (In-house)";
+                attribute description = "Dedicated in-house rendering engine for SysML v2 models.";
+
+                attribute descPurpose = "Translate complex SysML v2 code into consumable graphical representations tailored for specific stakeholders.";
+                attribute descRole    = "Provide a way to visualize the model's views and manage custom viewpoints.";
+                attribute descOutput  = "Graphical views, interactive dashboards, rendered viewpoint exports.";
+                attribute descModules = "Viewpoint Manager; Rendering Engine.";
+                attribute descWiki    = "Internal Project Wiki";
             }
 
-            item git : Tool_Definitions::SoftwareTool {
-                attribute :>> toolName    = "Git";
-                attribute :>> version     = "2.43";
-                attribute :>> vendor      = "Git Project";
-                attribute :>> toolType    = "Version Control";
-                attribute :>> scope       = "DevOps";
-                attribute :>> license     = "Open Source (GPL-2.0)";
-                attribute :>> description = "Source control for SysML model files, firmware, and Visualizer source code.";
-            }
+            item gitlab : SoftwareTool {
+                attribute toolName    = "GitLab";
+                attribute version     = "3.17";
+                attribute vendor      = "Git Project";
+                attribute toolType    = "Version Control";
+                attribute scope       = "DevOps";
+                attribute license     = "Open Source";
+                attribute description = "Integrated platform for distributed version control and CI/CD automation.";
 
-            item vscode : Tool_Definitions::SoftwareTool {
-                attribute :>> toolName    = "Visual Studio Code";
-                attribute :>> version     = "1.90";
-                attribute :>> vendor      = "Microsoft";
-                attribute :>> toolType    = "IDE";
-                attribute :>> scope       = "Development";
-                attribute :>> license     = "Free";
-                attribute :>> description = "Primary development environment for SysML authoring, Python scripting, and Visualizer development.";
+                attribute descPurpose = "Guarantee version history, branching, and collaboration for all project source files, including text-based models.";
+                attribute descRole    = "Primary DevOps platform: Git repository hosting, code review via Merge Requests, and pipeline orchestration.";
+                attribute descOutput  = "Commit history, branches, tags, CI/CD artifacts.";
+                attribute descModules = "Version Control; CI/CD Pipelines; Issue Tracker; Merge Requests.";
+                attribute descWiki    = "https://docs.gitlab.com";
             }
+            
         }
     }
 
