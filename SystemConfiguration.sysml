@@ -3491,9 +3491,89 @@ package V2X_CACC_Model{
                 attribute date    = "2026-05-04";
             }
 
+            occurrence occ_D3 : InternalOccurrence{
+                attribute inPhase = "Logical";
+                attribute content = "End 1° Black/White Box Analysis";
+                attribute date    = "2026-05-04";
+            }
+
+            occurrence occ_D_B : IterationEvent {
+                attribute fromPhase    = "Logical";
+                attribute toPhase      = "Requirements";
+                attribute reason       = "Need to Define internal Component";
+                attribute date         = "2026-05-05";
+                attribute content      = "Step 2° Level";
+            }
+
+            occurrence occ_B3 : InternalOccurrence {
+                attribute inPhase = "Requirements";
+                attribute content = "Start 2° Black-Box Analysis";
+                attribute date    = "2026-05-05";
+            }
+
+            occurrence occ_B4 : InternalOccurrence {
+                attribute inPhase = "Requirements";
+                attribute content = "Define InputGateway Requirement";
+                attribute date    = "2026-05-05";
+            }
+
+            occurrence occ_B5 : InternalOccurrence {
+                attribute inPhase = "Requirements";
+                attribute content = "Define CamComposer Requirement";
+                attribute date    = "2026-05-05";
+            }
+
+            occurrence occ_B6 : InternalOccurrence {
+                attribute inPhase = "Requirements";
+                attribute content = "Define Elaboration Requirement";
+                attribute date    = "2026-05-05";
+            }
+
+            occurrence occ_B7 : InternalOccurrence {
+                attribute inPhase = "Requirements";
+                attribute content = "Define OutputGateway Requirement";
+                attribute date    = "2026-05-05";
+            }
+
+            occurrence occ_B8 : InternalOccurrence {
+                attribute inPhase = "Requirements";
+                attribute content = "Produce Components Requirement Views";
+                attribute date    = "2026-05-05";            
+            }
+
+            occurrence occ_B_C2 : PassageEvent {
+                attribute fromPhase    = "Requirements";
+                attribute toPhase      = "Functional";
+                attribute fromProgress = 60;
+                attribute date         = "2026-05-06";
+                attribute content      = "Requirements To Approve";
+            }
+
+            occurrence occ_C8 : InternalOccurrence {
+                attribute inPhase = "Functionals";
+                attribute content = "Define internal Structure";
+                attribute date    = "2026-05-06";
+            }
+
+             occurrence occ_C9 : InternalOccurrence {
+                attribute inPhase = "Functional";
+                attribute content = "Produce Internconnection View";
+                attribute date    = "2026-05-06";
+             }
+
+             occurrence occ_C10 : InternalOccurrence{
+                attribute inPhase = "Functional";
+                attribute content = "End 2° Black/White Box Analysis";
+                attribute date    = "2026-05-06";
+             }
+
             
-            
-        }
+
+        
+
+
+
+
         }
         
         package ProjectTeamMembers {
