@@ -22,6 +22,15 @@ package ComponentDefinition{
         attribute followingParameters : CarFollowingParams;
         attribute headwayIncrementPercentage : Real; // 10.0 %
 
+        // Global instrumentation
+        attribute systemTime : ScalarValues::DateTime;
+        attribute testRunId : String;
+        attribute scenarioId : String;
+        attribute measuredUpdateRate : Real; // Hz
+        attribute measuredLatencyE2E : Real; // ms
+        attribute measuredProcessingTime : Real; // ms
+        attribute observedFailures : Integer; // count
+
         // ---------- Soglie di sicurezza ----------
         attribute emergencyBrakingMaxReactionTime : Real; // 200.0 ms
         attribute signalViolationEmergencyDistance : Real; // m
@@ -102,6 +111,13 @@ package ComponentDefinition{
         out port v2iOut : V2ICommPort;
         out port platooningInfoOut : PlatooningInfoPort;
         
+        // Instrumentation & quality metrics
+        attribute v2vPacketLossRate : Real; // percent
+        attribute v2vAvgLatency : Real; // ms
+        attribute messageFragmentationRate : Real; // percent
+        attribute DENM_confidence : Real; // 0..100
+        attribute camIntegrityScore : Real; // 0..1
+        attribute validationLatency : Real; // ms
         
     }
 
@@ -113,6 +129,17 @@ package ComponentDefinition{
 
         out port modelParametersOut : ControlParametersPort;
         out port monitoringOut : MonitoringPort;
+        
+        // Decision & control attributes
+        attribute currentHeadway : Real; // m or s depending on model
+        attribute desiredHeadway : Real; // m or s
+        attribute speedLimitEnforced : Boolean;
+        attribute glosaActive : Boolean;
+        attribute glosaComputationTime : Real; // ms
+        attribute processingLatency : Real; // ms per cycle
+        attribute stringStabilityIndex : Real; // unitless metric
+        attribute leaderProfileConfidence : Real; // percent
+        attribute currentJamRate : Real; // 1/s
         
         //part analyzer : Analyzer_Unit;
         //part v2v_own_message : V2V_OwnMessage_Unit;
@@ -134,6 +161,13 @@ package ComponentDefinition{
         out port monitoringOut : MonitoringPort;   
         out port platooningInfoOut : PlatooningInfoPort;           // notifiche HMI
 
+        // Forwarding metrics
+        attribute camOutputRate : Real; // Hz
+        attribute camForwardingLatency : Real; // ms
+        attribute camForwardingRetries : Integer;
+        attribute controlForwardingLatency : Real; // ms
+        attribute forwardingSuccessRate : Real; // percent
+
         //part send_v2v_message : Send_V2VMessage_Unit;
         //part send_parameters : Send_Parameters_Unit;
         //part send_platooning_info : Send_Platooning_Info_Unit;
@@ -144,6 +178,12 @@ package ComponentDefinition{
         
         in port egoIn : EgoVehicleData_Flow;   // da InputGateway
         out port camOut : CAM_Port;
+        
+        // CAM / sample-and-hold attributes
+        attribute lastCamTimestamp : ScalarValues::DateTime;
+        attribute camGenerationLatency : Real; // ms
+        attribute camSequenceNumber : Integer;
+        attribute camSignatureValid : Boolean;
     }
 
     part def Allineator_Unit{
@@ -173,6 +213,10 @@ package ComponentDefinition{
         doc /* Part representing the sample and hold unit of the system, responsible for sampling the last CAM Message produced by the system. */
         in port camIn : CAM_Port;
         out port camOut : CAM_Port;
+        
+        // Sample-and-hold instrumentation
+        attribute sampleHoldTimeout : Real; // s
+        attribute sampleAge : Real; // ms
     }
 
     // LEVEL 2: Component Definitions

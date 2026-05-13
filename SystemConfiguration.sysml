@@ -1536,7 +1536,7 @@ package V2X_CACC_Model{
                         
                 
             }
-            satisfy cam_basedFollowingComputation by Structure::V2X_CACC_System::top_system;
+            satisfy cam_basedFollowingComputation by Structure::V2X_CACC_System::top_system::elaboration;
 
             requirement cam_transmission : CAM_Transmission{
                 @RequirementStatus { 
@@ -1546,7 +1546,7 @@ package V2X_CACC_Model{
                     group = "FUNCTIONALE REQ";
                 }
             }
-            satisfy cam_transmission by Structure::V2X_CACC_System::top_system;
+            satisfy cam_transmission by Structure::V2X_CACC_System::top_system::camComposer;
 
             requirement cutInDetection : CutInDetection{
                 @RequirementStatus { 
@@ -1556,7 +1556,7 @@ package V2X_CACC_Model{
                     group = "FUNCTIONALE REQ";  
                 }
             }
-            satisfy cutInDetection by Structure::V2X_CACC_System::top_system;
+            satisfy cutInDetection by Structure::V2X_CACC_System::top_system::elaboration;
 
             requirement cutInEmergencyBraking : CutInEmergencyBraking{
                 @RequirementStatus { 
@@ -1566,7 +1566,7 @@ package V2X_CACC_Model{
                     group = "FUNCTIONALE REQ";
                 }
             }
-            satisfy cutInEmergencyBraking by Structure::V2X_CACC_System::top_system;
+            satisfy cutInEmergencyBraking by Structure::V2X_CACC_System::top_system::elaboration;
 
             requirement cutInRequest{
                 @RequirementStatus { 
@@ -1606,7 +1606,7 @@ package V2X_CACC_Model{
 
 
             }
-            satisfy cutInRequest by Structure::V2X_CACC_System::top_system;
+            satisfy cutInRequest by Structure::V2X_CACC_System::top_system::elaboration;
 
             
             requirement cutInCompletionRevert : CutInCompletionRevert{
@@ -1617,7 +1617,7 @@ package V2X_CACC_Model{
                     group = "FUNCTIONALE REQ"; 
                 }
             }
-            satisfy cutInCompletionRevert by Structure::V2X_CACC_System::top_system;
+            satisfy cutInCompletionRevert by Structure::V2X_CACC_System::top_system::elaboration;
 
             requirement shockwaveMitigazion{
                 @RequirementStatus { 
@@ -1644,7 +1644,7 @@ package V2X_CACC_Model{
                     }
                 }
             }
-            satisfy shockwaveMitigazion by Structure::V2X_CACC_System::top_system;
+            satisfy shockwaveMitigazion by Structure::V2X_CACC_System::top_system::elaboration;
 
 
             requirement leaderClassification{
@@ -1672,7 +1672,7 @@ package V2X_CACC_Model{
                     }
                 } 
             }
-            satisfy leaderClassification by Structure::V2X_CACC_System::top_system;
+            satisfy leaderClassification by Structure::V2X_CACC_System::top_system::elaboration;
 
             requirement crossroadAdaptation{
                 @RequirementStatus { 
@@ -1717,7 +1717,7 @@ package V2X_CACC_Model{
                     }
                 }
             }
-            satisfy crossroadAdaptation by Structure::V2X_CACC_System::top_system;
+            satisfy crossroadAdaptation by Structure::V2X_CACC_System::top_system::elaboration;
 
             requirement speedLimitEnforcement : SpeedLimitEnforcement{
                 @RequirementStatus { 
@@ -1727,7 +1727,7 @@ package V2X_CACC_Model{
                     group = "FUNCTIONALE REQ"; 
                 }
             }
-            satisfy speedLimitEnforcement by Structure::V2X_CACC_System::top_system;
+            satisfy speedLimitEnforcement by Structure::V2X_CACC_System::top_system::elaboration;
 
             requirement roadHazardWarningResponse : RoadHazardWarningResponse{
                 @RequirementStatus { 
@@ -1737,7 +1737,7 @@ package V2X_CACC_Model{
                     group = "FUNCTIONALE REQ"; 
                 }
             }
-            satisfy roadHazardWarningResponse by Structure::V2X_CACC_System::top_system;
+            satisfy roadHazardWarningResponse by Structure::V2X_CACC_System::top_system::elaboration;
 
             requirement signalViolationWarningReception : SignalViolationWarningReception{
                 @RequirementStatus { 
@@ -1747,7 +1747,7 @@ package V2X_CACC_Model{
                     group = "FUNCTIONALE REQ"; 
                 }
             }
-            satisfy signalViolationWarningReception by Structure::V2X_CACC_System::top_system;
+            satisfy signalViolationWarningReception by Structure::V2X_CACC_System::top_system::elaboration;
 
             requirement swm{
                 @RequirementStatus { 
@@ -2443,6 +2443,7 @@ package V2X_CACC_Model{
                 date = "";
                 group = "FUNCTIONAL REQ"; 
             }
+            attribute :>> derivedFrom = cam_receptionRate;
             
         }
         satisfy camTransmissionRateReq by Structure::V2X_CACC_System::top_system::camComposer;
@@ -2456,7 +2457,7 @@ package V2X_CACC_Model{
             }
             
         }
-        satisfy sampleHoldReq by Structure::V2X_CACC_System::top_system::camComposer;
+        satisfy sampleHoldReq by Structure::V2X_CACC_System::top_system::camComposer::sample_hold;
         }
         package ElaborationRequirementUsage {
             requirement validatedDataReceptionReq : ValidatedDataReception {
@@ -2619,6 +2620,84 @@ package V2X_CACC_Model{
 
     package Verification{
 
+        item def VerificationCase {
+            doc /* Lightweight verification case definition used to link requirements to test artifacts. */
+            attribute id : String;
+            attribute linkedRequirements : String[*];
+            attribute testType : String; // unit | integration | scenario | performance
+            attribute passCriteria : String;
+            attribute owner : String;
+        }
+
+        item VC_CAM_Rate : VerificationCase {
+            attribute id = "VC_CAM_Rate";
+            attribute linkedRequirements = "cam_receptionRate";
+            attribute linkedRequirements = "cam_MinimumUpdateRate";
+            attribute testType = "integration";
+            attribute passCriteria = "measuredUpdateRate >= camUpdateRateMin AND jitter <= 10%";
+            attribute owner = "camComposer";
+        }
+
+        item VC_CAM_ForwardingLatency : VerificationCase {
+            attribute id = "VC_CAM_ForwardingLatency";
+            attribute linkedRequirements = "cam_transmission";
+            attribute linkedRequirements = "v2v_SafetyEndToEndLatency";
+            attribute testType = "integration";
+            attribute passCriteria = "measuredLatencyE2E <= maxV2VEndToEndLatency";
+            attribute owner = "outputGateway";
+        }
+
+        item VC_SpeedLimitEnforcement : VerificationCase {
+            attribute id = "VC_SpeedLimitEnforcement";
+            attribute linkedRequirements = "speedLimitEnforcement";
+            attribute linkedRequirements = "legalSpeedLimitCompliance";
+            attribute testType = "scenario";
+            attribute passCriteria = "when V2I speed limit changes, speedLimitEnforced==true and vehicle setpoints <= limit";
+            attribute owner = "elaboration";
+        }
+
+        item VC_CutIn_Safety : VerificationCase {
+            attribute id = "VC_CutIn_Safety";
+            attribute linkedRequirements = "cutInEmergencyBraking";
+            attribute linkedRequirements = "noCollisionDuringAssistedCutIn";
+            attribute testType = "scenario";
+            attribute passCriteria = "braking within reaction time; no collision";
+            attribute owner = "elaboration";
+        }
+
+        item VC_GLOSA_Timeout : VerificationCase {
+            attribute id = "VC_GLOSA_Timeout";
+            attribute linkedRequirements = "glosa_UnreachableGreenWaveHandling";
+            attribute linkedRequirements = "glosa_ComputationTime";
+            attribute testType = "scenario";
+            attribute passCriteria = "fallback activated when green wave unreachable; computation time within limit";
+            attribute owner = "elaboration";
+        }
+
+        item VC_Fragmentation_Reconstruction : VerificationCase {
+            attribute id = "VC_Fragmentation_Reconstruction";
+            attribute linkedRequirements = {"messageFragmentationHandling"};
+            attribute testType = "scenario";
+            attribute passCriteria = "reconstruction or fallback when fragmentation persists";
+            attribute owner = "inputGateway";
+        }
+
+        item VC_Heartbeat_Failure : VerificationCase {
+            attribute id = "VC_Heartbeat_Failure";
+            attribute linkedRequirements = "v2vSignalLossFallback";
+            attribute linkedRequirements = "heartbeatMonitoring";
+            attribute testType = "scenario";
+            attribute passCriteria = "heartbeat timeout triggers fail-safe";
+            attribute owner = "top_system";
+        }
+
+        item VC_StringStability : VerificationCase {
+            attribute id = "VC_StringStability";
+            attribute linkedRequirements = {"noStringInstabilityAmplification"};
+            attribute testType = "performance";
+            attribute passCriteria = "disturbance amplification <= 1 across platoon";
+            attribute owner = "elaboration";
+        }
 
     }
 

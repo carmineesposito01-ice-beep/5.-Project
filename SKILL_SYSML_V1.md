@@ -1,7 +1,7 @@
 ---
 name: sysml-v2-programming
 description: SysML v2 language reference and coding patterns — structure, behaviour, requirements, views. Focused exclusively on SysML v2 (NOT v1.x).
-version: 3.0.0
+version: 2.0.0
 ---
 
 # SysML v2 Programming Guide
@@ -83,37 +83,6 @@ public import ComponentDefinition::*;
 
 ---
 
-## Language Constructs Map
-
-Mappa completa dei costrutti SysML v2 organizzata per sezione dello standard (OMG SysML v2.0, settembre 2025) e package del progetto.
-
-| Spec §  | Keyword(s) principali | Package progetto | Scopo |
-|---|---|---|---|
-| §7.6 | `def` / usage duality, `:>`, `:>>` | Tutti | Fondazione: ogni `X def` ha la sua `X` usage corrispondente |
-| §7.7 | `attribute def` / `attribute` | Tutti | Proprietà tipizzate e valori con unità SI |
-| §7.8 | `enum def` | StandardLibrary | Tipi enumerativi per stati e classificazioni |
-| §7.9 | `occurrence def` / `occurrence` | ProjectInfo | Occorrenze temporali, ciclo di vita, eventi |
-| §7.10 | `item def` / `item` | StandardLibrary | Strutture dati che "scorrono" tra componenti |
-| §7.11 | `part def` / `part` | Structure | Componenti fisici o logici del sistema |
-| §7.12 | `port def` / `port` | Structure | Punti di interazione su una parte |
-| §7.13 | `connection def` / `connection` / `bind` / `succession` | Structure | Relazioni tra parti e feature |
-| §7.14 | `interface def` / `interface` | Structure | Connessione tipizzata porta-a-porta |
-| §7.15 | `allocation def` / `allocate` | Structure | Mapping funzionale→fisico |
-| §7.16 | `flow` / `succession flow` / `message` | Behaviour | Trasferimento dati tra azioni/parti |
-| §7.17 | `action def` / `action` / `assign` / `send` / `accept` / `perform action` / `if` / `while` / `for` / `loop` | Behaviour | Comportamento, flusso di controllo |
-| §7.18 | `state def` / `state` / `transition` / `exhibit state` | Behaviour | Macchine a stati |
-| §7.19 | `calc def` / `calc` | Analysis | Computazioni matematiche pure con `return` |
-| §7.20 | `constraint def` / `constraint` / `assert constraint` | Requirements / Analysis | Predicati booleani |
-| §7.21 | `requirement def` / `requirement` / `satisfy` | Requirements | Requisiti di stakeholder |
-| §7.22 | `case def` / `case` | Analysis / Verification | Base per analisi, verifica, use case |
-| §7.23 | `analysis def` / `analysis` | Analysis | Casi d'analisi, trade study |
-| §7.24 | `verification def` / `verification` / `verify` | Verification | Casi di verifica |
-| §7.25 | `use case def` / `use case` | Behaviour | Use case funzionali |
-| §7.26 | `view def` / `view` / `viewpoint def` / `viewpoint` | View_Viewpoint | Viste e viewpoint del modello |
-| §7.27 | `metadata def` / `@` / `#` | StandardLibrary | Annotazioni strutturate e keyword utente |
-
----
-
 ## Core Keywords Reference
 
 | Keyword | Meaning |
@@ -123,32 +92,16 @@ Mappa completa dei costrutti SysML v2 organizzata per sezione dello standard (OM
 | `item def` / `item` | Flowing data structure (messages, payloads) |
 | `port def` / `port` | Interaction point on a part |
 | `connection def` / `connection` | Binding between ports or parts |
-| `interface def` / `interface` | Typed connection between ports (§7.14) |
-| `allocation def` / `allocate` | Functional-to-physical mapping (§7.15) |
-| `flow` / `succession flow` / `message` | Data transfer between actions/parts (§7.16) |
-| `bind` | Structural equivalence: two features always have the same value (§7.13.3) |
 | `action def` / `action` | Behavior step |
-| `assign` | Runtime assignment of a feature value inside an action (§7.17.9) |
-| `perform action` | Specifies that a part or action performs a referenced action (§7.17.6) |
-| `send` / `accept` | Send/receive items via ports inside actions (§7.17.7-8) |
 | `state def` / `state` | State machine state |
-| `exhibit state` | Specifies that a part exhibits a referenced state (§7.18.4) |
-| `transition` | Triggered transition between states (§7.18.3) |
-| `calc def` / `calc` | Mathematical computation with a `return` result (§7.19) |
-| `constraint def` / `constraint` | Boolean constraint / predicate (§7.20) |
-| `assert constraint` | Asserts a constraint must always be true (§7.20.3) |
 | `use case def` / `use case` | Functional use case |
 | `requirement def` / `requirement` | Requirement |
-| `analysis def` / `analysis` | Analysis case, trade study (§7.23) |
-| `verification def` / `verification` | Verification case (§7.24) |
 | `viewpoint def` / `viewpoint` | Named stakeholder concern |
 | `view def` / `view` | Concrete view instance |
 | `enum def` | Enumeration type |
-| `occurrence def` / `occurrence` | Time-based event or lifecycle occurrence (§7.9) |
 | `metadata def` | Annotation schema |
 | `library package` | Package that can be imported by others |
-| `variation` / `variant` | Variability modeling — set of design alternatives (§7.6.7) |
-| `abstract` | Abstract definition — cannot be instantiated directly |
+| `constraint def` | Boolean constraint |
 
 ### Key Operators
 
@@ -161,8 +114,8 @@ Mappa completa dei costrutti SysML v2 organizzata per sezione dello standard (OM
 | `[1..*]` | Multiplicity — one or more |
 | `in` / `out` / `inout` | Port / parameter direction |
 | `ref` | Reference usage (not owned) |
-| `#` | User-defined keyword prefix — semantic metadata (e.g., `#situation def Failure`) — NOT a metadata annotation |
-| `@` | Metadata application operator (e.g., `@RequirementStatus { ... }`) |
+| `#` | Metadata annotation |
+| `@` | Metadata application |
 
 ---
 
@@ -254,109 +207,6 @@ part def System {
 
     // Internal connection — declared inside the parent
     connection linkAB : DataLink connect subsystemA.dataOut to subsystemB.dataIn;
-}
-```
-
-### Interfaces (§7.14)
-
-Un `interface def` è una `connection def` i cui **ends sono porte**. Tipizza la connessione tra due parti in modo che ogni porta sia compatibile con l'altra.
-
-```sysml
-// DEFINITION — tipizza la connessione tra due porte complementari
-interface def PowerInterface {
-    end port appliance : AppliancePort;   // porta lato utilizzatore
-    end port outlet    : OutletPort;      // porta lato fornitore (~AppliancePort)
-}
-
-// USAGE — crea la connessione tipizzata
-interface def DataLink {
-    end port source : DataPort;
-    end port target : ~DataPort;   // ~ = porta coniugata (direzioni invertite)
-}
-
-part part1 : PartA { port pa : DataPort; }
-part part2 : PartB { port pb : ~DataPort; }
-
-interface link1 : DataLink connect source ::> part1.pa to target ::> part2.pb;
-```
-
-**Quando usare `interface` vs `connection`:**
-- `interface` — quando entrambi i lati sono **port** (modello tipizzato, più formale)
-- `connection` — quando si collegano parti generiche o si vogliono connessioni semplici
-
-### Allocations (§7.15)
-
-`allocate` mappa elementi funzionali (logici) su elementi fisici (implementativi). È la relazione "questo realizza quello".
-
-```sysml
-// Dichiarazione inline — la funzione logica viene allocata al componente fisico
-allocate logicalComponent to physicalDevice;
-
-// Con specificazione delle sotto-allocazioni
-allocate logicalSystem to physicalPlatform {
-    allocate logicalSystem.controlFunction to physicalPlatform.cpu;
-    allocate logicalSystem.dataStorage     to physicalPlatform.memory;
-}
-
-// Dentro un package Structure, tipicamente:
-package Structure {
-    part logicCtrl  : LogicalController;
-    part fpgaBoard  : FPGABoard;
-    allocate logicCtrl to fpgaBoard;
-}
-```
-
-**Differenza tra `allocate`, `satisfy`, `connect`:**
-| Keyword | Domanda | Natura |
-|---|---|---|
-| `allocate` | "Chi implementa questa funzione?" | Mapping funzionale→fisico |
-| `satisfy` | "Chi realizza questo requisito?" | Allocazione requisito→elemento |
-| `connect` | "Come comunicano questi elementi?" | Strutturale/comunicazione |
-
-### Flows and Messages (§7.16)
-
-Modellano il **trasferimento di dati** tra azioni o parti. Tre varianti con semantica diversa.
-
-```sysml
-// STREAMING FLOW — trasferimento continuo mentre entrambe le azioni sono attive
-flow fuelTank.fuelOut to engine.fuelIn;
-
-// Con payload esplicito
-flow fuelFlow : FuelFlow of flowingFuel : Fuel
-    from fuelTank.fuelOut to engine.fuelIn;
-
-// SUCCESSION FLOW — source deve completare PRIMA che il trasferimento inizi
-succession flow focus.image to shoot.image;
-// Garantisce: focus → [transfer image] → shoot
-
-// MESSAGE — astratto, non specifica da/verso quale feature specifica
-message of ControlSignal from controller.sendControl to engine.receiveControl;
-```
-
-**Differenza tra i tre tipi:**
-| Tipo | Source completa prima? | Specifica output/input feature? | Uso tipico |
-|---|---|---|---|
-| `message` | No | No | Diagrammi di sequenza astratti |
-| `flow` | No | Sì | Dati in streaming continuo |
-| `succession flow` | Sì | Sì | Pipeline sequenziale (es. elaborazione step) |
-
-### Binding (§7.13.3)
-
-`bind` afferma che due feature **hanno sempre lo stesso valore**. Non è un'azione — è una relazione strutturale permanente.
-
-```sysml
-part def Vehicle {
-    part fuelTank { out fuelFlowOut : Fuel; }
-    part engine   { in  fuelFlowIn  : Fuel; }
-
-    // Bind — i due feature sono sempre uguali
-    bind fuelTank.fuelFlowOut = engine.fuelFlowIn;
-}
-
-// Shorthand: feature value come binding
-part def Counter {
-    attribute count : Natural := 0;   // := = valore iniziale (modificabile)
-    attribute max   : Natural  = 10;  // = = valore fisso (non modificabile)
 }
 ```
 
@@ -524,174 +374,6 @@ state def MyFSM {
 - Use `ref port` inside state machines (state machines reference ports, they don't own them)
 - Wrap boolean sub-expressions in parentheses: `(condA) and (condB)` not `condA and condB`
 
-### Assignment Actions (§7.17.9)
-
-`assign` cambia il valore di un attributo di un'occurrence durante una action:
-
-```sysml
-action def Counter {
-    attribute count : Integer := 0;   // := = valore iniziale (modificabile)
-
-    first start;
-    then assign count := count + 1;   // ← assegna nuovo valore
-    then done;
-}
-```
-
-- `=` (feature value bound): valore fisso, non modificabile
-- `:=` (feature value initial): valore iniziale, modificabile con `assign`
-- `assign <feature> := <expr>;` è l'unico modo per cambiare un valore a runtime
-
-### Structured Control Actions (§7.17.11-12)
-
-```sysml
-// IF / ELSE
-action processValue {
-    in attribute x : Integer;
-    out attribute y : Integer;
-    action decide if x >= 0 {
-        assign y := x;
-    } else {
-        assign y := -x;    // valore assoluto
-    }
-}
-
-// WHILE LOOP
-action countDown {
-    attribute n : Integer := 10;
-    first start;
-    then assign n := 10;
-    then action loop1 while n > 0 {
-        assign n := n - 1;
-    }
-    then done;
-}
-
-// FOR LOOP — itera su un range o sequenza
-action sumRange {
-    in attribute n : Integer;
-    out attribute total : Integer;
-    first start;
-    then assign total := 0;
-    then action forLoop for i : Integer in 1..n {
-        assign total := total + i;
-    }
-    then done;
-}
-
-// LOOP UNTIL — loop con condizione di uscita alla fine
-action refine {
-    attribute error : Real := 100.0;
-    first start;
-    then action loop2 loop {
-        assign error := error * 0.5;
-    } until error < 0.001;
-    then done;
-}
-```
-
-### Perform Action (§7.17.6)
-
-Collega una parte a un'azione definita altrove (senza duplicare la def):
-
-```sysml
-action def SystemControl { ... }   // definita a livello di package
-
-part def Controller {
-    perform action systemControl : SystemControl;   // la parte "esegue" questa azione
-}
-```
-
-### Exhibit State (§7.18.4)
-
-Collega una parte a una state machine definita altrove:
-
-```sysml
-state def VehicleStates { ... }
-
-part def Vehicle {
-    exhibit state operatingState : VehicleStates;
-    // equivalente a: exhibit state operatingState references VehicleStates::...
-}
-```
-
-### Send / Accept con Ports (§7.17.7-8)
-
-```sysml
-item def ControlCommand { attribute speed : Real; }
-
-// SEND — invia un item attraverso una porta
-action sendCmd {
-    out port ctrlPort : ControlPort;
-    send new ControlCommand(speed = 50.0) via ctrlPort;
-}
-
-// ACCEPT — riceve un item da una porta
-action receiveCmd {
-    in port ctrlPort : ControlPort;
-    accept cmd : ControlCommand via ctrlPort;
-    // successivo: usa cmd.speed
-}
-
-// Sequenza tipica in un action flow
-action communicationFlow {
-    action step1 { send new ControlCommand(speed = 30.0) via outPort; }
-    action step2 { accept response : AckMessage via inPort; }
-    first start then step1;
-    first step1 then step2;
-    first step2 then done;
-}
-```
-
----
-
-## Calculations (§7.19)
-
-`calc def` è un `action def` specializzato con un parametro di risultato distinto (`return`). Usato per computazioni matematiche pure e riusabili.
-
-### Calculation Definition and Usage
-
-```sysml
-// DEFINITION
-calc def Velocity {
-    in v_i : VelocityValue;
-    in a   : AccelerationValue;
-    in dt  : TimeValue;
-    return v_f : VelocityValue;
-    v_i + a * dt   // result expression — senza ; finale
-}
-
-// Alternativa: feature value sul return
-calc def Average {
-    in scores[1..*] : Rational;
-    return : Rational = sum(scores) / size(scores);
-}
-
-// USAGE
-calc myVelocity : Velocity {
-    in v_i = 10.0 [m/s];
-    in a   = 2.0  [m/s2];
-    in dt  = 5.0  [s];
-}
-```
-
-### Calc riusato dentro un'analisi (Trade Study pattern)
-
-```sysml
-// Sottocalcolo usato dentro evaluationFunction
-calc powerRollup : PowerRollup {
-    in engine = anEngine;
-    return power;
-}
-```
-
-**Regole `calc def`:**
-- `return` dichiara il parametro di risultato (sostituisce `out` per il risultato principale)
-- L'espressione finale nel body (senza `;`) è implicitamente legata al `return`
-- Oppure: `return : Type = <expr>;` come feature value
-- Un `calc def` puro: stessi input → stesso output, nessun side effect
-- `calc` è specializzato da `action` — può contenere sotto-azioni e sotto-calcoli
-
 ---
 
 ## Requirements Package
@@ -745,68 +427,39 @@ satisfy simpleReq by Structure::MySystem::mySystem;
 
 ## Analysis Package
 
-Il package `Analysis` ospita casi di analisi: trade study, analisi di performance, analisi di sicurezza, ecc. In SysML v2 si usa `analysis def` / `analysis` (§7.23 della spec OMG SysML v2).
+Il package `Analysis` ospita casi di analisi: trade study, analisi di performance, analisi di sicurezza (FMEA/FTA), ecc. In SysML v2 si usa `analysis case def` / `analysis case`.
 
-### Analysis Case Definition (§7.23.2)
+### Analysis Case Definition
 
 ```sysml
 // DEFINITION — in ComponentDefinitions.sysml
-analysis def FuelEconomyAnalysis {
-    doc /* Analisi del rendimento in carburante del veicolo. */
-    subject vehicle : Vehicle;
-    return fuelEconomyResult : DistancePerVolumeValue;   // tipo del valore restituito
-    objective fuelEconomyAnalysisObjective {
-        requirement : FuelEconomyRequirement;   // requisito da soddisfare con questo risultato
-    }
+analysis case def LatencyAnalysis {
+    doc /* Verifica che la latenza end-to-end rientri nel budget assegnato. */
+    subject system : MySystem;
+    return attribute result : Real;   // valore restituito dall'analisi
 }
-```
 
-> **Nota spec §7.23:** l'`objective` è associato al **risultato** (`return`) dell'analisi, non al soggetto.
-> Il `subject` è l'entità analizzata; il `return` dichiara il tipo del valore prodotto.
-
-### Analysis Case Usage
-
-```sysml
 // USAGE — in SystemConfiguration > package Analysis
-analysis myFuelAnalysis : FuelEconomyAnalysis {
-    subject vehicle redefines vehicle = Structure::myCar;
+analysis case latencyAnalysis : LatencyAnalysis {
+    subject system = Structure::MySystem::myPart;
+    return attribute :>> result = 85.0 [milli*s];  // risultato misurato/simulato
 }
 ```
 
-### Trade Study (§7.23.3)
-
-Il trade study usa `TradeStudy` e `MaximizeObjective` dall'Analysis Domain Library, con `calc :>> evaluationFunction` per iterare sulle alternative:
+### Trade Study
 
 ```sysml
-import AnalysisCases::TradeStudy;
-import AnalysisCases::MaximizeObjective;
-
-analysis engineTradeStudy : TradeStudy {
-    subject : Engine = (engine4cyl, engine6cyl);   // insieme di alternative
-    objective : MaximizeObjective;                  // massimizza il punteggio
-    calc :>> evaluationFunction {
-        in part anEngine : Engine :>> alternative;  // itera su ciascuna alternativa
-        calc powerRollup : PowerRollup {
-            in engine = anEngine;
-            return power;
-        }
-        return :>> result : Real = EngineEvaluation(
-            power = powerRollup.power,
-            mass  = anEngine.mass
-        );
-    }
-    return part :>> selectedAlternative : Engine;   // alternativa selezionata come risultato
+analysis case def ArchitectureTradeStudy {
+    doc /* Confronto tra due architetture secondo criteri pesati. */
+    subject system : MySystem;
+    attribute weightPerformance : Real = 0.5;
+    attribute weightCost        : Real = 0.3;
+    attribute weightReliability : Real = 0.2;
+    return attribute winnerOption : String;
 }
 ```
 
-**Regole Trade Study:**
-- `TradeStudy` e `MaximizeObjective` provengono da `AnalysisCases::*` (Analysis Domain Library)
-- `subject` è un insieme di alternative: `= (alt1, alt2, ...)`
-- `calc :>> evaluationFunction` redefines la funzione di valutazione ereditata da `TradeStudy`
-- `in part <name> :>> alternative` itera sulle alternative
-- `return part :>> selectedAlternative` è l'alternativa vincente
-
-### Analisi qualitativa (approccio semplificato)
+### Analisi senza Analysis Case (approccio semplificato)
 
 Per analisi qualitative o ancora da formalizzare, si può usare una semplice `part` con attributi:
 
@@ -814,9 +467,9 @@ Per analisi qualitative o ancora da formalizzare, si può usare una semplice `pa
 package Analysis {
     part performanceAnalysis {
         doc /* Valori misurati post-sintesi. Da confrontare con i requisiti. */
-        attribute measuredLatency    : Real = 8.5 [nano*s];
-        attribute measuredThroughput : Real = 6.1 [giga*bit/s];
-        attribute measuredPower      : Real = 14.2 [W];
+        attribute measuredLatency       : Real = 8.5 [nano*s];
+        attribute measuredThroughput    : Real = 6.1 [giga*bit/s];
+        attribute measuredPowerUsage    : Real = 14.2 [W];
     }
 }
 ```
@@ -825,90 +478,66 @@ package Analysis {
 
 ## Verification Package
 
-Il package `Verification` ospita i casi di verifica dei requisiti. In SysML v2 si usa `verification def` / `verification` + `verify requirement` (§7.24 della spec OMG SysML v2).
+Il package `Verification` ospita i casi di verifica dei requisiti. In SysML v2 si usa `verification case def` / `verification case` + `verify requirement ... by ...`.
 
-### Verification Case Definition (§7.24.2)
+### Verification Case Definition
 
 ```sysml
 // DEFINITION — in ComponentDefinitions.sysml
-verification def VehicleMassTest {
-    import VerificationCases::*;   // fornisce PassIf, VerdictKind, VerificationMethod, VerificationMethodKind
+verification case def SimulationVerification {
+    doc /* Verifica tramite simulazione numerica. */
+    subject system : MySystem;
+    objective : Requirements::myLatencyReq;   // requisito da verificare
+    return attribute passed : Boolean;
+}
 
-    subject testVehicle : Vehicle;
-
-    objective vehicleMassVerificationObjective {
-        verify vehicleMassRequirement;   // usa "verify", NON "satisfy"
-    }
-
-    metadata VerificationMethod { kind = VerificationMethodKind::test; }
-    // kind valori: inspect | analyze | demo | test
-
-    // Step 1 — raccolta dati
-    action collectData {
-        in part testVehicle : Vehicle = VehicleMassTest::testVehicle;
-        out massMeasured :> ISQ::mass;
-    }
-    // Step 2 — elaborazione dati
-    action processData {
-        in massMeasured :> ISQ::mass = collectData.massMeasured;
-        out massProcessed :> ISQ::mass;
-    }
-    // Step 3 — valutazione con PassIf
-    action evaluateData {
-        in massProcessed :> ISQ::mass = processData.massProcessed;
-        out verdict : VerdictKind = PassIf(vehicleMassRequirement(
-            vehicle    = testVehicle,
-            massActual = massProcessed
-        ));
-    }
-
-    return verdict : VerdictKind = evaluateData.verdict;
+// DEFINITION — metodo hardware-in-the-loop
+verification case def HilVerification {
+    doc /* Verifica tramite hardware-in-the-loop su prototipo fisico. */
+    subject system : MySystem;
+    return attribute passed : Boolean;
 }
 ```
-
-**Regole Verification Case (§7.24):**
-- `import VerificationCases::*;` — obbligatorio: fornisce `PassIf`, `VerdictKind`, `VerificationMethod`, `VerificationMethodKind`
-- `objective { verify <reqUsage>; }` — usa **`verify`**, non `satisfy`
-- `metadata VerificationMethod { kind = VerificationMethodKind::<method>; }` — metodo di verifica
-- Metodi disponibili: `inspect` | `analyze` | `demo` | `test`
-- Struttura azioni tipica: `collectData` → `processData` → `evaluateData` → `return verdict`
-- `PassIf(<reqUsage>(<params>))` — restituisce `VerdictKind::pass` se la condizione del requisito è vera
-- Il risultato è sempre `return verdict : VerdictKind`
-- `VerdictKind` valori: `pass` | `fail` | `inconclusive` | `error`
 
 ### Verification Case Usage
 
 ```sysml
-// USAGE — in SystemConfiguration > package Verification
 package Verification {
-    verification massTest : VehicleMassTest {
-        subject testVehicle = Structure::myCar;
+    // Istanzia il caso di verifica
+    verification case simVerify : SimulationVerification {
+        subject system = Structure::MySystem::myPart;
+        return attribute :>> passed = true;
     }
+
+    // Collega esplicitamente la verifica al requisito
+    verify requirement Requirements::System_Requirements::myLatencyReq
+        by simVerify;
+
+    // Verifica con risultato non ancora disponibile
+    verification case hilVerify : HilVerification {
+        subject system = Structure::MySystem::myPart;
+        // passed TBD — da eseguire in fase di integrazione
+    }
+    verify requirement Requirements::System_Requirements::myLatencyReq
+        by hilVerify;
 }
 ```
 
 ### Relazione `verify` standalone
 
-Il `verify requirement ... by ...` può essere scritto fuori da un `verification def`, come relazione diretta:
+Il `verify` può anche essere scritto fuori da un `verification case`, come relazione diretta tra requisito e elemento di sistema:
 
 ```sysml
-// Lega esplicitamente un caso di verifica a un requisito
-verify requirement Requirements::System_Requirements::myLatencyReq
-    by Verification::massTest;
-
-// Oppure, usando direttamente un elemento strutturale
+// Dichiarazione semplice — "questo elemento verifica quel requisito"
 verify requirement Requirements::System_Requirements::mySafetyReq
     by Structure::MySystem::myComponent;
 ```
 
-**Differenza `satisfy` vs `verify`:**
-
-| Parola chiave | Risponde a | Natura |
-|---|---|---|
-| `satisfy` | "Chi realizza il requisito?" | Strutturale — alloca il requisito a un elemento |
-| `verify` | "Come si dimostra che è soddisfatto?" | Procedurale — lega il requisito a un test/analisi |
-
-Un requisito può avere sia `satisfy` che `verify`.
+**Regole:**
+- `satisfy` risponde a "chi realizza il requisito?" → risposta strutturale
+- `verify` risponde a "come si dimostra che il requisito è soddisfatto?" → risposta procedurale/sperimentale
+- Un requisito può avere sia `satisfy` che `verify`
+- Il metodo di verifica (simulation, test, analysis, inspection) si documenta nel `doc` del `verification case def`
 
 ---
 
@@ -1270,147 +899,6 @@ part def SafeSystem {
     assert constraint { emergencyV <= maxSpeed * 0.8 }
 }
 ```
-
----
-
-## SysML v2 Design Principles (SOLID adattati)
-
-I principi SOLID del software engineering, adattati alla natura dichiarativa e ontologica di SysML v2.
-
-### S — Single Responsibility → Una definizione, un concetto
-
-Ogni `def` deve modellare esattamente **un** concetto del dominio.
-
-```sysml
-// CORRETTO — responsabilità separata
-part def Sensor        { attribute samplingRate : Real; }
-port def SensorDataPort { out item data : SensorReading; }
-
-// ERRATO — la porta fa anche il lavoro del componente
-port def SensorAndDataPort {
-    attribute samplingRate : Real;   // ← responsabilità della parte, non della porta
-    out item data : SensorReading;
-}
-```
-
-- Un `part def` descrive la struttura di un componente — non il suo protocollo di comunicazione
-- Un `port def` descrive un contratto di interazione — non i dati interni del componente
-- Un `action def` descrive un passo comportamentale — non la struttura del sistema
-- Un `requirement def` esprime un vincolo — non la soluzione
-
----
-
-### O — Open/Closed → Estendere con `:>`, non modificare
-
-Le definizioni sono **aperte all'estensione** (tramite `:>`) e **chiuse alla modifica** una volta consolidate.
-
-```sysml
-// DEFINIZIONE BASE — stabile, non si modifica
-part def Vehicle {
-    attribute mass : Real;
-    port fuelPort  : FuelPort;
-}
-
-// ESTENSIONE — specializzazione senza toccare Vehicle
-part def ElectricVehicle :> Vehicle {
-    attribute batteryCapacity : Real;   // nuova feature
-    port chargePort : ChargePort;       // nuova porta
-}
-
-// USAGE: ridefinisce un valore senza modificare la definizione
-part myEV : ElectricVehicle {
-    attribute :>> mass = 1800.0 [kg];   // :>> ridefinisce nel contesto d'uso
-}
-```
-
-- Usa `:>` (subclassification) per estendere una `def` senza toccarla
-- Usa `:>>` (redefinition) nelle `usage` per specializzare valori nel contesto corrente
-- Non modificare definizioni già referenziate da `satisfy` o `verify` — crea una sottoclasse
-
----
-
-### L — Liskov Substitution → Ogni sottotipo soddisfa il contratto del supertipo
-
-Una `part def` specializzata deve poter sostituire la base senza rompere vincoli esistenti. Non ridefinire per *allentare* vincoli — solo per *restringere*.
-
-```sysml
-// CORRETTO — SportsCar eredita e restringe (non allenta)
-part def SportsCar :> Vehicle {
-    attribute :>> maxRatedSpeed = 250.0 [km/h];
-}
-
-// ERRATO — rimuovere porte ereditate rompe chi si aspetta Vehicle
-// part def BrokenCar :> Vehicle { } con fuelPort rimossa
-```
-
-- Una specializzazione può **restringere** molteplicità (es. `[1..*]` → `[1]`) ma non allargarla
-- Una specializzazione non può eliminare porte o attributi ereditati
-- Prima di `satisfy <req> by <specializedPart>`, verificare che i vincoli del supertipo reggano
-
----
-
-### I — Interface Segregation → Porte piccole e dedicate
-
-Non creare un unico `port def` enorme. Separare i contratti per dominio funzionale.
-
-```sysml
-// ERRATO — "God port"
-port def SystemBusPort {
-    in  item controlCmd  : ControlCommand;
-    out item sensorData  : SensorReading;
-    in  item powerSignal : PowerLevel;
-    out item diagnostics : DiagData;
-}
-
-// CORRETTO — porte segregate per contratto
-port def ControlPort    { in  item cmd  : ControlCommand; }
-port def SensorDataPort { out item data : SensorReading;  }
-port def PowerPort      { in  item pwr  : PowerLevel;     }
-port def DiagPort       { out item diag : DiagData;       }
-
-part def ProcessingUnit {
-    in  port controlIn : ControlPort;
-    out port sensorOut : SensorDataPort;
-    in  port powerIn   : PowerPort;
-    out port diagOut   : DiagPort;
-}
-```
-
-- Un `port def` per dominio di interazione (controllo, dati, alimentazione, diagnostica)
-- Una parte si connette solo alle porte che usa realmente
-- Le porte con direzione `in`/`out` chiara sono più verificabili degli `inout` generici
-- Usa `interface def` per collegare porte complementari in modo tipizzato
-
----
-
-### D — Dependency Inversion → Dipendere da astrazioni, non implementazioni
-
-Le parti di alto livello dipendono da `abstract part def` (astrazioni). Le implementazioni concrete vengono fornite nelle usages in `SystemConfiguration`.
-
-```sysml
-// IN ComponentDefinitions.sysml — ASTRAZIONI
-
-abstract part def ISensor {
-    attribute samplingRate : Real;
-    out port dataOut : SensorDataPort;
-}
-
-part def DataProcessor {
-    in port sensorIn : SensorDataPort;    // dipende dal contratto, non dall'impl.
-}
-
-// IN SystemConfiguration.sysml > Structure — IMPLEMENTAZIONI CONCRETE
-
-part lidar  : LidarSensor  :> ISensor { attribute :>> samplingRate = 20.0 [Hz]; }
-part camera : CameraSensor :> ISensor { attribute :>> samplingRate = 30.0 [Hz]; }
-part proc   : DataProcessor { }
-connect lidar.dataOut to proc.sensorIn;   // configurazione concreta nel livello giusto
-```
-
-- `ComponentDefinitions.sysml` contiene definizioni astratte — nessun valore concreto
-- `SystemConfiguration.sysml` contiene usages concrete con valori — mai modificare le `def`
-- Usa `abstract part def` per definire contratti di componente riusabili
-- Le `connection` concrete appartengono a `Structure`, non alle `def`
 
 ---
 
