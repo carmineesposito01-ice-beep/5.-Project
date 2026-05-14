@@ -27,9 +27,12 @@ package ComponentDefinition{
         attribute testRunId : String;
         attribute scenarioId : String;
         attribute measuredUpdateRate : Real; // Hz
+        attribute actualReceiveRate : Real; // Hz — alias for CAM_ReceptionRate requirement
         attribute measuredLatencyE2E : Real; // ms
         attribute measuredProcessingTime : Real; // ms
         attribute observedFailures : Integer; // count
+        attribute verificationEvidence : String[*]; // links to test artifacts / run outputs
+        attribute verificationLog : String[*];
 
         // ---------- Soglie di sicurezza ----------
         attribute emergencyBrakingMaxReactionTime : Real; // 200.0 ms
@@ -52,6 +55,7 @@ package ComponentDefinition{
         attribute maxV2VEndToEndLatency : Real; // 100.0 ms
         attribute maxV2IEndToEndLatency : Real; // 200.0 ms
         attribute camUpdateRateMin : Real; // 10.0 Hz
+        attribute requiredRate : Real; // Hz — alias for CAM_ReceptionRate requirement
         attribute safetyDistanceAccuracyLowSpeed : Real; // 3.0 m
         attribute safetyDistanceAccuracyHighSpeedPercent : Real; // 2.0 %
         attribute glosaComputationTimeMax : Real; // 50.0 ms
@@ -72,6 +76,14 @@ package ComponentDefinition{
         attribute currentJamRate : Real;
         attribute glosaActive : Boolean; // false;
         attribute emergencyManeuverInProgress : Boolean; // false
+
+        // ---------- Safety events / observable flags (for verification) ----------
+        attribute rearEndCollisionDueToV2VError : Boolean; // false — maps to VC_NoRearEndCollision
+        attribute cutInCollisionOccurred : Boolean; // false — maps to VC_CutIn_Safety, VC_NoUnstableEvasion
+        attribute intersectionCollisionDueToV2IError : Boolean; // false — maps to VC_NoIntersectionCollision
+        attribute noPedestrianIncident : Boolean; // true — maps to VC_NoPedestrianIncident
+        attribute noEmergencyVehicleCollision : Boolean; // true — maps to VC_NoEmergencyVehicleCollision
+        attribute noWrongWayVehicleCollision : Boolean; // true — maps to VC_NoWrongWayVehicleCollision
 
         // ---------- Porte (riferimento alla definizione precedente) ----------
         in port v2vIn : V2VCommPort;
@@ -118,6 +130,15 @@ package ComponentDefinition{
         attribute DENM_confidence : Real; // 0..100
         attribute camIntegrityScore : Real; // 0..1
         attribute validationLatency : Real; // ms
+        attribute msgReceivedCount : Integer; // total messages received
+        attribute msgLossCount : Integer; // total messages lost
+        attribute lastMsgTimestamp : ScalarValues::DateTime;
+        attribute camReceptionTimestamp : ScalarValues::DateTime;
+        attribute heartbeatLastSeen : ScalarValues::DateTime;
+        attribute heartbeatMissedCount : Integer;
+        attribute confidenceCategory : StandardLibrary::Metadata_Definitions::ConfidenceCategory; // HIGH|MEDIUM|LOW
+        attribute validationPassFlag : Boolean;
+        attribute validationDetail : String;
         
     }
 
@@ -140,6 +161,29 @@ package ComponentDefinition{
         attribute stringStabilityIndex : Real; // unitless metric
         attribute leaderProfileConfidence : Real; // percent
         attribute currentJamRate : Real; // 1/s
+        // Requirement-observable attributes (mapped from StandardLibrary requirements)
+        attribute camDataAvailable : Boolean;
+        attribute followingParamsValid : Boolean;
+        attribute cutInScenarioOnV2V : Boolean;
+        attribute cutInDetected : Boolean;
+        attribute emergencyBrakeCommand : Boolean;
+        attribute timeToBrakeActuation : Real; // ms
+        attribute cutInRequestReceived : Boolean;
+        attribute feasibilityCheckPerformed : Boolean;
+        attribute cutInActive : Boolean;
+        attribute carFollowingMode : CarFollowingModeKind;
+        attribute multipleFollowerCAMs : Boolean;
+        attribute jamRateCalculated : Boolean;
+        attribute camHistoryAvailable : Boolean;
+        attribute leaderProfileDetermined : Boolean;
+        attribute spatMapDataAvailable : Boolean;
+        attribute glosaFeasible : Boolean;
+        attribute signalViolationWarningReceived : Boolean;
+        attribute signalViolationActionTaken : Boolean;
+        attribute legalSpeedLimitCompliance : Boolean;
+        attribute validationPassFlag : Boolean;
+        attribute validationDetail : String;
+        attribute verificationEvidence : String[*];
         
         //part analyzer : Analyzer_Unit;
         //part v2v_own_message : V2V_OwnMessage_Unit;
@@ -159,14 +203,18 @@ package ComponentDefinition{
         out port modelParametersOut : ControlParametersPort; // invia comandi attuatori
         out port monitoringIn : MonitoringPort;
         out port monitoringOut : MonitoringPort;   
-        out port platooningInfoOut : PlatooningInfoPort;           // notifiche HMI
+        out port platooningInfoOut : PlatooningInfoPort;
 
         // Forwarding metrics
         attribute camOutputRate : Real; // Hz
+        attribute actualCamSendRate : Real; // Hz — alias for CAM_Transmission requirement
+        attribute requiredCamSendRate : Real; // Hz = 10.0 — alias for CAM_Transmission requirement
         attribute camForwardingLatency : Real; // ms
         attribute camForwardingRetries : Integer;
         attribute controlForwardingLatency : Real; // ms
         attribute forwardingSuccessRate : Real; // percent
+        attribute forwardingLastError : String;
+        attribute verificationEvidence : String[*];
 
         //part send_v2v_message : Send_V2VMessage_Unit;
         //part send_parameters : Send_Parameters_Unit;
@@ -184,6 +232,9 @@ package ComponentDefinition{
         attribute camGenerationLatency : Real; // ms
         attribute camSequenceNumber : Integer;
         attribute camSignatureValid : Boolean;
+        attribute camReceptionTimestamp : ScalarValues::DateTime;
+        attribute actualCamSendRate : Real; // Hz — observable for CAM_Transmission requirement
+        attribute verificationEvidence : String[*];
     }
 
     part def Allineator_Unit{
@@ -197,14 +248,14 @@ package ComponentDefinition{
     part def TriggerCAM_Unit{
         doc /* Part representing the trigger CAM unit of the system, responsible for triggering the composition and sending of CAM messages based on specific events or conditions. */
 
-        in port egoIn : EgoVehicleStateInPort;
+        in port egoIn : EgoVehicleData_Flow;
         out port triggerOut : Boolean;
 
     }
 
     part def CAMMessageComposer_Unit{
         doc /* Part representing the CAM message composer unit of the system, responsible for composing the CAM messages based on the aligned data and the trigger signal. */
-        in port egoIn : VehicleBusPort;
+        in port egoIn : EgoVehicleData_Flow;
         out port camOut : CAM_Port;
         in port triggerIn : Boolean;
     }
@@ -243,7 +294,8 @@ package ComponentDefinition{
         in port v2iIn : V2ICommPort;
         in port egoSignalsIn : VehicleBusPort;
 
-        out port validatedDataOut : ValidatedDataOutPort;
+        out port v2vOut : V2VCommPort;
+        out port v2iOut : V2ICommPort;
         out port platooningInfoOut : PlatooningInfoPort;
         out port egoSignalsOut : VehicleBusPort;
                     
@@ -256,21 +308,21 @@ package ComponentDefinition{
         doc /* Part representing the evaluation unit of the system, responsible for evaluating the validated signals and generating insights for the following parameter generation. */
         in port v2vIn : V2VCommPort;
         in port v2iIn : V2ICommPort;
-        out port conditioningVariablesOut : ConditioningVariablePort;
+        out port conditioningVariablesOut : ConditioningVariablesPort;
     }
 
     part def ParameterGenerator_Unit{
         doc /* Part representing the parameter generator unit of the system, responsible for generating the parameters for the following model based on the analyzed data. */
         in port v2vIn : V2VCommPort;
         in port v2iIn : V2ICommPort;
-        in port conditioningVariablesIn : ConditioningVariablePort;
+        in port conditioningVariablesIn : ConditioningVariablesPort;
         out port forHmiOut;
         out port modelParametersOut : ControlParametersPort;
     }
 
     part def MonitoringComposer_Unit{
         doc /* Part representing the monitoring composer unit of the system, responsible for composing the monitoring data based on the validated signals and the system's state. */
-        in port conditioningVariablesIn : ConditioningVariablePort;
+        in port conditioningVariablesIn : ConditioningVariablesPort;
         in port modelParametersIn : ControlParametersPort;
         out port monitoringOut : MonitoringPort;
     }

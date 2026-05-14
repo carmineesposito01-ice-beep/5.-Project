@@ -17,6 +17,14 @@ library package StandardLibrary {
             Rejected;
         }
 
+        enum def ConfidenceCategory {
+            doc /* Confidence categories for message/measurement confidence used in verification and analysis */
+            High;
+            Medium;
+            Low;
+            Unknown;
+        }
+
         metadata def RequirementStatus{
             doc /* Metadata to track the status of requirements, including review status, approver, and date. */
             attribute status : ReqState; // e.g., "Draft", "Review", "Approved", "Rejected"
@@ -620,6 +628,7 @@ library package StandardLibrary {
             end consumer : ConditioningVariablesPort;
             flow provider.conditioningVariables to consumer.conditioningVariables;            
         }
+
 
 
         interface def ControlFlow {

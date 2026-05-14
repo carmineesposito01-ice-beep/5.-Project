@@ -1,0 +1,64 @@
+{
+  "nodes": [
+    {
+      "id": "vc_cam_forwardinglatency_py",
+      "label": "VC_CAM_ForwardingLatency.py",
+      "file_type": "code",
+      "source_file": "VC_CAM_ForwardingLatency.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "jupyter_verifier_vc_cam_forwardinglatency_measure_e2e_latency",
+      "label": "measure_e2e_latency()",
+      "file_type": "code",
+      "source_file": "VC_CAM_ForwardingLatency.py",
+      "source_location": "L4"
+    },
+    {
+      "id": "vc_cam_rate_py",
+      "label": "VC_CAM_Rate.py",
+      "file_type": "code",
+      "source_file": "VC_CAM_Rate.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "jupyter_verifier_vc_cam_rate_measure_cam_rate",
+      "label": "measure_cam_rate()",
+      "file_type": "code",
+      "source_file": "VC_CAM_Rate.py",
+      "source_location": "L4"
+    }
+  ],
+  "edges": [
+    {
+      "source": "vc_cam_forwardinglatency_py",
+      "target": "jupyter_verifier_vc_cam_forwardinglatency_measure_e2e_latency",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "VC_CAM_ForwardingLatency.py",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "vc_cam_forwardinglatency_py",
+      "target": "statistics",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "VC_CAM_ForwardingLatency.py",
+      "source_location": "L17",
+      "weight": 1.0
+    },
+    {
+      "source": "vc_cam_rate_py",
+      "target": "jupyter_verifier_vc_cam_rate_measure_cam_rate",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "VC_CAM_Rate.py",
+      "source_location": "L4",
+      "weight": 1.0
+    }
+  ],
+  "input_tokens": 0,
+  "output_tokens": 0
+}

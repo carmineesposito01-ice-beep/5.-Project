@@ -83,8 +83,8 @@ package V2X_CACC_Model{
                     connection egoVehicle_flow_IN : VehicleBusPort connect inputGateway.egoSignalsIn  to conditioning.egoSignalsIn;
                     connection ego_val_OUT : VehicleBusPort connect validation.egoSignalsOut to inputGateway.egoSignalsOut;
                     connection status_flag_OUT : PlatooningInfoPort connect validation.platooningInfoOut to inputGateway.platooningInfoOut;
-                    connection v2v_flow_OUT : V2VCommPort connect validation.validatedDataOut to inputGateway.v2vOut;
-                    connection v2i_flow_OUT : V2ICommPort connect validation.validatedDataOut to inputGateway.v2iOut;
+                    connection v2v_flow_OUT : V2VCommPort connect validation.v2vOut to inputGateway.v2vOut;
+                    connection v2i_flow_OUT : V2ICommPort connect validation.v2iOut to inputGateway.v2iOut;
 
                     connection v2v_to_val : V2VCommPort connect conditioning.v2vOut to validation.v2vIn;
                     connection v2i_to_val : V2ICommPort connect conditioning.v2iOut to validation.v2iIn;
@@ -99,11 +99,11 @@ package V2X_CACC_Model{
                     part camMessageComposer : CAMMessageComposer_Unit;
                     part sample_hold : SampleANDHold;
 
-                    connection ego_flow_IN : VehicleBusPort connect camComposer.egoIn to allineator.egoIn;
-                    connection ego_flow_IN2 : VehicleBusPort connect camComposer.egoIn to trigger_cam.egoIn;
+                    connection ego_flow_IN : EgoVehicleData_Flow connect camComposer.egoIn to allineator.egoIn;
+                    connection ego_flow_IN2 : EgoVehicleData_Flow connect camComposer.egoIn to trigger_cam.egoIn;
                     connection cam_flow_OUT : CAM_Flow connect sample_hold.camOut to camComposer.camOut;
 
-                    connection ego_aligned : VehicleBusPort connect allineator.egoOut to camMessageComposer.egoIn;
+                    connection ego_aligned : EgoVehicleData_Flow connect allineator.egoOut to camMessageComposer.egoIn;
                     connection trigger_flow : Boolean connect trigger_cam.triggerOut to camMessageComposer.triggerIn;
                     connection cam_message : CAM_Flow connect camMessageComposer.camOut to sample_hold.camIn;
 
@@ -167,6 +167,7 @@ package V2X_CACC_Model{
                 connection monitoring_flow : MonitoringPort connect elaboration.monitoringOut to outputGateway.monitoringIn;
                 connection cam_flow : CAM_Flow connect camComposer.camOut to outputGateway.camIn;
             }
+
         }
     }
 
@@ -1507,7 +1508,6 @@ package V2X_CACC_Model{
 
 
     }
-
     package Requirements{
         package System_Requirements{
             /* ===================================================================
@@ -1525,13 +1525,13 @@ package V2X_CACC_Model{
                 attribute :>> requiredRate = 10 [Hz];
             }
             satisfy cam_receptionRate by Structure::V2X_CACC_System::top_system;
-
+            
             requirement cam_basedFollowingComputation : CAM_BasedFollowingComputation {
                 @RequirementStatus { 
                     status = "Draft"; 
                     approver = ""; 
                     date = ""; 
-                    group = "FUNCTIONALE REQ"; 
+                    group = "FUNCTIONAL REQ"; 
                 }
                         
                 
@@ -2614,89 +2614,664 @@ package V2X_CACC_Model{
     }
 
     package Analysis{
+        analysis AC_CAM_Rate {
+            doc /* Analysis hook for the executable oracle in Jupyter_Verifier/VC_CAM_Rate.py. */
+            subject System = Structure::V2X_CACC_System::top_system;
+            objective camRateObjective {
+                verify cam_receptionRate;
+                verify cam_MinimumUpdateRate;
+            }
+        }
 
+        analysis AC_CAM_ForwardingLatency {
+            doc /* Analysis hook for the executable oracle in Jupyter_Verifier/VC_CAM_ForwardingLatency.py. */
+            subject System = Structure::V2X_CACC_System::top_system;
+            objective camForwardingLatencyObjective {
+                verify cam_transmission;
+                verify v2v_SafetyEndToEndLatency;
+            }
+        }
 
     }
 
     package Verification{
+        private import Requirements::System_Requirements::*;
 
-        item def VerificationCase {
+        verification def VerificationCase {
             doc /* Lightweight verification case definition used to link requirements to test artifacts. */
             attribute id : String;
-            attribute linkedRequirements : String[*];
             attribute testType : String; // unit | integration | scenario | performance
             attribute passCriteria : String;
             attribute owner : String;
         }
 
-        item VC_CAM_Rate : VerificationCase {
+        verification VC_CAM_Rate : VerificationCase {
+            objective camRateObjective {
+                verify cam_receptionRate;
+                verify cam_MinimumUpdateRate;
+            }
             attribute id = "VC_CAM_Rate";
-            attribute linkedRequirements = "cam_receptionRate";
-            attribute linkedRequirements = "cam_MinimumUpdateRate";
             attribute testType = "integration";
             attribute passCriteria = "measuredUpdateRate >= camUpdateRateMin AND jitter <= 10%";
             attribute owner = "camComposer";
         }
 
-        item VC_CAM_ForwardingLatency : VerificationCase {
+        verification VC_CAM_ForwardingLatency : VerificationCase {
+            objective camForwardingLatencyObjective {
+                verify cam_transmission;
+                verify v2v_SafetyEndToEndLatency;
+            }
             attribute id = "VC_CAM_ForwardingLatency";
-            attribute linkedRequirements = "cam_transmission";
-            attribute linkedRequirements = "v2v_SafetyEndToEndLatency";
             attribute testType = "integration";
             attribute passCriteria = "measuredLatencyE2E <= maxV2VEndToEndLatency";
             attribute owner = "outputGateway";
         }
 
-        item VC_SpeedLimitEnforcement : VerificationCase {
+        verification VC_CAM_BasedFollowing : VerificationCase {
+            objective camBasedFollowingObjective {
+                verify cam_basedFollowingComputation;
+            }
+            attribute id = "VC_CAM_BasedFollowing";
+            attribute testType = "integration";
+            attribute passCriteria = "following parameters are computed from validated CAM data within the configured cycle time";
+            attribute owner = "elaboration";
+        }
+
+        verification VC_SpeedLimitEnforcement : VerificationCase {
+            objective speedLimitEnforcementObjective {
+                verify speedLimitEnforcement;
+                verify legalSpeedLimitCompliance;
+            }
             attribute id = "VC_SpeedLimitEnforcement";
-            attribute linkedRequirements = "speedLimitEnforcement";
-            attribute linkedRequirements = "legalSpeedLimitCompliance";
             attribute testType = "scenario";
             attribute passCriteria = "when V2I speed limit changes, speedLimitEnforced==true and vehicle setpoints <= limit";
             attribute owner = "elaboration";
         }
 
-        item VC_CutIn_Safety : VerificationCase {
+        verification VC_CutIn_Safety : VerificationCase {
+            objective cutInSafetyObjective {
+                verify cutInEmergencyBraking;
+                verify noCollisionDuringAssistedCutIn;
+            }
             attribute id = "VC_CutIn_Safety";
-            attribute linkedRequirements = "cutInEmergencyBraking";
-            attribute linkedRequirements = "noCollisionDuringAssistedCutIn";
             attribute testType = "scenario";
             attribute passCriteria = "braking within reaction time; no collision";
             attribute owner = "elaboration";
         }
 
-        item VC_GLOSA_Timeout : VerificationCase {
+        verification VC_GLOSA_Timeout : VerificationCase {
+            objective glosaTimeoutObjective {
+                verify glosa_UnreachableGreenWaveHandling;
+                verify glosa_ComputationTime;
+            }
             attribute id = "VC_GLOSA_Timeout";
-            attribute linkedRequirements = "glosa_UnreachableGreenWaveHandling";
-            attribute linkedRequirements = "glosa_ComputationTime";
             attribute testType = "scenario";
             attribute passCriteria = "fallback activated when green wave unreachable; computation time within limit";
             attribute owner = "elaboration";
         }
 
-        item VC_Fragmentation_Reconstruction : VerificationCase {
+        verification VC_Fragmentation_Reconstruction : VerificationCase {
+            objective fragmentationReconstructionObjective {
+                verify messageFragmentationHandling;
+            }
             attribute id = "VC_Fragmentation_Reconstruction";
-            attribute linkedRequirements = {"messageFragmentationHandling"};
             attribute testType = "scenario";
             attribute passCriteria = "reconstruction or fallback when fragmentation persists";
             attribute owner = "inputGateway";
         }
 
-        item VC_Heartbeat_Failure : VerificationCase {
+        verification VC_Heartbeat_Failure : VerificationCase {
+            objective heartbeatFailureObjective {
+                verify v2vSignalLossFallback;
+                verify heartbeatMonitoring;
+            }
             attribute id = "VC_Heartbeat_Failure";
-            attribute linkedRequirements = "v2vSignalLossFallback";
-            attribute linkedRequirements = "heartbeatMonitoring";
             attribute testType = "scenario";
             attribute passCriteria = "heartbeat timeout triggers fail-safe";
             attribute owner = "top_system";
         }
 
-        item VC_StringStability : VerificationCase {
+        verification VC_StringStability : VerificationCase {
+            objective stringStabilityObjective {
+                verify noStringInstabilityAmplification;
+            }
             attribute id = "VC_StringStability";
-            attribute linkedRequirements = {"noStringInstabilityAmplification"};
             attribute testType = "performance";
             attribute passCriteria = "disturbance amplification <= 1 across platoon";
             attribute owner = "elaboration";
+        }
+
+        verification VC_CutInDetection : VerificationCase {
+            objective cutInDetectionObjective { verify cutInDetection; }
+            attribute id = "VC_CutInDetection";
+            attribute testType = "scenario";
+            attribute passCriteria = "Cut-in events detected within 500 ms and appropriate response initiated";
+            attribute owner = "elaboration";
+        }
+
+        verification VC_CutInRequest : VerificationCase {
+            objective cutInRequestObjective { verify cutInRequest; }
+            attribute id = "VC_CutInRequest";
+            attribute testType = "scenario";
+            attribute passCriteria = "Cut-in requests evaluated and accepted/rejected per feasibility rules";
+            attribute owner = "elaboration";
+        }
+
+        verification VC_CutInCompletionRevert : VerificationCase {
+            objective cutInCompletionObjective { verify cutInCompletionRevert; }
+            attribute id = "VC_CutInCompletionRevert";
+            attribute testType = "scenario";
+            attribute passCriteria = "System returns to platoon parameters within expected timeout after cut-in completion";
+            attribute owner = "elaboration";
+        }
+
+        verification VC_ShockwaveMitigation : VerificationCase {
+            objective shockwaveObjective { verify shockwaveMitigazion; }
+            attribute id = "VC_ShockwaveMitigation";
+            attribute testType = "performance";
+            attribute passCriteria = "Jam rate and headway adjustments reduce shockwave amplitude in recorded scenarios";
+            attribute owner = "elaboration";
+        }
+
+        verification VC_LeaderClassification : VerificationCase {
+            objective leaderClassObjective { verify leaderClassification; }
+            attribute id = "VC_LeaderClassification";
+            attribute testType = "functional";
+            attribute passCriteria = "Leader profiles correctly classified and modifiers applied where applicable";
+            attribute owner = "elaboration";
+        }
+
+        verification VC_CrossroadAdaptation : VerificationCase {
+            objective crossroadObjective { verify crossroadAdaptation; }
+            attribute id = "VC_CrossroadAdaptation";
+            attribute testType = "scenario";
+            attribute passCriteria = "GLOSA feasibility and speed adaptation computed correctly when SPaT/MAP available";
+            attribute owner = "elaboration";
+        }
+
+        verification VC_RoadHazardResponse : VerificationCase {
+            objective roadHazardObjective { verify roadHazardWarningResponse; }
+            attribute id = "VC_RoadHazardResponse";
+            attribute testType = "scenario";
+            attribute passCriteria = "Detected hazards lead to timely warning and parameter adaptation";
+            attribute owner = "elaboration";
+        }
+
+        verification VC_SignalViolationReception : VerificationCase {
+            objective signalViolationObjective { verify signalViolationWarningReception; }
+            attribute id = "VC_SignalViolationReception";
+            attribute testType = "scenario";
+            attribute passCriteria = "Signal violation warnings received and acted upon per policy";
+            attribute owner = "elaboration";
+        }
+
+        verification VC_SpecialVehicleMessages : VerificationCase {
+            objective svmObjective { verify swm; }
+            attribute id = "VC_SpecialVehicleMessages";
+            attribute testType = "scenario";
+            attribute passCriteria = "SVW messages trigger appropriate emergency or mild deceleration behaviors";
+            attribute owner = "inputGateway";
+        }
+
+        verification VC_WrongWayAdaptation : VerificationCase {
+            objective wrongWayObjective { verify wrongWay_Adaptation; }
+            attribute id = "VC_WrongWayAdaptation";
+            attribute testType = "safety";
+            attribute passCriteria = "Wrong-way vehicle detection yields lateral headway and evasion maneuvers per spec";
+            attribute owner = "elaboration";
+        }
+
+        /* --- Safety verifications --- */
+        verification VC_NoRearEndCollision : VerificationCase {
+            objective noRearEndObjective { verify noRearEndCollision_V2VError; }
+            attribute id = "VC_NoRearEndCollision";
+            attribute testType = "safety";
+            attribute passCriteria = "No rear-end collisions observed in defined V2V degraded and normal scenarios";
+            attribute owner = "elaboration";
+        }
+
+        verification VC_NoIntersectionCollision : VerificationCase {
+            objective noIntersectionObjective { verify noIntersectionCollision_V2IError; }
+            attribute id = "VC_NoIntersectionCollision";
+            attribute testType = "safety";
+            attribute passCriteria = "Intersection crossing logic avoids collisions when V2I inputs are present or absent";
+            attribute owner = "elaboration";
+        }
+
+        verification VC_NoPedestrianIncident : VerificationCase {
+            objective noPedestrianObjective { verify noPedestrianIncident; }
+            attribute id = "VC_NoPedestrianIncident";
+            attribute testType = "safety";
+            attribute passCriteria = "Pedestrian detection and TTA responses prevent incidents in urban scenarios";
+            attribute owner = "elaboration";
+        }
+
+        verification VC_NoEmergencyVehicleCollision : VerificationCase {
+            objective noEmergencyObjective { verify noEmergencyVehicleCollision; }
+            attribute id = "VC_NoEmergencyVehicleCollision";
+            attribute testType = "safety";
+            attribute passCriteria = "Emergency vehicle maneuvers are handled with priority and collisions avoided";
+            attribute owner = "elaboration";
+        }
+
+        verification VC_NoWrongWayVehicleCollision : VerificationCase {
+            objective noWrongWayObjective { verify noWrongWayVehicleCollision; }
+            attribute id = "VC_NoWrongWayVehicleCollision";
+            attribute testType = "safety";
+            attribute passCriteria = "Wrong-way vehicle scenarios produce safe evasive or mitigative responses";
+            attribute owner = "elaboration";
+        }
+
+        verification VC_NoUnnecessaryEmergencyBrake : VerificationCase {
+            objective unnecessaryBrakeObjective { verify noUnnecessaryOrExcessiveEmergencyBrake; }
+            attribute id = "VC_NoUnnecessaryEmergencyBrake";
+            attribute testType = "safety";
+            attribute passCriteria = "Emergency braking occurs only when collision risk threshold exceeded; false positives below acceptable rate";
+            attribute owner = "elaboration";
+        }
+
+        verification VC_NoUnstableEvasion : VerificationCase {
+            objective unstableEvasionObjective { verify noUnstableOrExcessiveEvasionManeuver; }
+            attribute id = "VC_NoUnstableEvasion";
+            attribute testType = "safety";
+            attribute passCriteria = "Evasion maneuvers remain within lateral/longitudinal stability limits";
+            attribute owner = "elaboration";
+        }
+
+        /* --- Analysis / Scenario verification cases (group 1) --- */
+        verification VC_ScenarioCatalogGeneration : VerificationCase {
+            objective scenarioCatalogGenObjective { verify scenarioCatalogGeneration; }
+            attribute id = "VC_ScenarioCatalogGeneration";
+            attribute testType = "analysis";
+            attribute passCriteria = "generated scenario catalog covers ODD partitions and required edge cases";
+            attribute owner = "analysis";
+        }
+
+        verification VC_ScenarioBasedSafetyIntegration : VerificationCase {
+            objective scenarioSafetyIntegrationObjective { verify scenarioBasedSafetyIntegration; }
+            attribute id = "VC_ScenarioBasedSafetyIntegration";
+            attribute testType = "scenario";
+            attribute passCriteria = "safety constraints from scenario analysis are integrated into control logic and verified by regression scenarios";
+            attribute owner = "safety";
+        }
+
+        verification VC_ScenarioResultsAcceptance : VerificationCase {
+            objective scenarioResultsAcceptanceObjective { verify scenarioResultsAgainstAcceptanceCriteria; }
+            attribute id = "VC_ScenarioResultsAcceptance";
+            attribute testType = "analysis";
+            attribute passCriteria = "scenario results meet defined acceptance thresholds for performance and safety metrics";
+            attribute owner = "analysis";
+        }
+
+        verification VC_ODD_ScenarioCoverage : VerificationCase {
+            objective oddScenarioCoverageObjective { verify odd_ScenarioCoverageDocumentation; }
+            attribute id = "VC_ODD_ScenarioCoverage";
+            attribute testType = "analysis";
+            attribute passCriteria = "ODD coverage documentation maps scenarios to ODD cells with coverage metrics >= target";
+            attribute owner = "analysis";
+        }
+
+        verification VC_V2X_DegradedChannelScenarios : VerificationCase {
+            objective v2xDegradedObjective { verify v2x_DegradedChannelScenarios; }
+            attribute id = "VC_V2X_DegradedChannelScenarios";
+            attribute testType = "scenario";
+            attribute passCriteria = "system maintains safe behaviour or triggers safe fallback under defined degraded channel conditions";
+            attribute owner = "inputGateway";
+        }
+
+        verification VC_DENM_ConfidenceValidation : VerificationCase {
+            objective denmConfidenceObjective { verify denm_ConfidenceLevelValidation; }
+            attribute id = "VC_DENM_ConfidenceValidation";
+            attribute testType = "integration";
+            attribute passCriteria = "DENM messages are filtered/weighted by confidence and downstream consumers respect confidence thresholds";
+            attribute owner = "inputGateway";
+        }
+
+        verification VC_DENM_ConfReq : VerificationCase {
+            objective denmConfObjective { verify denmConfReq; }
+            attribute id = "VC_DENM_ConfReq";
+            attribute testType = "integration";
+            attribute passCriteria = "DENM confidence filtering and mapping to downstream processing passes validation tests";
+            attribute owner = "inputGateway";
+        }
+
+        verification VC_CAM_TemporalSpatialValidation : VerificationCase {
+            objective camTemporalSpatialObjective { verify camValidationReq; }
+            attribute id = "VC_CAM_TemporalSpatialValidation";
+            attribute testType = "integration";
+            attribute passCriteria = "CAM temporal/spatial validation passes for messages used in control computations";
+            attribute owner = "camComposer";
+        }
+
+        verification VC_MessageReception : VerificationCase {
+            objective msgReceptionObjective { verify msgReceptionReq; }
+            attribute id = "VC_MessageReception";
+            attribute testType = "integration";
+            attribute passCriteria = "message reception metrics (loss, latency) remain within specified limits for relevant channels";
+            attribute owner = "inputGateway";
+        }
+
+        /* --- Functional / Forwarding / Performance verification cases (group 3) --- */
+        verification VC_ControlForwarding : VerificationCase {
+            objective controlForwardingObjective { verify controlForwardingReq; }
+            attribute id = "VC_ControlForwarding";
+            attribute testType = "integration";
+            attribute passCriteria = "control parameters forwarded reliably with loss < threshold and latency within spec";
+            attribute owner = "outputGateway";
+        }
+
+        verification VC_CAM_Forwarding : VerificationCase {
+            objective camForwardingObjective { verify camForwardingReq; }
+            attribute id = "VC_CAM_Forwarding";
+            attribute testType = "integration";
+            attribute passCriteria = "CAM messages forwarded without loss and with bounded latency under nominal load";
+            attribute owner = "outputGateway";
+        }
+
+        verification VC_MonitoringForwarding : VerificationCase {
+            objective monitoringForwardingObjective { verify monitoringForwardingReq; }
+            attribute id = "VC_MonitoringForwarding";
+            attribute testType = "integration";
+            attribute passCriteria = "monitoring streams forwarded timely and intact to consumers";
+            attribute owner = "outputGateway";
+        }
+
+        verification VC_PlatooningForwarding : VerificationCase {
+            objective platooningForwardingObjective { verify platooningForwardingReq; }
+            attribute id = "VC_PlatooningForwarding";
+            attribute testType = "integration";
+            attribute passCriteria = "platooning info forwarded with integrity and within configured latency";
+            attribute owner = "outputGateway";
+        }
+
+        verification VC_PlatooningInfoControl : VerificationCase {
+            objective platooningInfoControlObjective { verify platooningInfoControl; }
+            attribute id = "VC_PlatooningInfoControl";
+            attribute testType = "functional";
+            attribute passCriteria = "platooning control parameters are consistent with received platooning info";
+            attribute owner = "elaboration";
+        }
+
+        verification VC_ForwardingLatency : VerificationCase {
+            objective forwardingLatencyObjective { verify forwardingLatencyReq; }
+            attribute id = "VC_ForwardingLatency";
+            attribute testType = "performance";
+            attribute passCriteria = "measured forwarding latencies <= maxLatency for relevant channels";
+            attribute owner = "outputGateway";
+        }
+
+        verification VC_ComputationLatency : VerificationCase {
+            objective computationLatencyObjective { verify computationLatencyReq; }
+            attribute id = "VC_ComputationLatency";
+            attribute testType = "performance";
+            attribute passCriteria = "computation cycle time <= maxCycleTime under expected load";
+            attribute owner = "elaboration";
+        }
+
+        verification VC_MonitoringOutput : VerificationCase {
+            objective monitoringOutputObjective { verify monitoringOutputReq; }
+            attribute id = "VC_MonitoringOutput";
+            attribute testType = "integration";
+            attribute passCriteria = "monitoring outputs reported and conform to schema and validity flags";
+            attribute owner = "outputGateway";
+        }
+
+        verification VC_ValidatedDataReception : VerificationCase {
+            objective validatedDataReceptionObjective { verify validatedDataReceptionReq; }
+            attribute id = "VC_ValidatedDataReception";
+            attribute testType = "integration";
+            attribute passCriteria = "validated data received by consumers within required timing and format";
+            attribute owner = "elaboration";
+        }
+
+        verification VC_FollowingParametersComputation : VerificationCase {
+            objective followingParamsObjective { verify followingParamsReq; }
+            attribute id = "VC_FollowingParametersComputation";
+            attribute testType = "functional";
+            attribute passCriteria = "following parameters computed accurately from validated inputs within cycle time";
+            attribute owner = "elaboration";
+        }
+
+        verification VC_CAM_Composition : VerificationCase {
+            objective camCompositionObjective { verify camCompositionReq; }
+            attribute id = "VC_CAM_Composition";
+            attribute testType = "integration";
+            attribute passCriteria = "CAM composition matches composition rules and produces consistent aggregated outputs";
+            attribute owner = "camComposer";
+        }
+
+        verification VC_CAM_TransmissionRate : VerificationCase {
+            objective camTransmissionRateObjective { verify camTransmissionRateReq; }
+            attribute id = "VC_CAM_TransmissionRate";
+            attribute testType = "performance";
+            attribute passCriteria = "CAM transmission rate meets minimum update frequency under typical loads";
+            attribute owner = "inputGateway";
+        }
+
+        verification VC_SampleHoldBehavior : VerificationCase {
+            objective sampleHoldObjective { verify sampleHoldReq; }
+            attribute id = "VC_SampleHoldBehavior";
+            attribute testType = "functional";
+            attribute passCriteria = "sample-and-hold behavior preserves values correctly between updates as specified";
+            attribute owner = "elaboration";
+        }
+
+        verification VC_TriggerOnStateChange : VerificationCase {
+            objective triggerObjective { verify triggerReq; }
+            attribute id = "VC_TriggerOnStateChange";
+            attribute testType = "integration";
+            attribute passCriteria = "triggers activate on configured state changes and propagate events to subscribers";
+            attribute owner = "elaboration";
+        }
+
+        verification VC_InfrastructureAdaptation : VerificationCase {
+            objective infraAdaptObjective { verify infrastructureAdaptReq; }
+            attribute id = "VC_InfrastructureAdaptation";
+            attribute testType = "scenario";
+            attribute passCriteria = "system adapts speed/behaviour correctly when infrastructure inputs are present";
+            attribute owner = "elaboration";
+        }
+
+        verification VC_ManeuverPrioritization : VerificationCase {
+            objective maneuverPriorityObjective { verify maneuverPriorityReq; }
+            attribute id = "VC_ManeuverPrioritization";
+            attribute testType = "functional";
+            attribute passCriteria = "maneuver prioritization resolves conflicts according to policy and safety constraints";
+            attribute owner = "elaboration";
+        }
+
+        /* --- Safety-critical & governance verification cases (group 2) --- */
+        verification VC_V2I_SafetyLatency : VerificationCase {
+            objective v2iSafetyLatencyObjective { verify v2i_SafetyEndToEndLatency; }
+            attribute id = "VC_V2I_SafetyLatency";
+            attribute testType = "safety";
+            attribute passCriteria = "V2I end-to-end latency for safety messages within specified bound in all tested ODDs";
+            attribute owner = "outputGateway";
+        }
+
+        verification VC_SafetyDistanceEstimation : VerificationCase {
+            objective safetyDistanceObjective { verify safetyDistance_EstimationAccuracy; }
+            attribute id = "VC_SafetyDistanceEstimation";
+            attribute testType = "functional";
+            attribute passCriteria = "distance estimation error within configured tolerance across speed range";
+            attribute owner = "elaboration";
+        }
+
+        verification VC_FailSafeArchitecture : VerificationCase {
+            objective failSafeObjective { verify failSafeArchitecture; }
+            attribute id = "VC_FailSafeArchitecture";
+            attribute testType = "safety";
+            attribute passCriteria = "fail-safe transitions occur within defined timing and maintain safety constraints";
+            attribute owner = "top_system";
+        }
+
+        verification VC_TARA_Conduction : VerificationCase {
+            objective taraObjective { verify tara_Conduction; }
+            attribute id = "VC_TARA_Conduction";
+            attribute testType = "governance";
+            attribute passCriteria = "Threat analysis and mitigation actions documented and traceable to requirements";
+            attribute owner = "safety";
+        }
+
+        verification VC_SafetyCaseDevelopment : VerificationCase {
+            objective safetyCaseObjective { verify safetyCaseDevelopment; }
+            attribute id = "VC_SafetyCaseDevelopment";
+            attribute testType = "governance";
+            attribute passCriteria = "Safety case artifacts produced and linked to verification evidence";
+            attribute owner = "safety";
+        }
+
+        verification VC_V2V_RestoreReactivation : VerificationCase {
+            objective v2vRestoreObjective { verify v2vSignalRestoreAndReactivation; }
+            attribute id = "VC_V2V_RestoreReactivation";
+            attribute testType = "scenario";
+            attribute passCriteria = "System restores V2V-based functions correctly after transient outages and reactivation";
+            attribute owner = "inputGateway";
+        }
+
+        verification VC_V2I_FailureFallback : VerificationCase {
+            objective v2iFallbackObjective { verify v2iFailureFallback; }
+            attribute id = "VC_V2I_FailureFallback";
+            attribute testType = "safety";
+            attribute passCriteria = "Fallback strategies engaged when V2I unavailable and safety maintained";
+            attribute owner = "top_system";
+        }
+
+        verification VC_GLOSA_FailureRecovery : VerificationCase {
+            objective glosaRecoveryObjective { verify glosaFailureRecovery; }
+            attribute id = "VC_GLOSA_FailureRecovery";
+            attribute testType = "scenario";
+            attribute passCriteria = "System recovers or safely degrades when GLOSA data is missing or inconsistent";
+            attribute owner = "elaboration";
+        }
+
+        verification VC_RequirementsTraceability : VerificationCase {
+            objective reqTraceObjective { verify requirementsTraceability; }
+            attribute id = "VC_RequirementsTraceability";
+            attribute testType = "governance";
+            attribute passCriteria = "All requirements have traceable satisfy/verify relationships and review evidence";
+            attribute owner = "projectManagement";
+        }
+
+        verification VC_RequirementsReview : VerificationCase {
+            objective reqReviewObjective { verify requirementsReview; }
+            attribute id = "VC_RequirementsReview";
+            attribute testType = "governance";
+            attribute passCriteria = "Requirements review completed with stakeholder approvals and recorded comments";
+            attribute owner = "projectManagement";
+        }
+
+        verification VC_ExternalInterfaceSpecification : VerificationCase {
+            objective extIfaceObjective { verify externalInterfaceSpecification; }
+            attribute id = "VC_ExternalInterfaceSpecification";
+            attribute testType = "integration";
+            attribute passCriteria = "External interface specs are validated against implemented message formats and contracts";
+            attribute owner = "inputGateway";
+        }
+
+        verification VC_TARA_SafetyCoverage : VerificationCase {
+            objective taraCoverageObjective { verify tara_Conduction; }
+            attribute id = "VC_TARA_SafetyCoverage";
+            attribute testType = "governance";
+            attribute passCriteria = "TARA mitigations mapped to safety case and verification evidence";
+            attribute owner = "safety";
+        }
+
+        /* --- Remaining uncovered requirements (group 4) --- */
+        verification VC_EmergencyVehicleHandling : VerificationCase {
+            objective emergencyVehicleObjective { verify emergencyVehicle; }
+            attribute id = "VC_EmergencyVehicleHandling";
+            attribute testType = "safety";
+            attribute passCriteria = "Emergency vehicle interactions handled with priority and safe trajectories";
+            attribute owner = "elaboration";
+        }
+
+        verification VC_PedestrianProtection : VerificationCase {
+            objective pedestrianObjective { verify pedestrian; }
+            attribute id = "VC_PedestrianProtection";
+            attribute testType = "safety";
+            attribute passCriteria = "Pedestrian incidents avoided in defined urban scenarios; TTA thresholds met";
+            attribute owner = "elaboration";
+        }
+
+        verification VC_StateCommunication : VerificationCase {
+            objective stateCommObjective { verify state_Comunication; }
+            attribute id = "VC_StateCommunication";
+            attribute testType = "integration";
+            attribute passCriteria = "State communication messages exchanged and consumed by subscribers as specified";
+            attribute owner = "inputGateway";
+        }
+
+        verification VC_LeaderProfileFallback : VerificationCase {
+            objective leaderProfileObjective { verify leaderProfile_ConservativeFallback; }
+            attribute id = "VC_LeaderProfileFallback";
+            attribute testType = "functional";
+            attribute passCriteria = "Leader conservative fallback engages when leader profile untrusted";
+            attribute owner = "elaboration";
+        }
+
+        verification VC_JamRateFalsePositiveHandling : VerificationCase {
+            objective jamRateObjective { verify jamRate_FalsePositiveHandling; }
+            attribute id = "VC_JamRateFalsePositiveHandling";
+            attribute testType = "functional";
+            attribute passCriteria = "Jam detection filters minimize false positives while preserving true detections";
+            attribute owner = "elaboration";
+        }
+
+        verification VC_PedestrianOnboardVerification : VerificationCase {
+            objective pedestrianOnboardObjective { verify pedestrian_OnboardVerification; }
+            attribute id = "VC_PedestrianOnboardVerification";
+            attribute testType = "integration";
+            attribute passCriteria = "Onboard pedestrian verification sensors integrated and produce reliable detections";
+            attribute owner = "elaboration";
+        }
+
+        verification VC_EmergencyManeuver_ODD : VerificationCase {
+            objective emergencyManeuverObjective { verify emergencyManeuver_ODDRestrictions; }
+            attribute id = "VC_EmergencyManeuver_ODD";
+            attribute testType = "safety";
+            attribute passCriteria = "Emergency maneuvers only allowed within permitted ODDs and restrictions enforced";
+            attribute owner = "safety";
+        }
+
+        verification VC_ScenarioCatalogDefinition : VerificationCase {
+            objective scenarioCatalogDefObjective { verify scenarioCatalogogDefinition; }
+            attribute id = "VC_ScenarioCatalogDefinition";
+            attribute testType = "analysis";
+            attribute passCriteria = "Scenario catalog definition matches expected schema and maps to requirement IDs";
+            attribute owner = "analysis";
+        }
+
+        verification VC_SignalLossDetection : VerificationCase {
+            objective signalLossObjective { verify signalLossReq; }
+            attribute id = "VC_SignalLossDetection";
+            attribute testType = "integration";
+            attribute passCriteria = "Signal loss detection triggers appropriate fallbacks within specified timeout";
+            attribute owner = "inputGateway";
+        }
+
+        verification VC_FragmentationMonitoringReq : VerificationCase {
+            objective fragmentationObjective { verify fragmentationReq; }
+            attribute id = "VC_FragmentationMonitoringReq";
+            attribute testType = "scenario";
+            attribute passCriteria = "Message fragmentation detected and reconstructed or handled by fallback";
+            attribute owner = "inputGateway";
+        }
+
+        verification VC_ValidationLatency : VerificationCase {
+            objective validationLatencyObjective { verify validationLatencyReq; }
+            attribute id = "VC_ValidationLatency";
+            attribute testType = "performance";
+            attribute passCriteria = "Validation latency remains below configured thresholds under typical loads";
+            attribute owner = "elaboration";
+        }
+
+        verification VC_EgoStateReception : VerificationCase {
+            objective egoStateReceptionObjective { verify egoStateReceptionReq; }
+            attribute id = "VC_EgoStateReception";
+            attribute testType = "integration";
+            attribute passCriteria = "Ego state reception meets timing and integrity requirements for control computations";
+            attribute owner = "inputGateway";
         }
 
     }
@@ -3325,7 +3900,7 @@ package V2X_CACC_Model{
             // ────── OCCURRENCE ──────
             occurrence occ_A1 : InternalOccurrence {
                 attribute inPhase = "Concept";
-                attribute content = "Define Objective: Design a modular cacc system that use V2X signals (V2V, V2I, ecc) to generate a batch of parameters to controll a car following model, using Deep Learning tecnique. Final implementation on FPGA hardware (PYNQ-Z1).";
+                attribute content = "Define Objective - Design a modular cacc system that use V2X signals (V2V, V2I, ecc) to generate a batch of parameters to controll a car following model, using Deep Learning tecnique. Final implementation on FPGA hardware (PYNQ-Z1).";
                 attribute date    = "2026-03-15";
             }
 
@@ -3565,14 +4140,7 @@ package V2X_CACC_Model{
                 attribute inPhase = "Functional";
                 attribute content = "End 2° Black/White Box Analysis";
                 attribute date    = "2026-05-06";
-             }
-
-            
-
-        
-
-
-
+             } 
 
         }
         
@@ -3737,7 +4305,7 @@ package V2X_CACC_Model{
                 attribute description = "Integrated platform for distributed version control and CI/CD automation.";
 
                 attribute descPurpose = "Guarantee version history, branching, and collaboration for all project source files, including text-based models.";
-                attribute descRole    = "Primary DevOps platform: Git repository hosting, code review via Merge Requests, and pipeline orchestration.";
+                attribute descRole    = "Primary DevOps platform - Git repository hosting, code review via Merge Requests, and pipeline orchestration.";
                 attribute descOutput  = "Commit history, branches, tags, CI/CD artifacts.";
                 attribute descModules = "Version Control; CI/CD Pipelines; Issue Tracker; Merge Requests.";
                 attribute descWiki    = "https://docs.gitlab.com";
@@ -3746,4 +4314,5 @@ package V2X_CACC_Model{
         }
     }
 
+}
 }
