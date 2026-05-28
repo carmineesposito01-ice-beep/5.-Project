@@ -189,6 +189,12 @@ package ComponentDefinition{
         //part v2v_own_message : V2V_OwnMessage_Unit;
         //part parameter_generator : ParameterGenerator_Unit;
         //part output_gateway : OutputGateway_Unit;
+        part imm_tracker     : IMM_LeaderTracker;
+        part feature_norm    : FeatureNormalizer_Unit;
+        part snn_inference   : SNN_Inference_Unit;
+        part param_projection: ParameterProjection_Unit;
+        part glosa           : GLOSA_Unit;
+        part dead_reckoning  : DeadReckoning_Unit;
     }
 
     part def OutputGateway_Unit{
@@ -308,14 +314,14 @@ package ComponentDefinition{
         doc /* Part representing the evaluation unit of the system, responsible for evaluating the validated signals and generating insights for the following parameter generation. */
         in port v2vIn : V2VCommPort;
         in port v2iIn : V2ICommPort;
-        out port conditioningVariablesOut : ConditioningVariablesPort;
     }
 
     part def ParameterGenerator_Unit{
         doc /* Part representing the parameter generator unit of the system, responsible for generating the parameters for the following model based on the analyzed data. */
         in port v2vIn : V2VCommPort;
         in port v2iIn : V2ICommPort;
-        in port conditioningVariablesIn : ConditioningVariablesPort;
+        in port physicsStateIn : PhysicsStatePort;
+        in port contextIn : ContextFlagsPort;
         out port forHmiOut;
         out port modelParametersOut : ControlParametersPort;
     }
@@ -354,51 +360,80 @@ package ComponentDefinition{
 
     part def SignalRecostruction_Unit{
         doc /* Part representing the signal reconstruction unit of the system, responsible for reconstructing the received signals in case of degradation or loss. */
-
+        part imm : IMM_LeaderTracker;
+        part deadReckoning : DeadReckoning_Unit;
     }
+
+
+
+    part def ParameterProjection_Unit{
+        doc /* Part that impose constraint on the string stability */
+    }
+
+
+
+
+
+    part def IMM_LeaderTracker {
+        in  port camIn         : CAM_Port;
+        out port leaderStateOut: LeaderStatePort;
+        attribute modelTransitionMatrix : Real[*];  // 3x3 markovian
+        attribute processNoiseQ_CV      : Real;
+        attribute processNoiseQ_CA      : Real;
+        attribute processNoiseQ_brake   : Real;
+    }
+
+    part def FeatureNormalizer_Unit {
+        in  port physicsRawIn  : PhysicsStatePort;
+        in  port contextRawIn  : ContextFlagsPort;
+        out port physicsNormOut: PhysicsStatePort;   // normalizzato + fixed-point
+        out port contextNormOut: ContextFlagsPort;
+        attribute quantizationFormat : String;       // es. "Q1.15"
+    }
+
+
+    part def SNN_Inference_Unit {
+        in  port physicsIn  : PhysicsStatePort;
+        in  port contextIn  : ContextFlagsPort;
+        out port rawParams  : ControlParametersPort;
+        attribute networkArchitecture : String;     // es. "ALIF-LIF, 3 layers"
+        attribute inferenceLatency   : Real;        // microseconds
+    }
+
+    part def ParameterProjection_Unit {
+        in  port rawIn       : ControlParametersPort;
+        in  port leaderState : LeaderStatePort;
+        out port safeParams  : ControlParametersPort;
+        assert constraint stringStability : StringStabilityConstraint;
+        assert constraint parameterRange  : ParameterRangeConstraint;
+    }
+
+
+    part def GLOSA_Unit {
+        in  port spatIn       : V2ICommPort;
+        in  port mapIn        : V2ICommPort;
+        in  port egoSpeedIn   : VehicleBusPort;
+        out port advisoryOut  : GLOSAAdvisoryPort;
+        attribute computationTime : Real;  // ms
+    }
+
+    part def DeadReckoning_Unit {
+        in  port lastLeaderState : LeaderStatePort;
+        in  port v2vStatusIn     : V2VCommPort;
+        out port predictedState  : LeaderStatePort;
+        attribute predictionHorizon : Real;  // ms
+        attribute pessimisticAccel  : Real;  // m/s^2 (assunzione conservativa)
+    }
+
+
+
+
 
 
 
     
 
-    part def Analyzer_Unit{
-        doc /* Part representing the analyzer unit of the system, responsible for analyzing the validated signals data and generating data for following parameter generation insights. */
-        
-
-
-        //part v2v_analyzer : V2V_Analyzer_Unit;
-        //part v2i_analyzer : V2I_Analyzer_Unit;
-    }
-
-    part def V2V_Analyzer_Unit{
-        doc /* Part representing the V2V analyzer unit of the system, responsible for analyzing the validated signals data and generating data for following parameter generation insights. */
-        
-    }
-
-    part def V2I_Analyzer_Unit{
-        doc /* Part representing the V2I analyzer unit of the system, responsible for analyzing the validated signals data and generating data for following parameter generation insights. */
-        
-    }
-
-    part def V2V_OwnMessage_Unit{
-        doc /* Part representing the V2V own message unit of the system, responsible for generating the V2V own message from own actual data (speed, position, ecc). */
-        
-    }
-
     
-
-    part def Send_V2VMessage_Unit{
-        doc /* Part representing the send V2V message unit of the system, responsible for sending the generated V2V own message to other vehicles. */
-    }
-
-    part def Send_Parameters_Unit{
-        doc /* Part representing the send parameters unit of the system, responsible for sending the generated parameters to the vehicle's control system. */
-    }
-
-    part def Send_Platooning_Info_Unit{
-        doc /* Part representing the send platooning info unit of the system, responsible for sending the generated platooning information to other vehicles. */
-    }
-
 
 
 

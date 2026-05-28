@@ -192,3 +192,39 @@ library package Use_Case_Definitions_wrong_definitions{
 
 
 }
+
+
+
+
+package test {
+    private import ScalarValues::*;
+    private import Quantities::*;
+    private import MeasurementReferences::*;
+    private import ISQ::*;
+    private import SI::*;
+    private import Time::*;
+
+    // Approach A — TYPE-LEVEL (best): redefines mRef to fix the unit structurally.
+    // mRef is inherited from MassValue :> ScalarQuantityValue.
+    // :>> kg pins mRef to the SI kilogram — enforced at parse/type-check time,
+    // not at runtime. Any value assigned must use kg; other units are a type mismatch.
+    attribute def Mass :> MassValue {
+        doc /* Mass quantity locked to kilograms (kg) at type level via mRef redefinition. */
+        attribute :>> mRef = kg;
+    }
+
+    // Approach B — RUNTIME constraint (secondary / belt-and-suspenders).
+    // Asserts mRef identity at model-check time.
+    // Use when you cannot redefine mRef (e.g. specializing a third-party type).
+    attribute def MassChecked :> MassValue {
+        doc /* Mass quantity with runtime assertion that mRef must be kg. */
+        assert constraint unit_is_kg {
+            mRef == kg
+        }
+    }
+
+    // ── Usage examples ────────────────────────────────────────────────────
+    attribute massA : Mass        = 1500.0 [kg];  // correct — unit matches mRef
+    attribute massB : MassChecked = 1500.0 [kg];  // correct — constraint passes
+    attribute massC : Mass     = 1500 [kg];     // type mismatch — mRef locked to kg
+}

@@ -145,6 +145,9 @@ library package StandardLibrary {
             attribute accelerationExponent : Real{
                 doc /* Adjusts the acceleration progression towards the desired speed (dimensionless). */
             }
+            attribute coolness : Real{
+                doc /* Adjusts the sensitivity to speed differences with the leading vehicle (dimensionless). */
+            }
         }
 
         
@@ -152,6 +155,7 @@ library package StandardLibrary {
             * MESSAGE TYPE DEFINITIONS (V2X)
         * =================================================================== */
         item def CAM{
+            @UnitInfo{unit = "test";}
             doc /* Cooperative Awareness Message (CAM) - Contains information about the vehicle's position, speed, and heading. */
             // Cooperative Awareness Message – ETSI EN 302 637-2
             attribute stationID : Integer;
@@ -208,17 +212,7 @@ library package StandardLibrary {
             attribute endLatitude : Real;
             attribute endLongitude : Real;
         }
-        item def EVA{
-            doc /* Environmental Vision Application (EVA) - Contains information about the vehicle's environment and perception. */
-            // Emergency Vehicle Alert – SAE J2735
-            attribute vehicleID : Integer;
-            attribute vehicleType : EmergencyVehicleTypeKind; // police, ambulance...
-            attribute latitude : Real;
-            attribute longitude : Real;
-            attribute speed : Real; // m/s
-            attribute heading : Real; // gradi
-            attribute routePath : GeoPath; // opzionale, percorso previsto
-        }
+
         item def VRU{
             doc /* Vulnerable Road User (VRU) - Contains information about pedestrians and cyclists. */
             // Vulnerable Road User Awareness Message (VAM) – ETSI TS 103 300-3
@@ -230,13 +224,7 @@ library package StandardLibrary {
             attribute heading : Real; // gradi
             attribute clusterSize : Integer; // opzionale, dimensione gruppo
         }
-        item def CPM{
-            doc /* Coordinated Perception Message (CPM) - Contains information about the vehicle's perception of its surroundings. */
-            // Collective Perception Message – ETSI TS 103 324
-            attribute stationID : Integer;
-            attribute sensorCapabilities : SensorCapability[*];
-            attribute perceivedObjects : PerceivedObject[*];
-        }
+
         item def MCM{
             doc /* Message for Coordination (MCM) - Contains information about vehicle coordination and communication. */
             // Maneuver Coordination Message – ETSI TS 103 561
@@ -248,6 +236,7 @@ library package StandardLibrary {
             attribute requestID : Integer; // identificativo richiesta
             attribute response : ResponseKind; // accettato/rifiutato
         }
+
         item def GNSSData{
             doc /* Global Navigation Satellite System Data (GNSSData) - Contains information about GPS and other satellite navigation data. */
             attribute carrierWaves : Real{
@@ -364,8 +353,44 @@ library package StandardLibrary {
             item fragmentationRate : ScalarValue;
             item latency : TimeValue;
             item platooningAvailable : PlatooningAvailability;
-            item conditioningVariables : Real[*];
+            item conditioningVariables : PhysicsStateVector[*];
             item followingParameters : CarFollowingParams;
+        }
+
+        item def PhysicsStateVector {
+            doc /* A vector of physical state variables for the vehicle, used in car-following calculations. */
+            attribute gap         : Real; // m
+            attribute relSpeed    : Real; // m/s
+            attribute egoSpeed    : Real; // m/s
+            attribute leaderSpeed : Real; // m/s
+            attribute leaderAccel : Real; // m/s^2
+            attribute leaderCovP  : Real; // m  (sigma_p dell'IMM)
+        }
+
+        item def ContextFlagsVector {
+            attribute cutInRequested       : Boolean;
+            attribute glosaActive          : Boolean;
+            attribute signalViolationWarn  : Boolean;
+            attribute emergencyManeuver    : Boolean;
+            attribute platoonRole          : VehicleRoleKind;
+            attribute degradedTracking     : Boolean;
+        }
+
+        item def LeaderStateEstimate {
+            attribute position     : Real;
+            attribute velocity     : Real;
+            attribute acceleration : Real;
+            attribute sigmaP       : Real;
+            attribute sigmaV       : Real;
+            attribute modeCV       : Real;
+            attribute modeCA       : Real;
+            attribute modeBrake    : Real;
+        }
+
+        item def GLOSA_Advisory {
+            attribute glosaFeasible : Boolean;
+            attribute vAdvisory     : Real;   // m/s, valido solo se glosaFeasible=true
+            attribute stopProfile   : Real;   // valore di decelerazione richiesto, se non fattibile
         }
 
         attribute def PlatooningAvailability :> Boolean{
@@ -467,14 +492,17 @@ library package StandardLibrary {
             reject; 
         }
 
+
         enum def CarFollowingModelKind {
             doc /* Enumeration for car-following models, used in car-following attributes. */
             Newell;
             IDM;
-            IDM_2D;
+            IIDM;          // sostituisce IDM_2D
+            ACC_IIDM;       // ACC-IIDM con coolness CAH
             OVM;
             Gipps;
         }
+
         enum def CarFollowingModeKind {
             doc /* Enumeration for car-following modes, used in car-following attributes. */
             CACC;
@@ -512,6 +540,13 @@ library package StandardLibrary {
             Disabled;
             Active;
             Passive;
+        }
+
+        enum def LeaderMotionMode {
+            doc /* Enumeration for leader motion modes, used in MMI reconstruction process. */
+            ConstantVelocity;
+            ConstantAcceleration;
+            HardBrake;
         }
 
 
@@ -569,6 +604,7 @@ library package StandardLibrary {
         }        
 
         port def CAM_Port {
+            @UnitInfo{unit = "test";}
             doc /* A port for in/outputting CAM messages to other vehicles. */
             in cam : CAM;
         }
@@ -577,6 +613,19 @@ library package StandardLibrary {
             doc /* A port for outputting platooning information, such as the system working state (disabled, active, passive) and availability for platooning (0-1). */
             out stateOfWork : StatOfWork;
             out platooningAvailability : PlatooningAvailability; // True/False
+        }
+
+        port def PhysicsStatePort {
+            in physicsState : PhysicsStateVector;  
+        }
+        port def ContextFlagsPort {
+            in contextFlags : ContextFlagsVector;  
+        }
+        port def LeaderStatePort {
+            in leaderState : LeaderStateEstimate; 
+        }
+        port def GLOSAAdvisoryPort {
+            in advisory : GLOSA_Advisory;      
         }
 
 
@@ -658,6 +707,19 @@ library package StandardLibrary {
             end consumer : ~PlatooningInfoPort;
             flow provider.stateOfWork to consumer.stateOfWork;
             flow provider.platooningAvailability to consumer.platooningAvailability;
+        }
+    }
+
+    library package Constraint_Definitions{
+        constraint def StringStabilityConstraint {
+            in params : CarFollowingParams;
+            in v_e    : Real;
+            // m_stab > 0 = stabile
+            // forma chiusa per IIDM, espressa in patterns/forms documentati
+        }
+
+        constraint def ParameterRangeConstraint {
+            //TODO: Dalla tabella dei range
         }
     }
 
@@ -794,6 +856,13 @@ library package StandardLibrary {
         }
 
         package SystemRequirement{
+            requirement def StringStabilityRequirement {
+                doc /* Parameters generated by the elaboration unit shall satisfy
+                    the IIDM string-stability criterion m_stab > 0 at all times. */
+                id = "SYS-STR-001";
+                assert constraint { subject.params satisfies StringStabilityConstraint }
+            }
+            
             /* ===================================================================
                 * SYSTEM REQUIREMENTS (WIP)
             * =================================================================== */

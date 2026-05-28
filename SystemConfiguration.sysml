@@ -25,7 +25,7 @@ package V2X_CACC_Model{
                      * ATTRIBUTES (Top-Use Case)
                  * =================================================================== */
                 // Car-Following Attributes
-                attribute :>> carFollowingModel = CarFollowingModelKind::IDM_2D;
+                attribute :>> carFollowingModel = CarFollowingModelKind::ACC_IIDM;
                 attribute :>> followingParameters;
                 attribute :>> headwayIncrementPercentage =10.0;
 
